@@ -134,7 +134,7 @@ Also support your custom dependency for each api
 
 ## Quick Use
 ```angular2html
-pip install quick-crud
+pip install fastapi-quickcrud
 ```
 1. Build a sample table with Sqlalchemy
 
