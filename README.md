@@ -14,6 +14,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 - Upsert Many
 - Delete One
 - Delete Many
+- Post Redirect Get
 ![docs page](pic/page_preview.png)
 
 
