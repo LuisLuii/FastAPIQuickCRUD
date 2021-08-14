@@ -3,10 +3,10 @@ from collections import OrderedDict
 
 from starlette.testclient import TestClient
 
-from quick_crud.crud_router import crud_router
-from quick_crud.crud_service import CrudService
-from quick_crud.misc.type import CrudMethods
-from quick_crud.misc.utils import sqlalchemy_to_pydantic
+from src.quick_crud import crud_router
+from src.quick_crud import CrudService
+from src.quick_crud.misc.type import CrudMethods
+from src.quick_crud import sqlalchemy_to_pydantic
 from tests.test_implementations import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)

@@ -1,22 +1,15 @@
-
-import uuid
-from typing import Optional
-
-from guid import GUID
-import uvicorn
-from fastapi import FastAPI
-from sqlalchemy import UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, sessionmaker, synonym
+from sqlalchemy.orm import declarative_base, synonym
 from sqlalchemy.sql.sqltypes import NullType
 
-from quick_crud.misc.exceptions import MultipleSingleUniqueNotSupportedException, \
+from src.quick_crud import MultipleSingleUniqueNotSupportedException, \
     MultiplePrimaryKeyNotSupportedException, CompositePrimaryKeyConstraintNotSupportedException, \
     ColumnTypeNotSupportedException
-from quick_crud.misc.type import CrudMethods
-from quick_crud.misc.utils import sqlalchemy_to_pydantic
+from src.quick_crud.misc.type import CrudMethods
+from src.quick_crud import sqlalchemy_to_pydantic
 
 
 
