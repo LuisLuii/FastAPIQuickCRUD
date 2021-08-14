@@ -2,16 +2,15 @@
 
 This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
 
+
 - Get one
 - Get many
 - Update one
 - Update many
 - Patch one
 - Patch many
-- Create one
-- Create many
-- Upsert One
-- Upsert Many
+- Create/Upsert one
+- Create/Upsert many
 - Delete One
 - Delete Many
 - Post Redirect Get
