@@ -2,10 +2,10 @@ import json
 
 from starlette.testclient import TestClient
 
-from src.quick_crud import crud_router
-from src.quick_crud import CrudService
-from src.quick_crud.misc.type import CrudMethods
-from src.quick_crud import sqlalchemy_to_pydantic
+from fastapi_quickcrud import crud_router
+from fastapi_quickcrud import CrudService
+from fastapi_quickcrud.misc.type import CrudMethods
+from fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)

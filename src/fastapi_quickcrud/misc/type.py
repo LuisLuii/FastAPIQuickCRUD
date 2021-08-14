@@ -1,10 +1,6 @@
-from functools import singledispatch
-from types import DynamicClassAttribute
-from typing import Any, Type, Optional, Generic, TypeVar, ClassVar, NewType
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel
-from sqlalchemy import types, or_
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 from strenum import StrEnum
@@ -108,7 +104,6 @@ class ExtraFieldType(StrEnum):
     Matching_pattern = '_____matching_pattern'
 
 
-
 class ExtraFieldTypePrefix(StrEnum):
     List = '____list'
     From = '____from'
@@ -133,12 +128,12 @@ class ItemComparisonOperators(StrEnum):
     Not_in = auto()
 
 
-
 class UniqueEnumMeta(type):
     """
     Metaclass that makes all produced classes compare equal and hash equal
     if their respective names match.
     """
+
     def __eq__(self, other):
         return self.__name__ == other.__name__
 
@@ -157,7 +152,6 @@ class MatchingPatternInString(StrEnum):
     not_case_sensitive = auto()
     similar_to = auto()
     not_similar_to = auto()
-
 
 
 class JSONMatchingMode(str, Enum):

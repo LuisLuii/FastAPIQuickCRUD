@@ -1,0 +1,16 @@
+README.md
+setup.py
+src/fastapi_quickcrud/__init__.py
+src/fastapi_quickcrud/crud_router.py
+src/fastapi_quickcrud/crud_service.py
+src/fastapi_quickcrud.egg-info/PKG-INFO
+src/fastapi_quickcrud.egg-info/SOURCES.txt
+src/fastapi_quickcrud.egg-info/dependency_links.txt
+src/fastapi_quickcrud.egg-info/requires.txt
+src/fastapi_quickcrud.egg-info/top_level.txt
+src/fastapi_quickcrud/misc/__init__.py
+src/fastapi_quickcrud/misc/crud_model.py
+src/fastapi_quickcrud/misc/exceptions.py
+src/fastapi_quickcrud/misc/schema_builder.py
+src/fastapi_quickcrud/misc/type.py
+src/fastapi_quickcrud/misc/utils.py

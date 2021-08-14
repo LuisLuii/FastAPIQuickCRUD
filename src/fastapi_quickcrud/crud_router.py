@@ -17,11 +17,11 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-from src.quick_crud.crud_service import CrudService
-from src.quick_crud.misc.crud_model import CRUDModel
-from src.quick_crud.misc.exceptions import FindOneApiNotRegister, PrimaryMissing
-from src.quick_crud.misc.type import \
-    CrudMethods
+from .crud_service import CrudService
+from .misc.crud_model import CRUDModel
+from .misc.exceptions import FindOneApiNotRegister, PrimaryMissing
+from .misc.type import CrudMethods
+
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)

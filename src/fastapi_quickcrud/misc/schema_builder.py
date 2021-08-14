@@ -9,7 +9,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
 
-from src.quick_crud.misc.exceptions import MultipleSingleUniqueNotSupportedException, SchemaException, \
+from fastapi_quickcrud.misc.exceptions import MultipleSingleUniqueNotSupportedException, SchemaException, \
     CompositePrimaryKeyConstraintNotSupportedException, MultiplePrimaryKeyNotSupportedException, \
     ColumnTypeNotSupportedException, UnknownError
 import uuid
@@ -21,7 +21,7 @@ from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime,
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, synonym
 
-from src.quick_crud.misc.type import MatchingPatternInString, \
+from fastapi_quickcrud.misc.type import MatchingPatternInString, \
     RangeFromComparisonOperators, Ordering, RangeToComparisonOperators, ExtraFieldTypePrefix, \
     ExtraFieldType, ItemComparisonOperators
 

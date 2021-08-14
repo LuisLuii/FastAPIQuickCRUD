@@ -3,8 +3,8 @@ from typing import Optional, Dict, List
 from pydantic import BaseModel
 from pydantic.main import ModelMetaclass
 
-from src.quick_crud.misc.exceptions import RequestMissing, InvalidRequestMethod
-from src.quick_crud.misc.type import CrudMethods
+from fastapi_quickcrud.misc.exceptions import RequestMissing, InvalidRequestMethod
+from fastapi_quickcrud.misc.type import CrudMethods
 
 
 class RequestResponseModel(BaseModel):

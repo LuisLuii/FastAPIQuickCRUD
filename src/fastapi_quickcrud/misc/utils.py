@@ -7,7 +7,7 @@ from typing import Type, List, Union, TypeVar, Dict
 
 from fastapi import FastAPI, APIRouter
 
-from src.quick_crud.misc.crud_model import RequestResponseModel, CRUDModel
+from fastapi_quickcrud.misc.crud_model import RequestResponseModel, CRUDModel
 
 from pydantic import BaseModel, create_model, BaseConfig
 from sqlalchemy import any_, text, Integer
@@ -16,9 +16,9 @@ from sqlalchemy.sql.elements import \
     or_, \
     and_, BinaryExpression
 
-from src.quick_crud.misc.exceptions import QueryOperatorNotFound
-from src.quick_crud.misc.schema_builder import ApiParameterSchemaBuilder
-from src.quick_crud.misc.type import \
+from .exceptions import QueryOperatorNotFound
+from .schema_builder import ApiParameterSchemaBuilder
+from .type import \
     Base, \
     CrudMethods, \
     CRUDRequestMapping, \

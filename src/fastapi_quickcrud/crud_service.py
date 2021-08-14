@@ -6,10 +6,10 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import ChunkedIteratorResult, CursorResult
 from sqlalchemy.sql.elements import BinaryExpression
 
-from src.quick_crud.misc.exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
-from src.quick_crud.misc.type import Ordering
-from src.quick_crud.misc.utils import Base, alias_to_column
-from src.quick_crud.misc.utils import find_query_builder
+from .misc.exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
+from .misc.type import Ordering
+from .misc.utils import Base, alias_to_column
+from .misc.utils import find_query_builder
 
 logger = logging.getLogger(__name__)
 
