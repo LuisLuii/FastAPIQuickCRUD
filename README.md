@@ -1,89 +1,470 @@
-# QuickCRUD
+#  Quick CRUD
 
+This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
 
+- Get one
+- Get many
+- Update one
+- Update many
+- Patch one
+- Patch many
+- Create one
+- Create many
+- Upsert One
+- Upsert Many
+- Delete One
+- Delete Many
 
-## Getting started
+Also support your custom dependency for each api
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# constraint
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Please use composite unique constraint if there are more than one unique fields
+- Please don't use composite unique constraint and the single unique constraint in the same time
+    - except the single one unique constraint is primary key which be contained into composite unique constraint
 
-## Add your files
+        Don't declare the `unique=True` if the column is primary key
 
-- [ ] [Create](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+        ```python
+        class Example(Base):
+            __tablename__ = 'example'
+            __table_args__ = (
+                UniqueConstraint('p_id', 'test'),
+            )
 
+            p_id = Column(Integer, primary_key=True)
+            test = Column(Integer)
+            test_1 = Column(Text)
+        ```
+
+- Primary key is required but not support composite primary key
+- The field of api will be optional if there is default value or is nullable or server_default is set
+- The value of server_default did not support show on OpenAPI
+- The field of api will be required if there is no default value of the column or is not nullable
+- Some type of columns are not support in query:
+    - INTERVAL
+    - JSON
+    - JSONB
+    - H-STORE
+    - ARRAY
+    - BYTE
+    - Geography
+    - box
+    - line
+    - point
+    - lseg
+    - polygon
+    - inet
+    - macaddr
+
+- Automap() of Sqlalchemy is not support
+
+## Quick Use
+
+1. Build a sample table with Sqlalchemy
+
+    Strongly recommend you use `[sqlacodegen](https://pypi.org/project/sqlacodegen/)` to  generate the sql schema
+
+    ```python
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine('postgresql://<user name>:<password>@<host>:<port>/<database name>', future=True, echo=True,
+                           pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+
+    class CRUDTest(Base):
+        __tablename__ = 'crud_test'
+        __table_args__ = (
+            UniqueConstraint('id','float4_value', 'int4_value'),
+        )
+
+        id = Column(Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+        bool_value = Column(Boolean, nullable=False, server_default=text("false"))
+        bytea_value = Column(LargeBinary)
+        char_value = Column(CHAR(10))
+        date_value = Column(Date, server_default=text("now()"))
+        float4_value = Column(Float, nullable=False)
+        float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
+        int2_value = Column(SmallInteger, nullable=False)
+        int4_value = Column(Integer, nullable=False)
+        int8_value = Column(BigInteger, default=99)
+        interval_value = Column(INTERVAL)
+        json_value = Column(JSON)
+        jsonb_value = Column(JSONB(astext_type=Text()))
+        numeric_value = Column(Numeric)
+        text_value = Column(Text)
+        time_value = Column(Time)
+        timestamp_value = Column(DateTime)
+        timestamptz_value = Column(DateTime(True))
+        timetz_value = Column(Time(True))
+        uuid_value = Column(UUID(as_uuid=True))
+        varchar_value = Column(String)
+        array_value = Column(ARRAY(Integer()))
+        array_str__value = Column(ARRAY(String()))
+
+    CRUDTest.__table__.create(engine)
+    ```
+
+2. prepare a database connection 
+
+    ```python
+    session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    def get_transaction_session():
+        try:
+            db = session()
+            yield db
+        finally:
+            db.close()
+    ```
+
+3. import the required module
+
+    ```python
+    from quick_crud import crud_router
+    from quick_crud import CrudService
+    from quick_crud import CrudMethods
+    from quick_crud import sqlalchemy_to_pydantic
+    ```
+
+4. register CrudService  
+
+    ```python
+    test_crud_service = CrudService(model=CRUDTest)
+    ```
+
+5. covent the sqlalchemy model to Pydantic model
+
+    ```python
+    test_crud_model = sqlalchemy_to_pydantic(db_model = CRUDTest,
+                                             crud_methods=[
+                                                       CrudMethods.FIND_MANY,
+                                                       CrudMethods.FIND_ONE,
+                                                       CrudMethods.UPSERT_ONE,
+                                                       CrudMethods.UPDATE_MANY,
+                                                       CrudMethods.UPDATE_ONE,
+                                                       CrudMethods.DELETE_ONE,
+                                                       CrudMethods.DELETE_MANY,
+                                                       CrudMethods.PATCH_MANY,
+                                                       CrudMethods.PATCH_ONE,
+
+                                               ],
+                                             exclude_columns=[])
+
+    ```
+
+    argument: 
+
+    db_model: Sqlalchemy Schema
+
+    crud_methods: CRUD api
+
+    - example
+
+        crud_methods: build the curd method
+
+        FASTCRUD supports these crud method(`CrudMethods`)
+
+        - FIND_ONE
+        - FIND_MANY
+        - UPDATE_ONE
+        - UPDATE_MANY
+        - PATCH_ONE
+        - PATCH_MANY
+        - CREATE_ONE
+        - CREATE_MANY
+        - UPSERT_ONE
+        - UPSERT_MANY
+        - DELETE_ONE
+        - DELETE_MANY
+
+    exclude_columns: Same columns will not be operation (if the column is nullable or has default value)
+
+6. user CrudRouter to register API
+
+    db_session: `get_transaction_session`
+
+    crud_service: `CrudService`
+
+    crud_models: `sqlalchemy_to_pydantic` 
+
+    prefix, tags: extra argument for include_router() of APIRouter() of fastapi
+
+    ```python
+    	new_route_3 = CrudRouter(db_session=get_transaction_session,
+                             crud_service=UntitledTable256_service,
+                             crud_models=test_crud_model,
+                             prefix="/crud_test",
+                             tags=["Example"]
+                             )
+    ```
+
+- `GET`
+
+    Http status code of api response is follow the rule when data not found in `FIND_ONE` and `FIND_MANY`:
+
+    Collection resources(`FIND_MANY`):
+
+    - /user
+    - /user/me/friends
+
+    200 with an empty list
+
+    Object resource(`FIND_ONE`):
+
+    - /user/$id
+
+    204 
+
+    - FIND_ONE
+
+        ### This api will find the data with strict searching
+
+        Url:
+
+        /end point name 
+
+        - The api did not support the following data types:
+            - INTERVAL
+            - JSON
+            - JSONB
+            - H-STORE
+            - ARRAY
+            - BYTE
+        - The api supports the following data types:
+            - Boolean
+            - Character types such as `char`, `varchar`, and `text`.
+            - Numeric types such as integer and floating-point number.
+            - Temporal types such as date, time, timestamp but interval
+
+                Temporal types related columns query is strict, but it is support date range filter, e.g.  you want to get data without deleted_at < now()
+
+            - UUID for storing Universally Unique Identifiers
+
+        - Feature
+            - search by date range for date related columns
+            - search the data by primary key and allow to filter with additional columns(such as now()>deleted_at)
+        - Other thing
+            - If data is found, the `x-total-count` in the header should be 1
+
+        response status code:
+
+        200 - get data success
+
+        200(with empty list in response body) - request success but data not found by the query parameters
+
+    - FIND_MANY
+
+        ### This api supports Approximate String Matching(Fuzzy Matching)
+
+        Url:
+
+        /end point name 
+
+        - The api did not support the following data types:
+            - INTERVAL
+            - JSON
+            - JSONB
+            - H-STORE
+            - ARRAY
+            - BYTE
+        - The api supports the following data types:
+            - Boolean
+            - Character types such as `char`, `varchar`, and `text`.
+
+                The query operation of Character type columns is according with the `string_matching_patterns`
+
+            - Numeric types such as integer and floating-point number.
+            - Temporal types such as date, time, timestamp but interval
+
+                Temporal types related columns query is strict, but it is support date range filter, e.g.  you want to get data without deleted_at < now()
+
+            - UUID for storing Universally Unique Identifiers
+
+        - Feature
+            - Pagination
+                - limit
+                - offset
+            - Order by columns
+            - Sql approximate string matching
+                - MatchRegexWithCaseSensitive
+                - MatchRegexWithCaseInsensitive
+                - DoesNotMatchRegexWithCaseInsensitive
+                - DoesNotMatchRegexWithCaseSensitive
+                - Ilike
+                - Like
+                - SimilarTo
+            - search by date range for date related columns
+        - Other thing
+            - `x-total-count` in header will show how many date match your query
+
+        response status code:
+
+        200 - get data success
+
+        204 - request success but data not found by the query parameters
+
+- UPDATE
+
+    The required or optional fields in request body is depended on the nullable and column default in the table schema. 
+
+    The field will be optional if the columns is nullable and there is default value 
+
+    `default input do not support server_default in Sqlalchemy schema`
+
+    example:
+
+    if the field is using `server_default` with Sqlalchemy schema
+
+    - Optional field
+    - It can default input
+    - The Openapi will not show the default value
+
+    if the field is using `default` with Sqlalchemy schema
+
+    - Optional field
+    - It can default input
+    - The Openapi will show the default value
+- PATCH & DELETE
+
+    The following api supports url parameter (primary key) as a command to the resource to limit the scope of the current request. And a query parameters as a command to strict filter the scope of data.
+
+    the filtering data number should only be one(filter by primary key), and data will be updated by request body if there is data after filter by query parameters.
+
+    Http status code of api response is follow the rule:
+
+    200 - operation success
+
+    204 - No data if filter by query parameters
+
+    - PATCH_ONE
+
+        url:
+
+        /`{primary key name}`?`column_name=xxx`
+
+        Query:
+
+        You Should Know:
+
+        - the primary key path parameter is required
+        - the query parameter allows to all the columns
+        - query and response binary data is not support, use `exclude` argument in `sqlalchemy_to_pydantic`
+
+        the api supports the following data types:
+
+        - Boolean
+        - Character types such as `char`, `varchar`, and `text`.
+        - Numeric types such as integer and floating-point number.
+        - Temporal types such as date, time, timestamp, and interval
+
+            Temporal types related columns query is strict, but it is support date range filter, e.g.  you want to get data without deleted_at < now()
+
+        - UUID for storing Universally Unique Identifiers
+
+        Request Body
+
+        Which columns you want to be updated
+
+        Return
+
+        All the columns without the columns in exclude list
+
+    - DELETE_ONE
+
+        Http status code of api response is follow the rule:
+
+        200 - delete success
+
+        204 - deletion target of query filter not found
+
+        url:
+
+        /`{primary key name}`?`column_name=xxx`
+
+        Query:
+
+        You Should Know:
+
+        - the primary key path parameter is required
+        - the query parameter allows to all the columns
+        - query and response binary data is not support, use `exclude` argument in `sqlalchemy_to_pydantic`
+
+        the api supports the following data types:
+
+        - Boolean
+        - Character types such as `char`, `varchar`, and `text`.
+        - Numeric types such as integer and floating-point number.
+        - Temporal types such as date, time, timestamp, and interval
+
+            Temporal types related columns query is strict, but it is support date range filter, e.g.  you want to get data without deleted_at < now()
+
+        - UUID for storing Universally Unique Identifiers
+
+        Request Body
+
+        Which columns you want to be updated
+
+        Return
+
+        return the primary key value
+
+- POST_REDIRECT_GET
+
+    This API supports that create one data and redirect to get one api if create success, and response 409 if conflict
+
+    - POST_REDIRECT_GET
+
+        url:
+
+        /`end point`?`conflict_handling=`
+
+        Query:
+
+        You Should Know:
+
+        - abort
+
+            response `409`
+
+        - redirect_get
+
+            redirect to the url of `FIND_ONE` API with primary key of you input
+
+- UPSERT
+
+    This API supports that insert one or more than one data, and update the existing data if conflicting
+
+    - UPSERT_MANY
+
+        url:
+
+        /`end point`
+
+    - UPSERT_ONE
+
+        url:
+
+        /
+
+    there are on_conflict_columns and update_columns in request body;
+
+    the `on_conflict_columns` should be  composite unique construct columns in that table, and the other columns should be set as `update_columns`
+
+# Alias
+
+Alias is supported already
+
+usage:
+
+```python
+id = Column('primary_key',Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/luislui/quickcrud.git
-git branch -M main
-git push -uf origin main
+
+you can use info argument wait alias_name key 
+
+modify the id to alias name
+
+```python
+id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+primary_key = synonym('id')
 ```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/integrations/)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Automatically merge when pipeline succeeds](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://docs.gitlab.com/ee/user/application_security/sast/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://gitlab.com/-/experiment/new_project_readme_content:ee9ff6e68c4cb5b960bbb548e5a7a35d?https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
-
