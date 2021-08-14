@@ -150,10 +150,18 @@ pip install quick-crud
 
     ```python
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    engine = create_engine('postgresql://<user name>:<password>@<host>:<port>/<database name>', future=True, echo=True,
-                           pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+    from sqlalchemy import *
+    from sqlalchemy.dialects.postgresql import *
+    from sqlalchemy.orm import *
+   
+    Base = declarative_base()
+    metadata = Base.metadata
+    engine = create_engine('postgresql://<user name>:<password>@<host>:<port>/<database name>', 
+                            future=True, 
+                            echo=True,
+                            pool_use_lifo=True,
+                            pool_pre_ping=True, 
+                            pool_recycle=7200)
 
     class CRUDTest(Base):
         __tablename__ = 'crud_test'
@@ -264,7 +272,7 @@ pip install quick-crud
     - prefix, tags: extra argument for include_router() of APIRouter() of fastapi
 
     ```python
-    	new_route_3 = CrudRouter(db_session=get_transaction_session,
+    	new_route_3 = crud_router(db_session=get_transaction_session,
                              crud_service=UntitledTable256_service,
                              crud_models=test_crud_model,
                              prefix="/crud_test",
