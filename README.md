@@ -60,7 +60,9 @@ Also support your custom dependency for each api
 - Automap() of Sqlalchemy is not support
 
 ## Quick Use
-
+```angular2html
+pip install quick-crud
+```
 1. Build a sample table with Sqlalchemy
 
     Strongly recommend you use `[sqlacodegen](https://pypi.org/project/sqlacodegen/)` to  generate the sql schema
@@ -120,10 +122,10 @@ Also support your custom dependency for each api
 3. import the required module
 
     ```python
-    from quick_crud import crud_router
-    from quick_crud import CrudService
-    from quick_crud import CrudMethods
-    from quick_crud import sqlalchemy_to_pydantic
+    from src.quick_crud import crud_router
+    from src.quick_crud import CrudService
+    from src.quick_crud import CrudMethods
+    from src.quick_crud import sqlalchemy_to_pydantic
     ```
 
 4. register CrudService  
