@@ -15,7 +15,7 @@ print("""
 
 if __name__ == '__main__':
     setup(
-        name='quick-crud',
+        name='fastapi-quickcrud',
         version=VERSION,
         install_requires=["fastapi","pydantic","SQLAlchemy","StrEnum"],
         python_requires=">=3.6",

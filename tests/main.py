@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import NullType
 
 from src.quick_crud import crud_router
 from src.quick_crud import CrudService
-from src.quick_crud import CrudMethods
+from src.quick_crud import CrudRouter
 from src.quick_crud import sqlalchemy_to_pydantic
 app = FastAPI()
 
@@ -119,7 +119,7 @@ UntitledTable256_service = CrudService(model=UntitledTable256)
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
+                                                   CrudRouter.UPSERT_ONE
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 a = UntitledTable256Model.__dict__
@@ -132,7 +132,7 @@ test_create_one = crud_router(db_session=get_transaction_session,
                           )
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
+                                                   CrudRouter.UPSERT_MANY,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
@@ -145,7 +145,7 @@ test_create_many = crud_router(db_session=get_transaction_session,
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.FIND_ONE,
+                                                   CrudRouter.FIND_ONE,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
@@ -158,7 +158,7 @@ test_create_one = crud_router(db_session=get_transaction_session,
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.UPSERT_MANY
+                                                   CrudRouter.UPSERT_MANY
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
@@ -170,7 +170,7 @@ test2 = crud_router(db_session=get_transaction_session,
                           )
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.POST_REDIRECT_GET
+                                                   CrudRouter.POST_REDIRECT_GET
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
@@ -183,15 +183,15 @@ test3 = crud_router(db_session=get_transaction_session,
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.FIND_MANY,
-                                                   CrudMethods.FIND_ONE,
-                                                   CrudMethods.UPSERT_ONE,
-                                                   CrudMethods.UPDATE_MANY,
-                                                   CrudMethods.UPDATE_ONE,
-                                                   CrudMethods.DELETE_ONE,
-                                                   CrudMethods.DELETE_MANY,
-                                                   CrudMethods.PATCH_MANY,
-                                                   CrudMethods.PATCH_ONE,
+                                                   CrudRouter.FIND_MANY,
+                                                   CrudRouter.FIND_ONE,
+                                                   CrudRouter.UPSERT_ONE,
+                                                   CrudRouter.UPDATE_MANY,
+                                                   CrudRouter.UPDATE_ONE,
+                                                   CrudRouter.DELETE_ONE,
+                                                   CrudRouter.DELETE_MANY,
+                                                   CrudRouter.PATCH_MANY,
+                                                   CrudRouter.PATCH_ONE,
 
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
@@ -211,7 +211,7 @@ test_get_data = crud_router(db_session=get_transaction_session,
 #
 # UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #                                                crud_methods=[
-#                                                    CrudMethods.UPSERT_ONE
+#                                                    CrudRouter.UPSERT_ONE
 #                                                ],
 #                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 #

@@ -16,6 +16,7 @@ from sqlalchemy.sql.elements import \
     or_, \
     and_, BinaryExpression
 
+from src.quick_crud.misc.exceptions import QueryOperatorNotFound
 from src.quick_crud.misc.schema_builder import ApiParameterSchemaBuilder
 from src.quick_crud.misc.type import \
     Base, \
@@ -377,7 +378,7 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
         operator_column_name = column_name + process_type_map[type_]
         operators = param.get(operator_column_name, None)
         if not operators:
-            raise Exception(f'The operator of {column_name} not found!')
+            raise QueryOperatorNotFound(f'The query operator of {column_name} not found!')
         if not isinstance(operators, list):
             operators = [operators]
         for operator in operators:

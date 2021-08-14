@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import ChunkedIteratorResult, CursorResult
 from sqlalchemy.sql.elements import BinaryExpression
 
+from src.quick_crud.misc.exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
 from src.quick_crud.misc.type import Ordering
 from src.quick_crud.misc.utils import Base, alias_to_column
 from src.quick_crud.misc.utils import find_query_builder
@@ -53,7 +54,7 @@ class CrudService:
                 elif order_by.upper() == Ordering.ASC.upper():
                     order_by_query_list.append(getattr(self.model, sort_column).asc())
                 else:
-                    raise Exception(f"Unknown order type {order_by}, oly accept DESC or ASC")
+                    raise UnknownOrderType(f"Unknown order type {order_by}, oly accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
         query_result = session.execute(stmt)
@@ -102,13 +103,13 @@ class CrudService:
             update_columns = alias_to_column(insert_with_conflict_handle.__dict__.get('update_columns', None),
                                              self.model)
             if not update_columns:
-                raise Exception('update_columns parameter must be a non-empty list ')
+                raise UpdateColumnEmptyException('update_columns parameter must be a non-empty list ')
             conflict_update_dict = {}
             for columns in update_columns:
                 if hasattr(insert_stmt.excluded, columns):
                     conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
                 else:
-                    raise Exception(f'the {columns} is not exited')
+                    raise UnknownColumn(f'the {columns} is not exited')
             conflict_list = alias_to_column(model=self.model, param=unique_fields)
             conflict_update_dict = alias_to_column(model=self.model, param=conflict_update_dict, column_collection=True)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,

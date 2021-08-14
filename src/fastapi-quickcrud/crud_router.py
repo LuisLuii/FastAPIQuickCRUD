@@ -19,7 +19,7 @@ from starlette.responses import RedirectResponse
 
 from src.quick_crud.crud_service import CrudService
 from src.quick_crud.misc.crud_model import CRUDModel
-from src.quick_crud.misc.exceptions import FindOneApiNotRegister
+from src.quick_crud.misc.exceptions import FindOneApiNotRegister, PrimaryMissing
 from src.quick_crud.misc.type import \
     CrudMethods
 
@@ -46,7 +46,7 @@ def crud_router(
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
     if not primary_name:
-        raise Exception("primary key is required")
+        raise PrimaryMissing("primary key is required")
     path = '/{' + primary_name + '}'
     unique_list: List[str] = crud_models.UNIQUE_LIST
     router = APIRouter()
@@ -127,8 +127,6 @@ def crud_router(
                 return result
             result = parse_obj_as(_response_model, query_result)
             response.headers["x-total-count"] = str(1)
-            # todo handle there is no unique or exclusion constraint matching the ON CONFLICT specification ()
-            # todo handle there is asyncpg.exceptions.ForeignKeyViolationError
             session.commit()
             return result
 

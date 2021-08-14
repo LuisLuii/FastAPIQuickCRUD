@@ -1,14 +1,41 @@
-from typing import Type
-
 from fastapi import HTTPException
+
 
 class FindOneApiNotRegister(HTTPException):
     pass
 
+
 class CRUDBuilderException(BaseException):
     pass
+
+
 class RequestMissing(CRUDBuilderException):
     pass
+
+
+class PrimaryMissing(CRUDBuilderException):
+    pass
+
+
+class UnknownOrderType(CRUDBuilderException):
+    pass
+
+
+class UpdateColumnEmptyException(CRUDBuilderException):
+    pass
+
+
+class UnknownColumn(CRUDBuilderException):
+    pass
+
+
+class QueryOperatorNotFound(CRUDBuilderException):
+    pass
+
+
+class UnknownError(CRUDBuilderException):
+    pass
+
 
 class ConflictColumnsCannotHit(CRUDBuilderException):
     pass
@@ -28,6 +55,7 @@ class CompositePrimaryKeyConstraintNotSupportedException(CRUDBuilderException):
 
 class MultiplePrimaryKeyNotSupportedException(CRUDBuilderException):
     pass
+
 
 class ColumnTypeNotSupportedException(CRUDBuilderException):
     pass
@@ -73,4 +101,3 @@ class FDDRestHTTPException(HTTPException):
         application to render a default error page or you can catch the subclasses
         of it independently and render nicer error messages.
         """
-

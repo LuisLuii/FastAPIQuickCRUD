@@ -11,7 +11,7 @@ from sqlalchemy.orm import ColumnProperty
 
 from src.quick_crud.misc.exceptions import MultipleSingleUniqueNotSupportedException, SchemaException, \
     CompositePrimaryKeyConstraintNotSupportedException, MultiplePrimaryKeyNotSupportedException, \
-    ColumnTypeNotSupportedException
+    ColumnTypeNotSupportedException, UnknownError
 import uuid
 from typing import Optional
 
@@ -708,7 +708,7 @@ class ApiParameterSchemaBuilder:
                                        i['column_type'],
                                        Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -756,7 +756,7 @@ class ApiParameterSchemaBuilder:
                                        i['column_type'],
                                        Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -802,7 +802,7 @@ class ApiParameterSchemaBuilder:
                                        i['column_type'],
                                        Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -848,7 +848,7 @@ class ApiParameterSchemaBuilder:
                                        i['column_type'],
                                        Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -908,7 +908,7 @@ class ApiParameterSchemaBuilder:
                                              i['column_type'],
                                              Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -972,7 +972,7 @@ class ApiParameterSchemaBuilder:
                                              i['column_type'],
                                              Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1045,7 +1045,7 @@ class ApiParameterSchemaBuilder:
                                              i['column_type'],
                                              Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1116,7 +1116,7 @@ class ApiParameterSchemaBuilder:
                                              i['column_type'],
                                              Query(i['column_default'])))
             else:
-                raise Exception('Unknown error')
+                raise UnknownError(f'Unknown error, {i}')
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
