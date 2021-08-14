@@ -236,7 +236,7 @@ pip install quick-crud
     ```
 
     - argument:
-        - db_model: ```Declarative Base Class```
+        - db_model: ```Sqlachemy Declarative Base Class```
         - crud_methods: ```CrudMethods```
             - examples
               - CrudMethods.FIND_ONE
