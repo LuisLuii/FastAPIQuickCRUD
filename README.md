@@ -1,4 +1,4 @@
-#  Quick CRUD
+#  FastAPI Quick CRUD
 
 This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
 
@@ -14,6 +14,78 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 - Upsert Many
 - Delete One
 - Delete Many
+![docs page](pic/page_preview.png)
+
+
+- Query Operation will look like that when python type of column is 
+  - string
+    - support Approximate String Matching that require this 
+        - (<column_name>____str, <column_name>____str_____matching_pattern)
+    - support In-place Operation, get the value of column in the list of input
+        - (<column_name>____list, <column_name>____list____comparison_operator)
+    - ![string](pic/string_query.png)
+  - numeric 
+    - support Range Searching from and to
+        - (<column_name>____from, <column_name>____from_____comparison_operator)
+        - (<column_name>____to, <column_name>____to_____comparison_operator)
+    - support In-place Operation, get the value of column in the list of input
+        - (<column_name>____list, <column_name>____list____comparison_operator)
+    ![numeric](pic/numeric_query.png)
+  - datetime 
+    - support Range Searching from and to
+        - (<column_name>____from, <column_name>____from_____comparison_operator)
+        - (<column_name>____to, <column_name>____to_____comparison_operator)
+    - support In-place Operation, get the value of column in the list of input
+        - (<column_name>____list, <column_name>____list____comparison_operator)
+    ![datetime](pic/time_query.png)
+  - Pagination 
+    - limit
+    - offset
+    - order by
+    ![Pagination](pic/Pagination_query.png)  
+      
+- Approximate String Matching  
+    ref: https://www.postgresql.org/docs/9.3/functions-matching.html
+    - example:
+        if query is ```GET /test_CRUD?char_value____str_____matching_pattern=match_regex_with_case_sensitive&char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&char_value____str_____matching_pattern=case_sensitive&char_value____str_____matching_pattern=not_case_insensitive&char_value____str=a&char_value____str=b```
+    - the sql will look like that
+        ```sql
+        SELECT untitled_table_256.*
+        FROM untitled_table_256 
+        WHERE (untitled_table_256.char_value ~ 'a') OR 
+        (untitled_table_256.char_value ~ 'b' OR 
+        (untitled_table_256.char_value !~* 'a') OR 
+        (untitled_table_256.char_value !~* 'b' OR 
+        untitled_table_256.char_value LIKE 'a' OR 
+        untitled_table_256.char_value LIKE 'b' OR 
+        untitled_table_256.char_value NOT ILIKE 'a' 
+        OR untitled_table_256.char_value NOT ILIKE 'b'
+        ```
+      
+- In-place Operation
+    - In-place support the following operation
+    ![in](pic/in_query.png)  
+    - query example
+      * if user select Equal operation and input True and False
+        ```sql
+        select * FROM untitled_table_256 
+        WHERE untitled_table_256.bool_value = true OR 
+        untitled_table_256.bool_value = false
+        ```  
+        
+- Range Searching
+    - Range Searching support the following operation
+    ![greater](pic/greater_query.png)  
+    ![less](pic/less_query.png)  
+  - sql is look like that
+    ```sql
+    select * from untitled_table_256
+    WHERE untitled_table_256.date_value > %(date_value_1)s 
+    ```
+    ```sql
+    select * from untitled_table_256
+    WHERE untitled_table_256.date_value < %(date_value_1)s 
+    ```
 
 Also support your custom dependency for each api
 
@@ -58,6 +130,7 @@ Also support your custom dependency for each api
     - macaddr
 
 - Automap() of Sqlalchemy is not support
+
 
 ## Quick Use
 ```angular2html
@@ -122,10 +195,10 @@ pip install quick-crud
 3. import the required module
 
     ```python
-    from src.quick_crud import crud_router
-    from src.quick_crud import CrudService
-    from src.quick_crud import CrudMethods
-    from src.quick_crud import sqlalchemy_to_pydantic
+    from fastapi_quickcrud import crud_router
+    from fastapi_quickcrud import CrudService
+    from fastapi_quickcrud import CrudMethods
+    from fastapi_quickcrud import sqlalchemy_to_pydantic
     ```
 
 4. register CrudService  
@@ -286,7 +359,7 @@ pip install quick-crud
             - Pagination
                 - limit
                 - offset
-            - Order by columns
+                - order by
             - Sql approximate string matching
                 - MatchRegexWithCaseSensitive
                 - MatchRegexWithCaseInsensitive

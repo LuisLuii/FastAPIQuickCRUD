@@ -15,9 +15,9 @@ print("""
 
 if __name__ == '__main__':
     setup(
-        name='fastapi-quickcrud',
+        name='fastapi_quickcrud',
         version=VERSION,
-        install_requires=["fastapi","pydantic","SQLAlchemy","StrEnum"],
+        install_requires=["fastapi","pydantic","SQLAlchemy","StrEnum","psycopg2"],
         python_requires=">=3.6",
         description='A Postgresql Schema based FastAPI router that automatically creates CRUD routes',
         long_description=open("README.md").read(),
