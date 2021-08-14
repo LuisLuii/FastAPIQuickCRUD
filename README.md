@@ -235,42 +235,41 @@ pip install quick-crud
 
     ```
 
-    argument: 
+    - argument: 
 
-    db_model: Sqlalchemy Schema
+        - db_model: Sqlalchemy Schema
 
-    crud_methods: CRUD api
+        - crud_methods: CRUD api
 
-    - example
+        - example
 
-        crud_methods: build the curd method
+            - crud_methods: build the curd method
+    
+                - FASTCRUD supports these crud method(`CrudMethods`)
+        
+                    - FIND_ONE
+                    - FIND_MANY
+                    - UPDATE_ONE
+                    - UPDATE_MANY
+                    - PATCH_ONE
+                    - PATCH_MANY
+                    - UPSERT_ONE
+                    - UPSERT_MANY
+                    - DELETE_ONE
+                    - DELETE_MANY
+                    - POST_REDIRECT_GET
 
-        FASTCRUD supports these crud method(`CrudMethods`)
-
-        - FIND_ONE
-        - FIND_MANY
-        - UPDATE_ONE
-        - UPDATE_MANY
-        - PATCH_ONE
-        - PATCH_MANY
-        - CREATE_ONE
-        - CREATE_MANY
-        - UPSERT_ONE
-        - UPSERT_MANY
-        - DELETE_ONE
-        - DELETE_MANY
-
-    exclude_columns: Same columns will not be operation (if the column is nullable or has default value)
+        - exclude_columns: Same columns will not be operation (if the column is nullable or has default value)
 
 6. user CrudRouter to register API
 
-    db_session: `get_transaction_session`
+    - db_session: `get_transaction_session`
 
-    crud_service: `CrudService`
+    - crud_service: `CrudService`
 
-    crud_models: `sqlalchemy_to_pydantic` 
+    - crud_models: `sqlalchemy_to_pydantic` 
 
-    prefix, tags: extra argument for include_router() of APIRouter() of fastapi
+    - prefix, tags: extra argument for include_router() of APIRouter() of fastapi
 
     ```python
     	new_route_3 = CrudRouter(db_session=get_transaction_session,
