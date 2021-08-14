@@ -33,7 +33,6 @@ if __name__ == '__main__':
         # package_dir={'': ''},
         setup_requires=["setuptools>=31.6.0"],
         classifiers=[
-            "Development Status :: 2 - Pre-Alpha",
             "Operating System :: OS Independent",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python",
