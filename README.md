@@ -235,31 +235,23 @@ pip install quick-crud
 
     ```
 
-    - argument: 
+    - argument:
+        - db_model: ```Declarative Base Class```
+        - crud_methods: ```CrudMethods```
+            - examples
+              - CrudMethods.FIND_ONE
+              - CrudMethods.FIND_MANY
+              - CrudMethods.UPDATE_ONE
+              - CrudMethods.UPDATE_MANY
+              - CrudMethods.PATCH_ONE
+              - CrudMethods.PATCH_MANY
+              - CrudMethods.UPSERT_ONE
+              - CrudMethods.UPSERT_MANY
+              - CrudMethods.DELETE_ONE
+              - CrudMethods.DELETE_MANY
+              - CrudMethods.POST_REDIRECT_GET
 
-        - db_model: Sqlalchemy Schema
-
-        - crud_methods: CRUD api
-
-        - example
-
-            - crud_methods: build the curd method
-    
-                - FASTCRUD supports these crud method(`CrudMethods`)
-        
-                    - FIND_ONE
-                    - FIND_MANY
-                    - UPDATE_ONE
-                    - UPDATE_MANY
-                    - PATCH_ONE
-                    - PATCH_MANY
-                    - UPSERT_ONE
-                    - UPSERT_MANY
-                    - DELETE_ONE
-                    - DELETE_MANY
-                    - POST_REDIRECT_GET
-
-        - exclude_columns: Same columns will not be operation (if the column is nullable or has default value)
+        - exclude_columns: set the columns that not to be operated but the columns should nullable or set the default value)
 
 6. user CrudRouter to register API
 
