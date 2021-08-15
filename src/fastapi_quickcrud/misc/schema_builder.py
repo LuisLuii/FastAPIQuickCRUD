@@ -202,10 +202,12 @@ class ApiParameterSchemaBuilder:
                         else:
                             unique_column_name = column_name
                         unique_column_list.append(unique_column_name)
-        invalid = set(unique_column_list) - set(composite_unique_constraint)
-        if invalid:
-            raise SchemaException("Use single unique constraint and composite unique constraint "
-                                  "at same time not supported ")
+
+        if unique_column_list and composite_unique_constraint:
+            invalid = set(unique_column_list) - set(composite_unique_constraint)
+            if invalid:
+                raise SchemaException("Use single unique constraint and composite unique constraint "
+                                      "at same time not supported ")
         if len(unique_column_list) > 1:
             raise MultipleSingleUniqueNotSupportedException(
                 " In case you need composite unique constraint, "
