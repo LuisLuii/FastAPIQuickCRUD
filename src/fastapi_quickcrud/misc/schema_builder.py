@@ -207,11 +207,11 @@ class ApiParameterSchemaBuilder:
             invalid = set(unique_column_list) - set(composite_unique_constraint)
             if invalid:
                 raise SchemaException("Use single unique constraint and composite unique constraint "
-                                      "at same time not supported ")
-        if len(unique_column_list) > 1:
+                                      "at same time is not supported ")
+        if len(unique_column_list) > 1 and not composite_unique_constraint:
             raise MultipleSingleUniqueNotSupportedException(
                 " In case you need composite unique constraint, "
-                "FastAPi CRUD builder is not support to define multiple primary_key=True "
+                "FastAPi CRUD builder is not support to define multiple unique=True "
                 "but specifying UniqueConstraint(…) in __table_args__."
                 f'''
                 __table_args__ = (
