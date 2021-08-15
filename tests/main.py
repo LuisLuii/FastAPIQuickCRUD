@@ -1,7 +1,9 @@
 import uuid
+from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Security, Request
+from fastapi.security import HTTPBearer, APIKeyHeader, APIKeyQuery
 from sqlalchemy import TypeDecorator, Table, ForeignKey
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
@@ -196,9 +198,51 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
+
+
+def AuthenticationService(
+        auth_rest_url: str,
+        apikey_header_accept: str = "x-api-key",
+        apikey_query_accept: str = "apikey",
+):
+    jwt_bearer = HTTPBearer(auto_error=False)
+    apikey_header = APIKeyHeader(name=apikey_header_accept, auto_error=False)
+    apikey_query = APIKeyQuery(name=apikey_query_accept, auto_error=False)
+
+    async def security_schemes(
+            _jwt_bearer: Optional[str] = Security(jwt_bearer),
+            _apikey_header: Optional[str] = Security(apikey_header),
+            _apikey_query: Optional[str] = Security(apikey_query),
+    ):
+        """
+        authentication dependencices for correct generating openapi by fastapi
+        """
+
+    class AuthenticationServiceClass:
+        @staticmethod
+        def AuthRequest(request: Request, schemes=Depends(security_schemes)):
+            return request
+
+        @staticmethod
+        def auth_check(request: Request = Depends(security_schemes)):
+            ''' do your business logic'''
+            return True
+
+    return AuthenticationServiceClass
+
+
+authentication = AuthenticationService(
+    auth_rest_url='0.0.0.0',
+    apikey_header_accept='x-api-key',
+    apikey_query_accept='api-key',
+)
+
+dependencies = [Depends(dep) for dep in [authentication.auth_check]]
+
 test_get_data = crud_router(db_session=get_transaction_session,
                           crud_service=UntitledTable256_service,
                           crud_models=UntitledTable256Model,
+                            dependencies= dependencies,
                           prefix="/test_CRUD",
                           tags=["test"]
                           )
