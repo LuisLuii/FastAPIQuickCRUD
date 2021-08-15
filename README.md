@@ -109,46 +109,6 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 
 Also support your custom dependency for each api
 
-# constraint
-
-- Please use composite unique constraint if there are more than one unique fields
-- Please don't use composite unique constraint and the single unique constraint at the same time
-    - except the single one unique constraint is primary key which be contained into composite unique constraint
-        ```python
-        class Example(Base):
-            __tablename__ = 'example'
-            __table_args__ = (
-                UniqueConstraint('p_id', 'test'),
-            )
-        
-            p_id = Column(Integer, primary_key=True, unique=True)
-            test = Column(Integer)
-            test_1 = Column(Text)
-
-        ```
-
-- Primary key is required but not support composite primary key
-- The field of api will be optional if there is default value or is nullable or server_default is set
-- The value of server_default did not support show on OpenAPI
-- The field of api will be required if there is no default value of the column or is not nullable
-- Some type of columns are not support in query:
-    - INTERVAL
-    - JSON
-    - JSONB
-    - H-STORE
-    - ARRAY
-    - BYTE
-    - Geography
-    - box
-    - line
-    - point
-    - lseg
-    - polygon
-    - inet
-    - macaddr
-
-- Automap() of Sqlalchemy is not support
-
 
 ## Quick Use
 ```commandline
@@ -290,6 +250,48 @@ pip install quick-crud
                                   tags=["Example"]
                                   )
     ```
+
+
+# constraint
+
+- Please use composite unique constraint if there are more than one unique fields
+- Please don't use composite unique constraint and the single unique constraint at the same time
+    - except the single one unique constraint is primary key which be contained into composite unique constraint
+        ```python
+        class Example(Base):
+            __tablename__ = 'example'
+            __table_args__ = (
+                UniqueConstraint('p_id', 'test'),
+            )
+        
+            p_id = Column(Integer, primary_key=True, unique=True)
+            test = Column(Integer)
+            test_1 = Column(Text)
+
+        ```
+
+- Primary key is required but not support composite primary key
+- The field of api will be optional if there is default value or is nullable or server_default is set
+- The value of server_default did not support show on OpenAPI
+- The field of api will be required if there is no default value of the column or is not nullable
+- Some type of columns are not support in query:
+    - INTERVAL
+    - JSON
+    - JSONB
+    - H-STORE
+    - ARRAY
+    - BYTE
+    - Geography
+    - box
+    - line
+    - point
+    - lseg
+    - polygon
+    - inet
+    - macaddr
+
+- Automap() of Sqlalchemy is not support
+
 
 # Alias
 
