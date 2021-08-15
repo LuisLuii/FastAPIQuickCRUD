@@ -52,7 +52,8 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 - Approximate String Matching  
     ref: https://www.postgresql.org/docs/9.3/functions-matching.html
     - example:
-        if query is ```GET /test_CRUD?char_value____str_____matching_pattern=match_regex_with_case_sensitive&char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&char_value____str_____matching_pattern=case_sensitive&char_value____str_____matching_pattern=not_case_insensitive&char_value____str=a&char_value____str=b```
+        if query is 
+        ``` /test_CRUD?char_value____str_____matching_pattern=match_regex_with_case_sensitive&char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&char_value____str_____matching_pattern=case_sensitive&char_value____str_____matching_pattern=not_case_insensitive&char_value____str=a&char_value____str=b```
     - the sql will look like that
         ```sql
         SELECT *
@@ -72,12 +73,12 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
     
 ![in](pic/in_query.png)  
     - query example
-      * if user select Equal operation and input True and False
-        ```sql
+      - if user select Equal operation and input True and False
+        ```
         select * FROM untitled_table_256 
         WHERE untitled_table_256.bool_value = true OR 
         untitled_table_256.bool_value = false
-        ```  
+        ```
         
 - Range Searching
     - Range Searching support the following operation
@@ -102,19 +103,17 @@ Also support your custom dependency for each api
 - Please use composite unique constraint if there are more than one unique fields
 - Please don't use composite unique constraint and the single unique constraint in the same time
     - except the single one unique constraint is primary key which be contained into composite unique constraint
-
-        Don't declare the `unique=True` if the column is primary key
-
         ```python
         class Example(Base):
             __tablename__ = 'example'
             __table_args__ = (
                 UniqueConstraint('p_id', 'test'),
             )
-
-            p_id = Column(Integer, primary_key=True)
+        
+            p_id = Column(Integer, primary_key=True, unique=True)
             test = Column(Integer)
             test_1 = Column(Text)
+
         ```
 
 - Primary key is required but not support composite primary key
