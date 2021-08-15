@@ -112,7 +112,7 @@ Also support your custom dependency for each api
 # constraint
 
 - Please use composite unique constraint if there are more than one unique fields
-- Please don't use composite unique constraint and the single unique constraint in the same time
+- Please don't use composite unique constraint and the single unique constraint at the same time
     - except the single one unique constraint is primary key which be contained into composite unique constraint
         ```python
         class Example(Base):
@@ -151,12 +151,12 @@ Also support your custom dependency for each api
 
 
 ## Quick Use
-```angular2html
+```commandline
 pip install quick-crud
 ```
 1. Build a sample table with Sqlalchemy
 
-    Strongly recommend you use `[sqlacodegen](https://pypi.org/project/sqlacodegen/)` to  generate the sql schema
+    Strongly recommend you use [sqlacodegen](https://pypi.org/project/sqlacodegen/) to  generate the sql schema
 
     ```python
     from sqlalchemy import create_engine
