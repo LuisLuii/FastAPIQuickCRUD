@@ -52,8 +52,19 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 - Approximate String Matching  
     ref: https://www.postgresql.org/docs/9.3/functions-matching.html
     - example:
-        if query is 
-        ``` /test_CRUD?char_value____str_____matching_pattern=match_regex_with_case_sensitive&char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&char_value____str_____matching_pattern=case_sensitive&char_value____str_____matching_pattern=not_case_insensitive&char_value____str=a&char_value____str=b```
+      
+        if query is
+      
+        ```text
+      /test_CRUD?
+      char_value____str_____matching_pattern=match_regex_with_case_sensitive&
+      char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&
+      char_value____str_____matching_pattern=case_sensitive&
+      char_value____str_____matching_pattern=not_case_insensitive&
+      char_value____str=a&
+      char_value____str=b
+      ```
+      
     - the sql will look like that
         ```sql
         SELECT *
@@ -74,11 +85,11 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 ![in](pic/in_query.png)  
     - query example
       - if user select Equal operation and input True and False
-        ```
+```sql        
         select * FROM untitled_table_256 
         WHERE untitled_table_256.bool_value = true OR 
         untitled_table_256.bool_value = false
-        ```
+```     
         
 - Range Searching
     - Range Searching support the following operation
