@@ -223,7 +223,7 @@ pip install quick-crud
     test_crud_service = CrudService(model=CRUDTest)
     ```
 
-5. covent the sqlalchemy model to Pydantic model
+5. convert the sqlalchemy model to Pydantic model
 
     ```python
     test_crud_model = sqlalchemy_to_pydantic(db_model = CRUDTest,
@@ -273,11 +273,12 @@ pip install quick-crud
 
     ```python
     	new_route_3 = crud_router(db_session=get_transaction_session,
-                             crud_service=UntitledTable256_service,
-                             crud_models=test_crud_model,
-                             prefix="/crud_test",
-                             tags=["Example"]
-                             )
+                                  crud_service=UntitledTable256_service,
+                                  crud_models=test_crud_model,
+                                  prefix="/crud_test",
+                                  dependencies = [],
+                                  tags=["Example"]
+                                  )
     ```
 
 # Alias
