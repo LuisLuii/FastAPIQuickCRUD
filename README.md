@@ -291,9 +291,8 @@ usage:
 id = Column('primary_key',Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
 ```
 
-you can use info argument wait alias_name key 
-
-modify the id to alias name
+you can use info argument to set the alias name of column, 
+and use synonym to map the column between alias column and original column
 
 ```python
 id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
