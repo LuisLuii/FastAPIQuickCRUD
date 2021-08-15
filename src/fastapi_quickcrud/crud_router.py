@@ -33,6 +33,7 @@ def crud_router(
         db_session,
         crud_service: CrudService,
         crud_models: CRUDModel,
+        dependencies: List[callable],
         **router_kwargs: Any) -> APIRouter:
     """
 
@@ -49,6 +50,8 @@ def crud_router(
         raise PrimaryMissing("primary key is required")
     path = '/{' + primary_name + '}'
     unique_list: List[str] = crud_models.UNIQUE_LIST
+
+    dependencies = [Depends(dep) for dep in dependencies]
     router = APIRouter()
 
     def find_one_api(request_response_model: dict, dependencies=None):
@@ -399,7 +402,7 @@ def crud_router(
         crud_model_of_this_request_methods = value_of_dict_crud_model.keys()
         for crud_model_of_this_request_method in crud_model_of_this_request_methods:
             request_response_model_of_this_request_method = value_of_dict_crud_model[crud_model_of_this_request_method]
-            api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method)
+            api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method, dependencies)
 
     router.include_router(api, **router_kwargs)
     return router
