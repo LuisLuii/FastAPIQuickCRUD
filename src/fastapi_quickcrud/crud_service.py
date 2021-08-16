@@ -1,4 +1,3 @@
-import logging
 from typing import List, TypeVar
 
 from sqlalchemy import and_, text, select, delete, update
@@ -11,7 +10,6 @@ from .misc.type import Ordering
 from .misc.utils import Base, alias_to_column
 from .misc.utils import find_query_builder
 
-logger = logging.getLogger(__name__)
 
 SchemaModelType = TypeVar("SchemaModelType", bound=Base)
 
