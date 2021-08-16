@@ -149,6 +149,7 @@ class ApiParameterSchemaBuilder:
         self.array_type_columns = []
         self.all_field = self._extract_all_field()
 
+
     def _alias_mapping_builder(self) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
         # return dictionary
@@ -278,7 +279,8 @@ class ApiParameterSchemaBuilder:
                             default = self._extra_default_value(column)
                             if default is ...:
                                 warnings.warn(
-                                    f'The column of {attr.key} has not default value and it is not nullable but in exclude_list'
+                                    f'The column of {attr.key} has not default value '
+                                    f'and it is not nullable but in exclude_list'
                                     f'it may throw error when you write data through Fast-qucikcrud greated API')
                             if attr.key in self._exclude_column:
                                 continue
@@ -905,9 +907,6 @@ class ApiParameterSchemaBuilder:
 
         request_query_fields = []
         for i in query_param:
-            # if isinstance(i, Tuple):
-            #     request_query_fields.append(i)
-            #     request_body_fields.append()
             if isinstance(i, dict):
                 request_query_fields.append((i['column_name'],
                                              i['column_type'],

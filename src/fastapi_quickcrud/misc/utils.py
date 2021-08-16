@@ -80,10 +80,6 @@ def add_validators(model: Type[BaseModelT], validators) -> Type[BaseModelT]:
     but making them all optional and no default
     """
     config = model.Config
-    # for name, field in model.__fields__.items():
-    #     print(name)
-    #     print(field.outer_type_)
-    #     print(field.field_info.default)
     field_definitions = {
         name: (field.outer_type_, field.field_info.default)
         for name, field in model.__fields__.items()

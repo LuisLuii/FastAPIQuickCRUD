@@ -240,8 +240,6 @@ def crud_router(
             redirect_url_exist = False
             redirect_end_point = request.url.path + "/{" + primary_name + "}"
             for route in request.app.routes:
-                print(route.path)
-                print(redirect_end_point)
                 if route.path == redirect_end_point:
                     route_request_method, = route.methods
                     if route_request_method.upper() == 'GET':
