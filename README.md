@@ -53,7 +53,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
     ref: https://www.postgresql.org/docs/9.3/functions-matching.html
     - example:
       
-        if query is
+        query
       
         ```text
       /test_CRUD?
@@ -65,7 +65,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
       char_value____str=b
       ```
       
-    - the sql will look like that
+    - generated sql 
         ```sql
         SELECT *
         FROM untitled_table_256 
@@ -83,8 +83,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
     - In-place support the following operation
     
 ![in](pic/in_query.png)  
-    - query example
-      - if user select Equal operation and input True and False
+    - generated sql if user select Equal operation and input True and False
 ```sql        
         select * FROM untitled_table_256 
         WHERE untitled_table_256.bool_value = true OR 
@@ -97,7 +96,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 ![greater](pic/greater_query.png)  
     
 ![less](pic/less_query.png)  
-  - sql is look like that
+  - generated sql 
     ```sql
     select * from untitled_table_256
     WHERE untitled_table_256.date_value > %(date_value_1)s 
