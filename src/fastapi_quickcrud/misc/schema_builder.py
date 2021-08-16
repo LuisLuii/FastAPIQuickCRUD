@@ -370,7 +370,8 @@ class ApiParameterSchemaBuilder:
             if column.default is not None:
                 default = column.default.arg
             elif column.server_default is not None:
-                # default = ...
+                default = None
+            elif column.primary_key:
                 default = None
             else:
                 default = ...
