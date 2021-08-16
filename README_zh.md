@@ -252,6 +252,8 @@ pip install fastapi-quickcrud
 
     - argument:
         - db_model: ```Sqlachemy Declarative Base Class```
+        - async_mode: ```bool (default: False)```
+          - 請設置True 如果使用async SQLALchemy(SQLALchemy 在1.4版本已通過greenlet實現async)
         - crud_methods: ```CrudMethods```
             - examples
               - CrudMethods.FIND_ONE

@@ -3,19 +3,23 @@
 This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
 
 
-- Get one
-- Get many
-- Update one
-- Update many
-- Patch one
-- Patch many
-- Create/Upsert one
-- Create/Upsert many
-- Delete One
-- Delete Many
-- Post Redirect Get
-
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
+
+## Feature
+
+- Convert Sqlalchemy Declarative Base class of PostgreSQL Database to CRUD API 
+    - Get one
+    - Get many
+    - Update one
+    - Update many
+    - Patch one
+    - Patch many
+    - Create/Upsert one
+    - Create/Upsert many
+    - Delete One
+    - Delete Many
+    - Post Redirect Get
+
 
 ## Install 
 ```commandline
@@ -123,7 +127,9 @@ pip install fastapi-quickcrud
     ```
 
     - argument:
-        - db_model: ```Sqlachemy Declarative Base Class```
+        - db_model: ```SQLALchemy Declarative Base Class```
+        - async_mode: ```bool```
+          - set True if using async SQLALchemy
         - crud_methods: ```CrudMethods```
             - examples
               - CrudMethods.FIND_ONE
@@ -295,7 +301,7 @@ Also support your custom dependency for each api
 - Automap() of Sqlalchemy is not support
 
 
-# Alias
+## Alias
 
 Alias is supported already
 
@@ -312,3 +318,9 @@ and use synonym to map the column between alias column and original column
 id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
 primary_key = synonym('id')
 ```
+
+### TODO
+
+- Manually create the model for each CRUD API 
+- Apply the comment of each column into docs
+- 

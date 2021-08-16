@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1-Alpha-061'
+VERSION = '0.0.1-Alpha-07'
 
 print("""
 
 - upload
-    - build wheel: python setup.py bdist_wheel
-    - upload to server: python setup.py sdist upload -r internal
+    - build wheel: python setup.py sdist
+    - upload to server: twine upload dist/*
 
 - download
     - Just pip install <package>
@@ -17,9 +17,9 @@ if __name__ == '__main__':
     setup(
         name='fastapi_quickcrud',
         version=VERSION,
-        install_requires=["fastapi","pydantic","SQLAlchemy","StrEnum","psycopg2"],
+        install_requires=["fastapi","pydantic","SQLAlchemy==1.4.22","StrEnum","psycopg2"],
         python_requires=">=3.6",
-        description='A Postgresql Schema based FastAPI router that automatically creates CRUD routes',
+        description="FastAPI-quickcrud can help you to build a FastAPI CRUD routes automatically for the PostgreSQL's Sqlalchemy Schema",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
         author='Luis Lui',
@@ -27,10 +27,8 @@ if __name__ == '__main__':
         url='https://gitlab.com/luislui/quickcrud',
         license="MIT License",
         keywords=["fastapi", "crud", "restful", "routing", "generator", "crudrouter","postgresql","builder"],
-        # packages=find_packages(),
         packages=find_packages('src'),
         package_dir={'': 'src'},
-        # package_dir={'': ''},
         setup_requires=["setuptools>=31.6.0"],
         classifiers=[
             "Operating System :: OS Independent",
