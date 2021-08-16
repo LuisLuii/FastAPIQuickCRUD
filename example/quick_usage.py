@@ -117,7 +117,7 @@ example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                    CrudRouter.PATCH_ONE,
 
                                                ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                               exclude_columns=['array_str__value','bytea_value', 'xml_value', 'box_valaue'])
 
 
 

@@ -202,13 +202,12 @@ class ApiParameterSchemaBuilder:
                         else:
                             unique_column_name = column_name
                         unique_column_list.append(unique_column_name)
-
         if unique_column_list and composite_unique_constraint:
             invalid = set(unique_column_list) - set(composite_unique_constraint)
             if invalid:
                 raise SchemaException("Use single unique constraint and composite unique constraint "
-                                      "at same time is not supported ")
-        if len(unique_column_list) > 1 and not composite_unique_constraint:
+                                          "at same time is not supported ")
+        if len(unique_column_list) > 1 and not composite_unique_constraint :
             raise MultipleSingleUniqueNotSupportedException(
                 " In case you need composite unique constraint, "
                 "FastAPi CRUD builder is not support to define multiple unique=True "
@@ -277,6 +276,10 @@ class ApiParameterSchemaBuilder:
                                     f'The type of column {attr.key} ({column_type}) not supported yet')
 
                             default = self._extra_default_value(column)
+                            if default is ...:
+                                warnings.warn(
+                                    f'The column of {attr.key} has not default value and it is not nullable but in exclude_list'
+                                    f'it may throw error when you write data through Fast-qucikcrud greated API')
                             if attr.key in self._exclude_column:
                                 continue
                             column_name = attr.key
@@ -407,7 +410,7 @@ class ApiParameterSchemaBuilder:
                         else:
                             raise ColumnTypeNotSupportedException(
                                 f'The type of column {attr.key} ({column_type}) not supported yet')
-                    print(python_type.__name__)
+
                     # string filter
                     if python_type.__name__ in ['str']:
                         self.str_type_columns.append(column_name)
@@ -1196,46 +1199,3 @@ class ApiParameterSchemaBuilder:
             response_model = _add_validators(response_model, {"root_validator": validator_function})
 
         return None, request_body_model, response_model
-
-
-if __name__ == '__main__':
-    Base = declarative_base()
-    metadata = Base.metadata
-
-
-    class UntitledTable256(Base):
-        __tablename__ = 'untitled_table_256'
-        __table_args__ = (
-            UniqueConstraint('id', 'int4_value', 'float4_value'),
-        )
-        id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},
-                    server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-        primary_key = synonym('id')
-        bool_value = Column(Boolean, nullable=False, server_default=text("false"))
-        # bytea_value = Column(LargeBinary)
-        char_value = Column(CHAR(10))
-        date_value = Column(Date, server_default=text("now()"))
-        float4_value = Column(Float, nullable=False)
-        float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-        int2_value = Column(SmallInteger, nullable=False)
-        int4_value = Column(Integer, nullable=False)
-        int8_value = Column(BigInteger, server_default=text("99"))
-        interval_value = Column(INTERVAL)
-        json_value = Column(JSON)
-        jsonb_value = Column(JSONB(astext_type=Text()))
-        numeric_value = Column(Numeric)
-        text_value = Column(Text)
-        time_value = Column(Time)
-        timestamp_value = Column(DateTime)
-        timestamptz_value = Column(DateTime(True))
-        timetz_value = Column(Time(True))
-        uuid_value = Column(UUID(as_uuid=True))
-        varchar_value = Column(String)
-        # xml_value = Column(NullType)
-        array_value = Column(ARRAY(Integer()))
-        array_str__value = Column(ARRAY(String()))
-        # box_valaue = Column(NullType)
-
-
-    mode = ApiParameterSchemaBuilder(UntitledTable256).update_many()
-    print()
