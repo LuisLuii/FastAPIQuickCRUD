@@ -69,4 +69,5 @@ class UntitledTable256(Base):
 
 
 
+UntitledTable256.__table__.create(engine, checkfirst=True)
 
