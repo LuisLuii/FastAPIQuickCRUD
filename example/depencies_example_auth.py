@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends, Security, Request
 from fastapi.security import HTTPBearer, APIKeyHeader, APIKeyQuery
 from fastapi_quickcrud import CrudMethods as CrudRouter
 from fastapi_quickcrud import CrudService
-from fastapi_quickcrud import crud_router
+from fastapi_quickcrud import crud_router_builder
 from fastapi_quickcrud import sqlalchemy_to_pydantic
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
@@ -119,26 +119,26 @@ UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
-upsert_many_router = crud_router(db_session=get_transaction_session,
-                                 crud_service=UntitledTable256_service,
-                                 crud_models=UntitledTable256Model,
-                                 prefix="/upsert_many",
-                                 dependencies=dependencies,
-                                 tags=["test"]
-                                 )
+upsert_many_router = crud_router_builder(db_session=get_transaction_session,
+                                         crud_service=UntitledTable256_service,
+                                         crud_models=UntitledTable256Model,
+                                         prefix="/upsert_many",
+                                         dependencies=dependencies,
+                                         tags=["test"]
+                                         )
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                crud_methods=[
                                                    CrudRouter.POST_REDIRECT_GET
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
-post_redirect_get_router = crud_router(db_session=get_transaction_session,
-                                       crud_service=UntitledTable256_service,
-                                       crud_models=UntitledTable256Model,
-                                       prefix="/post_redirect_get",
-                                       dependencies=dependencies,
-                                       tags=["test"]
-                                       )
+post_redirect_get_router = crud_router_builder(db_session=get_transaction_session,
+                                               crud_service=UntitledTable256_service,
+                                               crud_models=UntitledTable256Model,
+                                               prefix="/post_redirect_get",
+                                               dependencies=dependencies,
+                                               tags=["test"]
+                                               )
 
 example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                    crud_methods=[
@@ -155,13 +155,13 @@ example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                    ],
                                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
-example_table_full_router = crud_router(db_session=get_transaction_session,
-                            crud_service=UntitledTable256_service,
-                            crud_models=example_table_full_api,
-                            dependencies=dependencies,
-                            prefix="/test_CRUD",
-                            tags=["test"]
-                            )
+example_table_full_router = crud_router_builder(db_session=get_transaction_session,
+                                                crud_service=UntitledTable256_service,
+                                                crud_models=example_table_full_api,
+                                                dependencies=dependencies,
+                                                prefix="/test_CRUD",
+                                                tags=["test"]
+                                                )
 
 ExampleTable.__table__.create(engine, checkfirst=True)
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]

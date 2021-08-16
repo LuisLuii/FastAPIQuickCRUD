@@ -4,13 +4,12 @@ from datetime import date, timedelta, datetime, timezone
 
 from starlette.testclient import TestClient
 
-from fastapi_quickcrud import crud_router
+from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 
-from fastapi_quickcrud import CrudService
-from fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
-
-from fastapi_quickcrud.misc.type import CrudMethods
-from fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud import crud_router_builder
+from src.fastapi_quickcrud import CrudService
+from src.fastapi_quickcrud import CrudMethods
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)
@@ -72,12 +71,12 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 
 # Create Many API Test
 
-test_create_many = crud_router(db_session=get_transaction_session,
-                               crud_service=UntitledTable256_service,
-                               crud_models=UntitledTable256Model,
-                               prefix="/test_creation_many",
-                               tags=["test"]
-                               )
+test_create_many = crud_router_builder(db_session=get_transaction_session,
+                                       crud_service=UntitledTable256_service,
+                                       crud_models=UntitledTable256Model,
+                                       prefix="/test_creation_many",
+                                       tags=["test"]
+                                       )
 [app.include_router(i) for i in [test_create_many]]
 
 client = TestClient(app)
@@ -407,4 +406,3 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
-test_try_input_with_conflict_but_conflict_columns_not_hit()

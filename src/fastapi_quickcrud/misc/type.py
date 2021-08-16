@@ -62,43 +62,6 @@ class CRUDRequestMapping(Enum):
         return crud_methods[value].value
 
 
-class ConflictHandling(str, Enum):
-    abort = "abort"
-    redirect_get = "redirect_get"
-
-
-class Ilike():
-    pass
-
-
-class Like():
-    pass
-
-
-class Like():
-    pass
-
-
-class SimilarTo():
-    pass
-
-
-class MatchRegexWithCaseSensitive():
-    pass
-
-
-class MatchRegexWithCaseInsensitive():
-    pass
-
-
-class DoesNotMatchRegexWithCaseInsensitive():
-    pass
-
-
-class DoesNotMatchRegexWithCaseSensitive():
-    pass
-
-
 class ExtraFieldType(StrEnum):
     Comparison_operator = '_____comparison_operator'
     Matching_pattern = '_____matching_pattern'

@@ -6,12 +6,9 @@ from functools import singledispatch
 from typing import Type, List, Union, TypeVar, Dict
 
 from fastapi import FastAPI, APIRouter
-
 from fastapi_quickcrud.misc.crud_model import RequestResponseModel, CRUDModel
-
 from pydantic import BaseModel, create_model, BaseConfig
 from sqlalchemy import any_, text, Integer
-
 from sqlalchemy.sql.elements import \
     or_, \
     and_, BinaryExpression
@@ -23,17 +20,11 @@ from .type import \
     CrudMethods, \
     CRUDRequestMapping, \
     MatchingPatternInString, \
-    Ilike, \
-    Like, \
-    SimilarTo, \
-    MatchRegexWithCaseSensitive, \
-    MatchRegexWithCaseInsensitive, \
-    DoesNotMatchRegexWithCaseInsensitive, \
-    DoesNotMatchRegexWithCaseSensitive, \
-    JSON, \
-    JSONB, \
-    ARRAY, \
-    Ordering, ExtraFieldType, RangeFromComparisonOperators, ExtraFieldTypePrefix, RangeToComparisonOperators, \
+    Ordering, \
+    ExtraFieldType, \
+    RangeFromComparisonOperators, \
+    ExtraFieldTypePrefix, \
+    RangeToComparisonOperators, \
     ItemComparisonOperators
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
@@ -141,180 +132,6 @@ def to_require(model: Type[BaseModelT]) -> Type[BaseModelT]:
     return create_model(f'Required{model.__name__}', **field_definitions,
                         __config__=config)  # type: ignore[arg-type]
 
-
-@singledispatch
-def _string_matching_query(q, _, __):
-    raise ValueError(f"Unhandled type {type(q)}")
-
-
-@_string_matching_query.register(list)
-def _list_str_query(string_matching_patterns, s, model):
-    string_match_query = []
-    if not string_matching_patterns:
-        return model == s
-    for string_matching_pattern in string_matching_patterns:
-        if eval(f'type({string_matching_pattern}())') is MatchRegexWithCaseSensitive:
-            string_match_query.append(model.op("~")(s))
-        if eval(f'type({string_matching_pattern}())') is MatchRegexWithCaseInsensitive:
-            string_match_query.append(model.op("~")(s))
-        if eval(f'type({string_matching_pattern}())') is DoesNotMatchRegexWithCaseInsensitive:
-            string_match_query.append(model.op("~")(s))
-        if eval(f'type({string_matching_pattern}())') is DoesNotMatchRegexWithCaseSensitive:
-            string_match_query.append(model.op("~")(s))
-        if eval(f'type({string_matching_pattern}())') is Like:
-            string_match_query.append(model.like(s))
-        if eval(f'type({string_matching_pattern}())') is Ilike:
-            string_match_query.append(model.ilike(s))
-        if eval(f'type({string_matching_pattern}())') is SimilarTo:
-            string_match_query.append(model.op('SIMILAR TO')(s))
-    return or_(*string_match_query)
-
-
-###
-@singledispatch
-def _create_query(q, _):
-    raise ValueError(f"Unhandled type {type(q)}")
-
-
-@_create_query.register(uuid.UUID)
-def _uuid_query(s: uuid.UUID, model):
-    return model == str(s)
-
-
-@_create_query.register(str)
-def _string_query(s: str, model):
-    return or_(model.ilike(s), model.op("SIMILAR TO")(s))
-
-
-@_create_query.register(bool)
-def _boolean_handler(b: bool, model):
-    return model == b
-
-
-@_create_query.register(float)
-def _float_handler(s: float, model):
-    return model == s
-
-
-@_create_query.register(int)
-def _boolean_handler(b: int, model):
-    return model == b
-
-
-@_create_query.register(list)
-def _list_handler(ls: list, model):
-    query = []
-    for item in ls:
-        query.append(model.op("?")(item))
-    return and_(*query)
-
-
-@_create_query.register(datetime.datetime)
-@_create_query.register(datetime.date)
-@_create_query.register(datetime.time)
-def _datetime_handler(time: Union[datetime.date, datetime.datetime], model):
-    return model == time
-
-
-###
-@singledispatch
-def _create_strict_query(q, _):
-    raise ValueError(f"Unhandled type {type(q)}")
-
-
-@_create_strict_query.register(JSON)
-def _strict_query_string_query(s: str, model):
-    query_list = s.split(',')
-    sql_query_list = []
-    for i in query_list:
-        query = i.split(':')
-        assert len(query) == 1 or len(query) == 3, '''
-                json query input should be: 
-                if not null
-                    
-                find one: key:value:value_type; 
-                find many: key:value:value_type,key:value:value_type...
-                '''
-        if len(query) == 1:
-            key, = query
-            sql_query_list.append(text(f"{model.key}->>'{key}' is not NULL"))
-        if len(query) == 3:
-            key, value, type_ = query
-            sql_query_list.append(model.data[key].astext.cast(Integer) == 5)
-            sql_query_list.append(text(f"CAST({model.key}->>'{key}' AS {type_}) = '{value}'"))
-    return and_(*sql_query_list)
-
-
-@_create_strict_query.register(JSONB)
-def _strict_query_string_query(s: str, model):
-    query_list = s.split(',')
-    sql_query_list = []
-    for i in query_list:
-        query = i.split(':')
-        assert len(query) not in [1, 3], '''
-                json query input should be: 
-                if not null
-
-                find one: key:value:value_type; 
-                find many: key:value:value_type,key:value:value_type...
-                '''
-        if len(query) == 1:
-            key, value, type_ = query
-            sql_query_list.append(text(f"{model.key}->>'{key}' is not NULL"))
-        if len(query) == 3:
-            key, value, type_ = query
-            sql_query_list.append(text(f"CAST({model.key}->>'{key}' AS {type_}) = '{value}'"))
-        return and_(*sql_query_list)
-
-
-@_create_strict_query.register(ARRAY)
-def _strict_query_string_query(s: str, model):
-    query_list = s.split(',')
-    sql_query_list = []
-    for i in query_list:
-        sql_query_list.append(i == any_(model))
-    return and_(*sql_query_list)
-
-
-@_create_strict_query.register(str)
-def _strict_query_string_query(s: str, model):
-    return model == s
-
-
-@_create_strict_query.register(uuid.UUID)
-def _strict_query_uuid_query(s: uuid.UUID, model):
-    return model == str(s)
-
-
-@_create_strict_query.register(float)
-def _strict_query_float_query(s: float, model):
-    return model == s
-
-
-@_create_strict_query.register(bool)
-def _strict_query_boolean_handler(b: bool, model):
-    return model == b
-
-
-@_create_strict_query.register(int)
-@_create_strict_query.register(decimal.Decimal)
-def _strict_query_int_handler(b: int, model):
-    return model == b
-
-
-@_create_strict_query.register(list)
-def _strict_query_list_handler(ls: list, model):
-    array_query = []
-    for i in ls:
-        array_query.append(i == any_(model))
-    return and_(*array_query)
-
-
-@_create_strict_query.register(datetime.datetime)
-@_create_strict_query.register(datetime.date)
-@_create_strict_query.register(datetime.time)
-def _strict_query_datetime_handler(time: Union[datetime.date, datetime.datetime], model):
-    return model == time
 
 
 def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
@@ -443,12 +260,12 @@ def sqlalchemy_to_pydantic(
             request_body_model, \
             response_model = model_builder.upsert_many()
         elif crud_method.value == CrudMethods.DELETE_ONE.value:
-            request_url_param_model,\
+            request_url_param_model, \
             request_query_model, \
             request_body_model, \
             response_model = model_builder.delete_one()
         elif crud_method.value == CrudMethods.DELETE_MANY.value:
-            request_url_param_model,\
+            request_url_param_model, \
             request_query_model, \
             request_body_model, \
             response_model = model_builder.delete_many()
@@ -506,7 +323,7 @@ def add_routers(app: FastAPI, routers: List[APIRouter], **kwargs):
         app.include_router(router, **kwargs)
 
 
-def find_duplicate_error(error_msg):
+def find_duplicate_error(error_msg) -> str:
     regex_result = re.findall('(duplicate.*?)\nDETAIL:(.*?)\n', error_msg)
     if regex_result:
         regex_result, = regex_result
@@ -515,12 +332,12 @@ def find_duplicate_error(error_msg):
     return f'{regex_result[0]}: {regex_result[1]}'
 
 
-def get_many_string_matching_patterns_description_builder():
+def get_many_string_matching_patterns_description_builder() -> str:
     return '''<br >Composite string field matching pattern<h5/> 
            <br /> Allow to select more than one pattern for string query'''
 
 
-def get_many_order_by_columns_description_builder(*, all_columns, regex_validation, primary_name):
+def get_many_order_by_columns_description_builder(*, all_columns, regex_validation, primary_name) -> str:
     return f'''<br> support column: 
     <br> {all_columns} <hr><br> support ordering:  
     <br> {list(map(str, Ordering))} 
@@ -542,15 +359,6 @@ process_type_map = {
     ExtraFieldTypePrefix.Str: ExtraFieldType.Matching_pattern,
 }
 
-#
-#
-# @singledispatch
-# def query_builder(Operator, _, __):
-#     raise ValueError(f"Unhandled type {Operator}")
-#
-#
-# @query_builder.register(list)
-# def _list_str_query(string_matching_patterns, s, model):
 
 process_map = {
     RangeFromComparisonOperators.Greater_than:

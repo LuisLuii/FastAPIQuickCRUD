@@ -90,7 +90,7 @@ pip install fastapi-quickcrud
 3. import the required module
 
     ```python
-    from fastapi_quickcrud import crud_router
+    from fastapi_quickcrud import crud_router_builder
     from fastapi_quickcrud import CrudService
     from fastapi_quickcrud import CrudMethods
     from fastapi_quickcrud import sqlalchemy_to_pydantic
@@ -151,13 +151,13 @@ pip install fastapi-quickcrud
     - prefix, tags: extra argument for include_router() of APIRouter() of fastapi
 
     ```python
-    	new_route_3 = crud_router(db_session=get_transaction_session,
-                                  crud_service=UntitledTable256_service,
-                                  crud_models=test_crud_model,
-                                  prefix="/crud_test",
-                                  dependencies = [],
-                                  tags=["Example"]
-                                  )
+    	new_route_3 = crud_router_builder(db_session=get_transaction_session,
+                                          crud_service=UntitledTable256_service,
+                                          crud_models=test_crud_model,
+                                          prefix="/crud_test",
+                                          dependencies = [],
+                                          tags=["Example"]
+                                          )
     ```
 
 

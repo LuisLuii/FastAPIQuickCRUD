@@ -28,12 +28,12 @@ CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
 OnConflictModelType = TypeVar("OnConflictModelType", bound=BaseModel)
 
 
-def crud_router(
+def crud_router_builder(
         *,
         db_session,
         crud_service: CrudService,
         crud_models: CRUDModel,
-        dependencies: List[callable],
+        dependencies: List[callable] = None,
         **router_kwargs: Any) -> APIRouter:
     """
 
@@ -43,6 +43,8 @@ def crud_router(
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
+    if dependencies is None:
+        dependencies = []
     api = APIRouter()
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME

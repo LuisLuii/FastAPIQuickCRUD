@@ -218,7 +218,7 @@ pip install fastapi-quickcrud
 3. import the required module
 
     ```python
-    from fastapi_quickcrud import crud_router
+    from fastapi_quickcrud import crud_router_builder
     from fastapi_quickcrud import CrudService
     from fastapi_quickcrud import CrudMethods
     from fastapi_quickcrud import sqlalchemy_to_pydantic
