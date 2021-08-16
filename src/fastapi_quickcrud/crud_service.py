@@ -3,7 +3,7 @@ from typing import List, TypeVar
 
 from sqlalchemy import and_, text, select, delete, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.engine import ChunkedIteratorResult, CursorResult
+# from sqlalchemy.engine import ChunkedIteratorResult, CursorResult
 from sqlalchemy.sql.elements import BinaryExpression
 
 from .misc.exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 SchemaModelType = TypeVar("SchemaModelType", bound=Base)
 
 
+
+
 class CrudService:
     def __init__(
             self,
@@ -24,7 +26,9 @@ class CrudService:
     ):
         self.model = model
 
-    def insert_one(self, insert_args, session) -> List[SchemaModelType]:
+    def insert_one(self,
+                   insert_args,
+                   session) -> List[SchemaModelType]:
 
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
@@ -38,7 +42,8 @@ class CrudService:
                  limit,
                  offset,
                  order_by_columns,
-                 session) -> ChunkedIteratorResult:
+                 session):
+                 # session) -> ChunkedIteratorResult:
 
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model)
@@ -68,7 +73,8 @@ class CrudService:
                 # jsonb_filter_args,
                 # array_filter_args,
                 # array_types,
-                session) -> ChunkedIteratorResult:
+                session) :
+                # session) -> ChunkedIteratorResult:
 
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model)
@@ -83,7 +89,8 @@ class CrudService:
                insert_arg,
                unique_fields: List[str],
                session,
-               upsert_one=True) -> CursorResult:
+               upsert_one=True):
+               # upsert_one=True) -> CursorResult:
         insert_arg_dict: dict = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
@@ -131,7 +138,8 @@ class CrudService:
                *,
                delete_args,
                session,
-               primary_key=None) -> CursorResult:
+               primary_key=None):
+               # primary_key=None) -> CursorResult:
 
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
@@ -152,7 +160,7 @@ class CrudService:
                extra_query,
                session,
                primary_key=None
-               ) -> int:
+               ):
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
                                                                  model=self.model)
         if primary_key:
@@ -167,26 +175,3 @@ class CrudService:
         query_result_rows = query_result.__iter__()
         return query_result_rows
 
-    #
-    # async def get_view_by_time_range(self, filter_args, date_time_filtering, session) -> List[SchemaModelType]:
-    #     # todo support many to many, table without primary key
-    #     filtered_args: dict = filter_none_from_dict(filter_args.dict())
-    #     date_time_filtering_args: dict = filter_none_from_dict(date_time_filtering.dict())
-    #     date_range = {}
-    #     if 'log_datetime_from' in date_time_filtering_args:
-    #         date_range['from'] = date_time_filtering_args.pop('log_datetime_from')
-    #     if 'log_datetime_to' in date_time_filtering_args:
-    #         date_range['to'] = date_time_filtering_args.pop('log_datetime_to')
-    #     if 'from' in date_range or 'to' in date_range:
-    #         date_range['column'] = date_time_filtering_args['date_range_filtering_column']
-    #     # between
-    #     # print([*self.model.columns])
-    #     if isinstance(self.model, sqlalchemy.sql.schema.Table):
-    #         columns = [*self.model.columns]
-    #     else:
-    #         columns = self.model
-    #     filter_list: List[BinaryExpression] = date_range_critical_filter_builder(value=filtered_args,
-    #                                                                              model=self.model,
-    #                                                                              date_range=date_range)
-    #     query_result = await session.execute(select(columns).where(and_(*filter_list)))
-    #     return query_result

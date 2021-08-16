@@ -1,8 +1,5 @@
 from typing import Generic, TypeVar
 
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
 from strenum import StrEnum
 from enum import Enum, auto
 

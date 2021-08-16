@@ -9,21 +9,25 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
 
-from fastapi_quickcrud.misc.exceptions import MultipleSingleUniqueNotSupportedException, SchemaException, \
-    CompositePrimaryKeyConstraintNotSupportedException, MultiplePrimaryKeyNotSupportedException, \
-    ColumnTypeNotSupportedException, UnknownError
+from .exceptions import MultipleSingleUniqueNotSupportedException, \
+    SchemaException, \
+    CompositePrimaryKeyConstraintNotSupportedException, \
+    MultiplePrimaryKeyNotSupportedException, \
+    ColumnTypeNotSupportedException, \
+    UnknownError
 import uuid
 from typing import Optional
 
 from fastapi import Body, Query
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, synonym
+from sqlalchemy import UniqueConstraint
 
-from fastapi_quickcrud.misc.type import MatchingPatternInString, \
-    RangeFromComparisonOperators, Ordering, RangeToComparisonOperators, ExtraFieldTypePrefix, \
-    ExtraFieldType, ItemComparisonOperators
+from .type import MatchingPatternInString, \
+    RangeFromComparisonOperators, \
+    Ordering, \
+    RangeToComparisonOperators, \
+    ExtraFieldTypePrefix, \
+    ExtraFieldType, \
+    ItemComparisonOperators
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 
@@ -107,7 +111,7 @@ def _filter_none(request_or_response_object):
         insert_item_without_null = []
         for received_insert in received_request['insert']:
             received_insert_ = deepcopy(received_insert)
-            for received_insert_item , received_insert_value in received_insert_.__dict__.items():
+            for received_insert_item, received_insert_value in received_insert_.__dict__.items():
                 if hasattr(received_insert_value, '__module__'):
                     if received_insert_value.__module__ == 'fastapi.params' or received_insert_value is None:
                         delattr(received_insert, received_insert_item)
@@ -115,7 +119,7 @@ def _filter_none(request_or_response_object):
                     delattr(received_insert, received_insert_item)
 
             insert_item_without_null.append(received_insert)
-        setattr(request_or_response_object,'insert',insert_item_without_null )
+        setattr(request_or_response_object, 'insert', insert_item_without_null)
     else:
         for name, value in received_request.items():
             if hasattr(value, '__module__'):
@@ -148,7 +152,6 @@ class ApiParameterSchemaBuilder:
         self.json_type_columns = []
         self.array_type_columns = []
         self.all_field = self._extract_all_field()
-
 
     def _alias_mapping_builder(self) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
@@ -207,8 +210,8 @@ class ApiParameterSchemaBuilder:
             invalid = set(unique_column_list) - set(composite_unique_constraint)
             if invalid:
                 raise SchemaException("Use single unique constraint and composite unique constraint "
-                                          "at same time is not supported ")
-        if len(unique_column_list) > 1 and not composite_unique_constraint :
+                                      "at same time is not supported ")
+        if len(unique_column_list) > 1 and not composite_unique_constraint:
             raise MultipleSingleUniqueNotSupportedException(
                 " In case you need composite unique constraint, "
                 "FastAPi CRUD builder is not support to define multiple unique=True "
@@ -639,7 +642,6 @@ class ApiParameterSchemaBuilder:
                                     i['column_type'],
                                     Body(i['column_default'])))
 
-
         #
         # # Ready uuid_to_str validator
         # if self.uuid_type_columns:
@@ -663,9 +665,8 @@ class ApiParameterSchemaBuilder:
                                                                                      self.uuid_type_columns))
 
         insert_item_field_model_pydantic = make_dataclass('UpsertManyInsertItemRequestModel',
-                                           insert_fields
-                                           )
-
+                                                          insert_fields
+                                                          )
 
         # Create List Model with contains item
         insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
@@ -886,7 +887,6 @@ class ApiParameterSchemaBuilder:
             'DeleteManyResponseListModel',
             **{'__root__': (List[response_model], None)}
         )
-
 
         return None, request_query_model, None, response_model
 
@@ -1126,7 +1126,7 @@ class ApiParameterSchemaBuilder:
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
-                                                                        self.uuid_type_columns))
+                                                                                     self.uuid_type_columns))
         request_query_model = make_dataclass('PatchManyRequestQueryBody',
                                              request_query_fields,
                                              namespace={

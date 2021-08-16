@@ -12,7 +12,6 @@ from fastapi import \
 from pydantic import \
     BaseModel, \
     parse_obj_as
-from sqlalchemy.engine import ChunkedIteratorResult, CursorResult
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -21,7 +20,7 @@ from .crud_service import CrudService
 from .misc.crud_model import CRUDModel
 from .misc.exceptions import FindOneApiNotRegister, PrimaryMissing
 from .misc.type import CrudMethods
-
+from .misc.utils import force_sync
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -34,6 +33,7 @@ def crud_router_builder(
         crud_service: CrudService,
         crud_models: CRUDModel,
         dependencies: List[callable] = None,
+        async_mode=False,
         **router_kwargs: Any) -> APIRouter:
     """
 
@@ -64,21 +64,21 @@ def crud_router_builder(
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         @api.get(path, status_code=200, response_model=_response_model, dependencies=dependencies)
-        def get_one_by_primary_key(response: Response,
-                                   url_param: _request_url_param_model = Depends(),
-                                   query=Depends(_request_query_model),
-                                   session=Depends(db_session)):
-
-            query_result: ChunkedIteratorResult = crud_service.get_one(filter_args=query.__dict__,
-                                                                       extra_args=url_param.__dict__,
-                                                                       session=session)
+        async def async_get_one_by_primary_key(response: Response,
+                                               url_param: _request_url_param_model = Depends(),
+                                               query=Depends(_request_query_model),
+                                               session=Depends(db_session)):
+            query_result = crud_service.get_one(filter_args=query.__dict__,
+                                                extra_args=url_param.__dict__,
+                                                session=session)
+            query_result = await query_result if async_mode else query_result
             one_row_data = query_result.one_or_none()
             if one_row_data:
                 result = parse_obj_as(_response_model, one_row_data[0])
                 response.headers["x-total-count"] = str(1)
             else:
                 result = Response(status_code=HTTPStatus.NO_CONTENT)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def find_many_api(request_response_model: dict, dependencies=None):
@@ -89,7 +89,7 @@ def crud_router_builder(
         _response_model = request_response_model.get('responseModel', None)
 
         @api.get("", response_model=_response_model, dependencies=dependencies)
-        def get_many(response: Response,
+        async def get_many(response: Response,
                      query=Depends(_request_query_model),
                      session=Depends(
                          db_session)
@@ -98,16 +98,17 @@ def crud_router_builder(
             limit = query_dict.pop('limit', None)
             offset = query_dict.pop('offset', None)
             order_by_columns = query_dict.pop('order_by_columns', None)
-            query_result: ChunkedIteratorResult = crud_service.get_many(
+            query_result = crud_service.get_many(
+                # query_result: ChunkedIteratorResult = crud_service.get_many(
                 filter_args=query_dict,
                 limit=limit,
                 offset=offset, order_by_columns=order_by_columns,
                 session=session)
-
+            query_result = await query_result if async_mode else query_result
             result_list = [i for i in query_result.scalars()]
             result = parse_obj_as(_response_model, result_list)
             response.headers["x-total-count"] = str(len(result_list))
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def upsert_one_api(request_response_model: dict, dependencies=None):
@@ -117,13 +118,15 @@ def crud_router_builder(
         _response_model = request_response_model.get('responseModel', None)
 
         @api.post("", status_code=201, response_model=_response_model, dependencies=dependencies)
-        def insert_one_and_support_upsert(
+        async def insert_one_and_support_upsert(
                 response: Response,
                 query: _request_body_model = Depends(_request_body_model),
                 session=Depends(db_session)
         ):
             try:
-                query_result, = crud_service.upsert(query, unique_list, session)
+                query_result = crud_service.upsert(query, unique_list, session)
+                query_result, = await query_result if async_mode else query_result
+
             except IntegrityError as e:
                 err_msg, = e.orig.args
                 if 'duplicate key value violates unique constraint' not in err_msg:
@@ -132,7 +135,7 @@ def crud_router_builder(
                 return result
             result = parse_obj_as(_response_model, query_result)
             response.headers["x-total-count"] = str(1)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def upsert_many_api(request_response_model: dict, dependencies=None):
@@ -143,13 +146,14 @@ def crud_router_builder(
 
         # _response_model = _response_model_list.__dict__['__fields__']['__root__'].type_
         @api.post("", status_code=201, response_model=_response_model, dependencies=dependencies)
-        def insert_many_and_support_upsert(
+        async def insert_many_and_support_upsert(
                 response: Response,
                 query: _request_body_model = Depends(_request_body_model),
                 session=Depends(db_session)
         ):
             try:
-                query_result: CursorResult = crud_service.upsert(query, unique_list, session, upsert_one=False)
+                query_result = crud_service.upsert(query, unique_list, session, upsert_one=False)
+                query_result = await query_result if async_mode else query_result
             except IntegrityError as e:
                 err_msg, = e.orig.args
                 if 'duplicate key value violates unique constraint' not in err_msg:
@@ -159,7 +163,8 @@ def crud_router_builder(
             insert_result_list = query_result.fetchall()
             req = parse_obj_as(_response_model, insert_result_list)
             response.headers["x-total-count"] = str(len(insert_result_list))
-            session.commit()
+
+            await session.commit() if async_mode else session.commit()
             return req
 
     def delete_one_api(request_response_model: dict, dependencies=None):
@@ -170,20 +175,24 @@ def crud_router_builder(
         _response_model = request_response_model.get('responseModel', None)
 
         @api.delete(path, status_code=200, response_model=_response_model, dependencies=dependencies)
-        def delete_one_by_primary_key(response: Response,
+        async def delete_one_by_primary_key(response: Response,
                                       query=Depends(_request_query_model),
                                       request_url_param_model=Depends(_request_url_model),
                                       session=Depends(db_session)):
 
-            query_result: CursorResult = crud_service.delete(primary_key=request_url_param_model.__dict__,
-                                                             delete_args=query.__dict__,
-                                                             session=session)
+            # query_result: CursorResult = crud_service.delete(primary_key=request_url_param_model.__dict__,
+            query_result = crud_service.delete(primary_key=request_url_param_model.__dict__,
+                                               delete_args=query.__dict__,
+                                               session=session)
+            query_result = await query_result if async_mode else query_result
+
             if query_result.rowcount:
                 result, = [parse_obj_as(_response_model, {primary_name: i}) for i in query_result.scalars()]
                 response.headers["x-total-count"] = str(1)
             else:
                 result = Response(status_code=HTTPStatus.NO_CONTENT)
-            session.commit()
+
+            await session.commit() if async_mode else session.commit()
             return result
 
     def delete_many_api(request_response_model: dict, dependencies=None):
@@ -194,21 +203,24 @@ def crud_router_builder(
         _response_model = request_response_model.get('responseModel', None)
 
         @api.delete('', status_code=200, response_model=_response_model, dependencies=dependencies)
-        def delete_many_by_query(response: Response,
+        async def delete_many_by_query(response: Response,
                                  query=Depends(_request_query_model),
                                  session=Depends(db_session)):
 
-            query_result: CursorResult = crud_service.delete(
+            # query_result: CursorResult = crud_service.delete(
+            query_result = crud_service.delete(
                 delete_args=query.__dict__,
                 session=session)
+            query_result = await query_result if async_mode else query_result
+
             if query_result.rowcount:
                 # result = [parse_obj_as(_response_model, {primary_name: i}) for i in query_result.scalars()]
-                result_list = [{primary_name: i}for i in query_result.scalars()]
-                result = parse_obj_as(_response_model,result_list)
+                result_list = [{primary_name: i} for i in query_result.scalars()]
+                result = parse_obj_as(_response_model, result_list)
                 response.headers["x-total-count"] = str(len(result_list))
             else:
                 result = Response(status_code=HTTPStatus.NO_CONTENT)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def post_redirect_get_api(request_response_model: dict, dependencies=None):
@@ -217,23 +229,23 @@ def crud_router_builder(
 
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
-
         @api.post("", status_code=303, response_class=Response, dependencies=dependencies)
-        def create_one_and_redirect_to_get_one_api_with_primary_key(
+        async def create_one_and_redirect_to_get_one_api_with_primary_key(
                 request: Request,
                 insert_args: _request_body_model = Depends(),
                 session=Depends(db_session),
         ):
 
             try:
-                query_result: List[CursorResult] = crud_service.insert_one(insert_args.__dict__, session)
+                query_result = crud_service.insert_one(insert_args.__dict__, session)
+                query_result_, = await query_result if async_mode else query_result
+
             except IntegrityError as e:
                 err_msg, = e.orig.args
                 if 'duplicate key value violates unique constraint' not in err_msg:
                     raise e
                 result = Response(status_code=HTTPStatus.CONFLICT)
                 return result
-            query_result_, = query_result
             result = parse_obj_as(_response_model, query_result_)
 
             primary_key_field = result.__dict__.pop(primary_name, None)
@@ -258,7 +270,7 @@ def crud_router_builder(
                                       status_code=HTTPStatus.SEE_OTHER,
                                       # headers=request.headers
                                       )
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def patch_one_api(request_response_model: dict, dependencies=None):
@@ -274,7 +286,7 @@ def crud_router_builder(
                    status_code=200,
                    response_model=Union[_response_model],
                    dependencies=dependencies)
-        def partial_update_one_by_primary_key(
+        async def partial_update_one_by_primary_key(
                 primary_key: _request_url_param_model = Depends(),
                 patch_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
@@ -285,13 +297,15 @@ def crud_router_builder(
                                                update_args=patch_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+            query_result = await query_result if async_mode else query_result
+
             try:
                 query_result = next(query_result)
             except StopIteration:
                 return Response(status_code=HTTPStatus.NO_CONTENT)
 
             result = parse_obj_as(_response_model, query_result)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def patch_many_api(request_response_model: dict, dependencies=None):
@@ -307,7 +321,7 @@ def crud_router_builder(
                    status_code=200,
                    response_model=_response_model,
                    dependencies=dependencies)
-        def partial_update_many_by_query(
+        async def partial_update_many_by_query(
                 patch_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
@@ -315,6 +329,8 @@ def crud_router_builder(
             query_result = crud_service.update(update_args=patch_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+            query_result = await query_result if async_mode else query_result
+
             result_list = []
             for result in query_result:
                 result_list.append(result)
@@ -323,7 +339,7 @@ def crud_router_builder(
                     return Response(status_code=HTTPStatus.NO_CONTENT)
 
             result = parse_obj_as(_response_model, result_list)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def put_api(request_response_model: dict, dependencies=None):
@@ -335,7 +351,7 @@ def crud_router_builder(
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         @api.put(path, status_code=200, response_model=_response_model, dependencies=dependencies)
-        def entire_update_by_primary_key(
+        async def entire_update_by_primary_key(
                 primary_key: _request_url_param_model = Depends(),
                 update_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
@@ -346,13 +362,15 @@ def crud_router_builder(
                                                update_args=update_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+            query_result = await query_result if async_mode else query_result
+
             try:
                 query_result = next(query_result)
             except StopIteration:
                 return Response(status_code=HTTPStatus.NO_CONTENT)
 
             result = parse_obj_as(_response_model, query_result)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     def put_many_api(request_response_model: dict, dependencies=None):
@@ -364,7 +382,7 @@ def crud_router_builder(
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         @api.put("", status_code=200, response_model=_response_model, dependencies=dependencies)
-        def entire_update_many_by_query(
+        async def entire_update_many_by_query(
                 update_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
@@ -373,6 +391,8 @@ def crud_router_builder(
             query_result = crud_service.update(update_args=update_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+            query_result = await query_result if async_mode else query_result
+
             result_list = []
             for result in query_result:
                 result_list.append(result)
@@ -381,7 +401,7 @@ def crud_router_builder(
                     return Response(status_code=HTTPStatus.NO_CONTENT)
 
             result = parse_obj_as(_response_model, result_list)
-            session.commit()
+            await session.commit() if async_mode else session.commit()
             return result
 
     api_register = {
@@ -402,7 +422,13 @@ def crud_router_builder(
         crud_model_of_this_request_methods = value_of_dict_crud_model.keys()
         for crud_model_of_this_request_method in crud_model_of_this_request_methods:
             request_response_model_of_this_request_method = value_of_dict_crud_model[crud_model_of_this_request_method]
-            api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method, dependencies)
+            if async_mode:
+                force_sync(api_register[crud_model_of_this_request_method.value])(
+                    request_response_model_of_this_request_method,
+                    dependencies)
+            else:
+                api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method,
+                                                                      dependencies)
 
     router.include_router(api, **router_kwargs)
     return router

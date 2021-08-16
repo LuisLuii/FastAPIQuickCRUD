@@ -1,5 +1,7 @@
-from fastapi_quickcrud.crud_service import CrudService
-from fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
-from fastapi_quickcrud.crud_router import crud_router_builder
-from fastapi_quickcrud.misc.type import CrudMethods
+from .crud_service import CrudService
+from .misc.utils import sqlalchemy_to_pydantic
+from .crud_router import crud_router_builder
+
+from .misc.type import CrudMethods
+
 

@@ -1,12 +1,15 @@
 import datetime
 import decimal
+import functools
 import re
 import uuid
-from functools import singledispatch
+from functools import singledispatch, wraps
 from typing import Type, List, Union, TypeVar, Dict
 
 from fastapi import FastAPI, APIRouter
-from fastapi_quickcrud.misc.crud_model import RequestResponseModel, CRUDModel
+from sqlalchemy.ext.declarative import declarative_base
+
+from .crud_model import RequestResponseModel, CRUDModel
 from pydantic import BaseModel, create_model, BaseConfig
 from sqlalchemy import any_, text, Integer
 from sqlalchemy.sql.elements import \
@@ -16,7 +19,6 @@ from sqlalchemy.sql.elements import \
 from .exceptions import QueryOperatorNotFound
 from .schema_builder import ApiParameterSchemaBuilder
 from .type import \
-    Base, \
     CrudMethods, \
     CRUDRequestMapping, \
     MatchingPatternInString, \
@@ -26,6 +28,7 @@ from .type import \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
     ItemComparisonOperators
+Base = TypeVar("Base", bound=declarative_base)
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 
@@ -415,3 +418,20 @@ process_map = {
     MatchingPatternInString.not_similar_to:
         lambda field, values: or_(field.op("NOT SIMILAR TO")(value) for value in values),
 }
+
+
+
+def force_sync(fn):
+    '''
+    turn an async function to sync function
+    '''
+    import asyncio
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        res = fn(*args, **kwargs)
+        if asyncio.iscoroutine(res):
+            return asyncio.get_event_loop().run_until_complete(res)
+        return res
+
+    return wrapper
