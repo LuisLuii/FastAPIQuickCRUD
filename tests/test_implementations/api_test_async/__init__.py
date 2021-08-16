@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Optional
 
@@ -16,19 +17,17 @@ app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-from sqlalchemy import create_engine
-
-engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
+engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
-def get_transaction_session():
-    try:
-        db = async_session()
-        yield db
-    finally:
-        db.close()
+
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+         yield session
+
 
 
 class UntitledTable256(Base):
@@ -68,6 +67,9 @@ class UntitledTable256(Base):
 
 
 
+async def create_table():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-UntitledTable256.__table__.create(engine, checkfirst=True)
-
+loop = asyncio.get_event_loop()
+loop.run_until_complete(create_table())
