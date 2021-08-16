@@ -15,7 +15,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
 - Delete Many
 - Post Redirect Get
 
-![docs page](pic/page_preview.png)
+![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
 ## Install 
 ```commandline
@@ -170,7 +170,7 @@ pip install fastapi-quickcrud
     - support In-place Operation, get the value of column in the list of input
         - (<column_name>____list, <column_name>____list____comparison_operator)
     
-![string](pic/string_query.png)
+![string](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/string_query.png?raw=true)
   - numeric 
     - support Range Searching from and to
         - (<column_name>____from, <column_name>____from_____comparison_operator)
@@ -178,7 +178,7 @@ pip install fastapi-quickcrud
     - support In-place Operation, get the value of column in the list of input
         - (<column_name>____list, <column_name>____list____comparison_operator)
     
-![numeric](pic/numeric_query.png)
+![numeric](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/numeric_query.png?raw=true)
   - datetime 
     - support Range Searching from and to
         - (<column_name>____from, <column_name>____from_____comparison_operator)
@@ -186,13 +186,13 @@ pip install fastapi-quickcrud
     - support In-place Operation, get the value of column in the list of input
         - (<column_name>____list, <column_name>____list____comparison_operator)
     
-![datetime](pic/time_query.png)
+![datetime](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/time_query.png?raw=true)
   - Pagination 
     - limit
     - offset
     - order by
     
-![Pagination](pic/Pagination_query.png)  
+![Pagination](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/Pagination_query.png?raw=true)  
       
 - Approximate String Matching  
     ref: https://www.postgresql.org/docs/9.3/functions-matching.html
@@ -227,7 +227,7 @@ pip install fastapi-quickcrud
 - In-place Operation
     - In-place support the following operation
     
-![in](pic/in_query.png)  
+![in](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/in_query.png?raw=true)  
     - generated sql if user select Equal operation and input True and False
 ```sql        
         select * FROM untitled_table_256 
@@ -238,9 +238,9 @@ pip install fastapi-quickcrud
 - Range Searching
     - Range Searching support the following operation
     
-![greater](pic/greater_query.png)  
+![greater](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/greater_query.png?raw=true)  
     
-![less](pic/less_query.png)  
+![less](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/less_query.png?raw=true)  
   - generated sql 
     ```sql
     select * from untitled_table_256

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1-Alpha-06'
+VERSION = '0.0.1-Alpha-061'
 
 print("""
 
