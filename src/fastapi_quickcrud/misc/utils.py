@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import decimal
 import functools
@@ -34,8 +35,6 @@ BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 
 __all__ = [
     'sqlalchemy_to_pydantic',
-    'filter_none_from_dict',
-    'strict_query_builder',
     'find_query_builder',
     'to_require_but_default',
     'to_optional',
@@ -49,93 +48,93 @@ unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
-def filter_none_from_dict_factory(data):
-    return dict(x for x in data if x[1] is not None)
+# def filter_none_from_dict_factory(data):
+#     return dict(x for x in data if x[1] is not None)
 
 
-def uuid_to_str(value, values):
-    if value is not None:
-        return str(value)
-
-
-def original_data_to_alias(alias_name_dict):
-    def core(_, values):
-        for original_name, alias_name in alias_name_dict.items():
-            if original_name in values:
-                values[alias_name] = values.pop(original_name)
-        return values
-
-    return core
-
-
-def add_validators(model: Type[BaseModelT], validators) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all optional and no default
-    """
-    config = model.Config
-    field_definitions = {
-        name: (field.outer_type_, field.field_info.default)
-        for name, field in model.__fields__.items()
-    }
-    return create_model(f'{model.__name__}_validators_added',
-                        **field_definitions,
-                        __config__=config,
-                        __validators__={**validators})
-
-
-def to_optional_null(model: Type[BaseModelT]) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all optional and no keep the default value
-    """
-    config = model.Config
-    field_definitions = {
-        name: (field.outer_type_, None)
-        for name, field in model.__fields__.items()
-    }
-    return create_model(f'Optional{model.__name__}', **field_definitions, __config__=config)
-
-
-def to_optional(model: Type[BaseModelT]) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all optional and keep the default value
-    """
-    config = model.Config
-
-    field_definitions = {}
-    for name, field in model.__fields__.items():
-        field_definitions[name] = (field.outer_type_, field.default if field.default else None)
-    return create_model(f'Optional{model.__name__}', **field_definitions, __config__=config)  # t
-
-
-def to_require_but_default(model: Type[BaseModelT]) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all require but there are default value
-    """
-    config = model.Config
-    field_definitions = {}
-    for name, field in model.__fields__.items():
-        field_definitions[name] = (field.outer_type_, field.field_info.default)
-    return create_model(f'Required{model.__name__}', **field_definitions,
-                        __config__=config)  # type: ignore[arg-type]
-
-
-def to_require(model: Type[BaseModelT]) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all require but there are default value
-    """
-    config = model.Config
-    field_definitions = {}
-    for name, field in model.__fields__.items():
-        field_definitions[name] = (field.outer_type_, ...)
-    return create_model(f'Required{model.__name__}', **field_definitions,
-                        __config__=config)  # type: ignore[arg-type]
-
-
+# def uuid_to_str(value, values):
+#     if value is not None:
+#         return str(value)
+#
+#
+# def original_data_to_alias(alias_name_dict):
+#     def core(_, values):
+#         for original_name, alias_name in alias_name_dict.items():
+#             if original_name in values:
+#                 values[alias_name] = values.pop(original_name)
+#         return values
+#
+#     return core
+#
+#
+# def add_validators(model: Type[BaseModelT], validators) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all optional and no default
+#     """
+#     config = model.Config
+#     field_definitions = {
+#         name: (field.outer_type_, field.field_info.default)
+#         for name, field in model.__fields__.items()
+#     }
+#     return create_model(f'{model.__name__}_validators_added',
+#                         **field_definitions,
+#                         __config__=config,
+#                         __validators__={**validators})
+#
+#
+# def to_optional_null(model: Type[BaseModelT]) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all optional and no keep the default value
+#     """
+#     config = model.Config
+#     field_definitions = {
+#         name: (field.outer_type_, None)
+#         for name, field in model.__fields__.items()
+#     }
+#     return create_model(f'Optional{model.__name__}', **field_definitions, __config__=config)
+#
+#
+# def to_optional(model: Type[BaseModelT]) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all optional and keep the default value
+#     """
+#     config = model.Config
+#
+#     field_definitions = {}
+#     for name, field in model.__fields__.items():
+#         field_definitions[name] = (field.outer_type_, field.default if field.default else None)
+#     return create_model(f'Optional{model.__name__}', **field_definitions, __config__=config)  # t
+#
+#
+# def to_require_but_default(model: Type[BaseModelT]) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all require but there are default value
+#     """
+#     config = model.Config
+#     field_definitions = {}
+#     for name, field in model.__fields__.items():
+#         field_definitions[name] = (field.outer_type_, field.field_info.default)
+#     return create_model(f'Required{model.__name__}', **field_definitions,
+#                         __config__=config)  # type: ignore[arg-type]
+#
+#
+# def to_require(model: Type[BaseModelT]) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all require but there are default value
+#     """
+#     config = model.Config
+#     field_definitions = {}
+#     for name, field in model.__fields__.items():
+#         field_definitions[name] = (field.outer_type_, ...)
+#     return create_model(f'Required{model.__name__}', **field_definitions,
+#                         __config__=config)  # type: ignore[arg-type]
+#
+#
 
 def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
@@ -203,43 +202,8 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
     return query
 
 
-def strict_query_builder(param: dict, model: Base):
-    query = []
-    date_range_query = []
-    for column_name, value in param.items():
-        if '____' in column_name:
-            date_range_filter_column = getattr(model, column_name.split('__')[0])
-            if '____from' in column_name:
-                date_range_query.append(date_range_filter_column >= value)
-                continue
-            if '____to' in column_name:
-                date_range_query.append(date_range_filter_column <= value)
-                continue
-
-        query.append(_create_strict_query(value, getattr(model, column_name)))
-    if date_range_query:
-        query.append(and_(*date_range_query))
-    return query
-
-
-def filter_none_from_dict(value: dict) -> dict:
-    return dict(filter(lambda item: item[1] is not None, value.items()))
-
-
 class OrmConfig(BaseConfig):
     orm_mode = True
-
-
-def alias(constraint_list: List['str'], fields: Dict[str, tuple], alias_name_dict: Dict[str, str]):
-    for original_name, alias_name in alias_name_dict.items():
-        if original_name in constraint_list:
-            constraint_list.remove(original_name)
-            constraint_list.append(alias_name)
-        if original_name in fields:
-            tmp = fields[original_name]
-            fields[alias_name] = tmp
-    return constraint_list, fields
-
 
 def sqlalchemy_to_pydantic(
         db_model: Type, *, crud_methods: List[CrudMethods], exclude_columns: List[str] = None) -> CRUDModel:
@@ -425,7 +389,7 @@ def force_sync(fn):
     '''
     turn an async function to sync function
     '''
-    import asyncio
+    # import asyncio
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):

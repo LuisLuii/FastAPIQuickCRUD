@@ -18,7 +18,7 @@ from starlette.responses import RedirectResponse
 
 from .crud_service import CrudService
 from .misc.crud_model import CRUDModel
-from .misc.exceptions import FindOneApiNotRegister, PrimaryMissing
+from .misc.exceptions import FindOneApiNotRegister
 from .misc.type import CrudMethods
 from .misc.utils import force_sync
 
@@ -48,26 +48,23 @@ def crud_router_builder(
     api = APIRouter()
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
-    if not primary_name:
-        raise PrimaryMissing("primary key is required")
+
     path = '/{' + primary_name + '}'
     unique_list: List[str] = crud_models.UNIQUE_LIST
 
     dependencies = [Depends(dep) for dep in dependencies]
     router = APIRouter()
 
-    def find_one_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def find_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         @api.get(path, status_code=200, response_model=_response_model, dependencies=dependencies)
-        async def async_get_one_by_primary_key(response: Response,
-                                               url_param: _request_url_param_model = Depends(),
-                                               query=Depends(_request_query_model),
-                                               session=Depends(db_session)):
+        async def get_one_by_primary_key(response: Response,
+                                         url_param: _request_url_param_model = Depends(),
+                                         query=Depends(_request_query_model),
+                                         session=Depends(db_session)):
             query_result = crud_service.get_one(filter_args=query.__dict__,
                                                 extra_args=url_param.__dict__,
                                                 session=session)
@@ -81,19 +78,17 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def find_many_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def find_many_api(request_response_model: dict, dependencies):
 
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
         @api.get("", response_model=_response_model, dependencies=dependencies)
         async def get_many(response: Response,
-                     query=Depends(_request_query_model),
-                     session=Depends(
-                         db_session)
-                     ):
+                           query=Depends(_request_query_model),
+                           session=Depends(
+                               db_session)
+                           ):
             query_dict = query.__dict__
             limit = query_dict.pop('limit', None)
             offset = query_dict.pop('offset', None)
@@ -104,6 +99,7 @@ def crud_router_builder(
                 limit=limit,
                 offset=offset, order_by_columns=order_by_columns,
                 session=session)
+
             query_result = await query_result if async_mode else query_result
             result_list = [i for i in query_result.scalars()]
             result = parse_obj_as(_response_model, result_list)
@@ -111,9 +107,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def upsert_one_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def upsert_one_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
@@ -138,9 +132,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def upsert_many_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def upsert_many_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
@@ -167,18 +159,16 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return req
 
-    def delete_one_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def delete_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _request_url_model = request_response_model.get('requestUrlParamModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
         @api.delete(path, status_code=200, response_model=_response_model, dependencies=dependencies)
         async def delete_one_by_primary_key(response: Response,
-                                      query=Depends(_request_query_model),
-                                      request_url_param_model=Depends(_request_url_model),
-                                      session=Depends(db_session)):
+                                            query=Depends(_request_query_model),
+                                            request_url_param_model=Depends(_request_url_model),
+                                            session=Depends(db_session)):
 
             # query_result: CursorResult = crud_service.delete(primary_key=request_url_param_model.__dict__,
             query_result = crud_service.delete(primary_key=request_url_param_model.__dict__,
@@ -195,17 +185,15 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def delete_many_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def delete_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _request_url_model = request_response_model.get('requestUrlParamModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
         @api.delete('', status_code=200, response_model=_response_model, dependencies=dependencies)
         async def delete_many_by_query(response: Response,
-                                 query=Depends(_request_query_model),
-                                 session=Depends(db_session)):
+                                       query=Depends(_request_query_model),
+                                       session=Depends(db_session)):
 
             # query_result: CursorResult = crud_service.delete(
             query_result = crud_service.delete(
@@ -223,12 +211,11 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def post_redirect_get_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def post_redirect_get_api(request_response_model: dict, dependencies):
 
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
+
         @api.post("", status_code=303, response_class=Response, dependencies=dependencies)
         async def create_one_and_redirect_to_get_one_api_with_primary_key(
                 request: Request,
@@ -262,10 +249,6 @@ def crud_router_builder(
                 raise FindOneApiNotRegister(404,
                                             f'EndPoint {request.url.path}/{ {primary_name} }  with GET method not found')
             # FIXME support auth
-            # headers = request.headers.__dict__
-            # print(request.headers.__dir__())
-            # headers.pop('content-length')
-            # headers['referer'] = request.url
             result = RedirectResponse(redirect_url,
                                       status_code=HTTPStatus.SEE_OTHER,
                                       # headers=request.headers
@@ -273,9 +256,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def patch_one_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def patch_one_api(request_response_model: dict, dependencies):
 
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
@@ -298,6 +279,7 @@ def crud_router_builder(
                                                extra_query=extra_query.__dict__,
                                                session=session)
             query_result = await query_result if async_mode else query_result
+            query_result = query_result.__iter__()
 
             try:
                 query_result = next(query_result)
@@ -308,9 +290,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def patch_many_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def patch_many_api(request_response_model: dict, dependencies):
 
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
@@ -330,6 +310,7 @@ def crud_router_builder(
                                                extra_query=extra_query.__dict__,
                                                session=session)
             query_result = await query_result if async_mode else query_result
+            query_result = query_result.__iter__()
 
             result_list = []
             for result in query_result:
@@ -342,9 +323,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def put_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def put_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -363,6 +342,7 @@ def crud_router_builder(
                                                extra_query=extra_query.__dict__,
                                                session=session)
             query_result = await query_result if async_mode else query_result
+            query_result = query_result.__iter__()
 
             try:
                 query_result = next(query_result)
@@ -373,9 +353,7 @@ def crud_router_builder(
             await session.commit() if async_mode else session.commit()
             return result
 
-    def put_many_api(request_response_model: dict, dependencies=None):
-        if dependencies == None:
-            dependencies = []
+    def put_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -392,6 +370,7 @@ def crud_router_builder(
                                                extra_query=extra_query.__dict__,
                                                session=session)
             query_result = await query_result if async_mode else query_result
+            query_result = query_result.__iter__()
 
             result_list = []
             for result in query_result:
@@ -422,13 +401,8 @@ def crud_router_builder(
         crud_model_of_this_request_methods = value_of_dict_crud_model.keys()
         for crud_model_of_this_request_method in crud_model_of_this_request_methods:
             request_response_model_of_this_request_method = value_of_dict_crud_model[crud_model_of_this_request_method]
-            if async_mode:
-                force_sync(api_register[crud_model_of_this_request_method.value])(
-                    request_response_model_of_this_request_method,
-                    dependencies)
-            else:
-                api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method,
-                                                                      dependencies)
+            api_register[crud_model_of_this_request_method.value](request_response_model_of_this_request_method,
+                                                                  dependencies)
 
     router.include_router(api, **router_kwargs)
     return router

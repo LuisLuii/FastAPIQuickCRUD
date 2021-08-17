@@ -14,7 +14,7 @@ from .exceptions import MultipleSingleUniqueNotSupportedException, \
     CompositePrimaryKeyConstraintNotSupportedException, \
     MultiplePrimaryKeyNotSupportedException, \
     ColumnTypeNotSupportedException, \
-    UnknownError
+    UnknownError, PrimaryMissing
 import uuid
 from typing import Optional
 
@@ -234,6 +234,7 @@ class ApiParameterSchemaBuilder:
         primary_columns_model = None
         primary_field_definitions = {}
         primary_column_name = None
+        primary = False
         if hasattr(self.__db_model, '__table_args__'):
             for constraints in self.__db_model.__table_args__:
                 if isinstance(constraints, PrimaryKeyConstraint):
@@ -246,7 +247,7 @@ class ApiParameterSchemaBuilder:
                 if attr.columns:
                     column, = attr.columns
                     if column.primary_key:
-                        if primary_column_name is None:
+                        if not primary:
                             column_type = str(column.type)
                             try:
                                 python_type = column.type.python_type
@@ -304,15 +305,13 @@ class ApiParameterSchemaBuilder:
                                                                            self_object,
                                                                            self.uuid_type_columns)
                                                                    })
+                            primary = True
                         else:
                             raise MultiplePrimaryKeyNotSupportedException(
                                 f'multiple primary key not supported; {str(mapper.mapped_table)} ')
-
+        if not primary_column_name:
+            raise PrimaryMissing("Primary key is required")
         return primary_column_name, primary_columns_model, primary_field_definitions
-
-    def _uuid_to_str(value, values):
-        if value is not None:
-            return str(value)
 
     @staticmethod
     def _value_of_list_to_str(request_or_response_object, columns):

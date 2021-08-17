@@ -170,6 +170,5 @@ class CrudService:
         update_stmt = update_stmt.execution_options(synchronize_session=False)
         query_result = session.execute(update_stmt)
         session.expire_all()
-        query_result_rows = query_result.__iter__()
-        return query_result_rows
+        return query_result
 
