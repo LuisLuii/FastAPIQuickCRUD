@@ -445,7 +445,7 @@ class ApiParameterSchemaBuilder:
                         if hasattr(base_column_detail.type, 'item_type'):
                             item_type = base_column_detail.type.item_type.python_type
                             fields.append({'column_name': column_name,
-                                           'column_type': python_type[item_type],
+                                           'column_type': List[item_type],
                                            'column_default': default})
                             continue
                     else:

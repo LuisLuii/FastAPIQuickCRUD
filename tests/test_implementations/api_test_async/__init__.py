@@ -11,15 +11,15 @@ from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime,
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 from sqlalchemy.sql.sqltypes import NullType
-
-
+import os
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL','postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
+engine = create_async_engine(TEST_DATABASE_URL, future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
 async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
@@ -37,8 +37,7 @@ class UntitledTable256(Base):
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},
-                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'})
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)

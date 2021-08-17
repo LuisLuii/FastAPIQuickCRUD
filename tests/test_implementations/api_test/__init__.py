@@ -1,16 +1,12 @@
-import uuid
-from typing import Optional
+import os
 
-from guid import GUID
-import uvicorn
 from fastapi import FastAPI
-from sqlalchemy import UniqueConstraint
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
-from sqlalchemy.sql.sqltypes import NullType
 
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_URL', 'postgresql://postgres:1234@127.0.0.1:5432/postgres')
 
 app = FastAPI()
 
@@ -19,9 +15,10 @@ metadata = Base.metadata
 
 from sqlalchemy import create_engine
 
-engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
+engine = create_engine(TEST_DATABASE_URL, future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
 async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_transaction_session():
     try:
@@ -38,8 +35,7 @@ class UntitledTable256(Base):
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},
-                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'})
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
@@ -67,7 +63,4 @@ class UntitledTable256(Base):
     # box_valaue = Column(NullType)
 
 
-
-
 UntitledTable256.__table__.create(engine, checkfirst=True)
-
