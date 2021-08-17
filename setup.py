@@ -17,7 +17,7 @@ if __name__ == '__main__':
     setup(
         name='fastapi_quickcrud',
         version=VERSION,
-        install_requires=["fastapi","pydantic","SQLAlchemy==1.4.22","StrEnum","psycopg2"],
+        install_requires=["fastapi","pydantic","SQLAlchemy==1.4.22","StrEnum","psycopg2","asyncpg"],
         python_requires=">=3.6",
         description="FastAPI-quickcrud can help you to build a FastAPI CRUD routes automatically for the PostgreSQL's Sqlalchemy Schema",
         long_description=open("README.md").read(),

@@ -1,5 +1,8 @@
 #  FastAPI Quick CRUD
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
+
+
 FastAPI Quick CRUD 可以為你節省編寫重複的CRUD代碼，用戶只需要為你的Postgresql table編寫Sqlalchemy Declarative Base Class 便可立即生成該Table的 CRUD API。
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)

@@ -1,0 +1,17 @@
+asgiref==3.4.1
+asyncpg==0.24.0
+attrs==21.2.0
+bleach==4.0.0
+certifi==2021.5.30
+cffi==1.14.6
+charset-normalizer==2.0.4
+click==8.0.1
+colorama==0.4.4
+coverage==5.5
+cryptography==3.4.7
+fastapi==0.68.0
+pydantic==1.8.2
+pytest==6.2.4
+SQLAlchemy==1.4.22
+StrEnum==0.4.6
+uvicorn==0.15.0
