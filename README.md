@@ -1,5 +1,7 @@
 #  FastAPI Quick CRUD
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/233b00f449bd4984acf032d827cf5a56)](https://app.codacy.com/gh/LuisLuii/FastAPIQuickCRUD?utm_source=github.com&utm_medium=referral&utm_content=LuisLuii/FastAPIQuickCRUD&utm_campaign=Badge_Grade_Settings)
+
 This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
 
 
