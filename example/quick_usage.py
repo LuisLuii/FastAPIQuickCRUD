@@ -11,10 +11,10 @@ from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 from sqlalchemy.sql.sqltypes import NullType
 
-from fastapi_quickcrud import crud_router_builder
-from fastapi_quickcrud import CrudService
-from fastapi_quickcrud import CrudMethods as CrudRouter
-from fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud import crud_router_builder
+from src.fastapi_quickcrud import CrudService
+from src.fastapi_quickcrud import CrudMethods as CrudRouter
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 app = FastAPI()
 
 Base = declarative_base()

@@ -3,10 +3,10 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Depends, Security, Request
 from fastapi.security import HTTPBearer, APIKeyHeader, APIKeyQuery
-from fastapi_quickcrud import CrudMethods as CrudRouter
-from fastapi_quickcrud import CrudService
-from fastapi_quickcrud import crud_router_builder
-from fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud import CrudMethods as CrudRouter
+from src.fastapi_quickcrud import CrudService
+from src.fastapi_quickcrud import crud_router_builder
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID

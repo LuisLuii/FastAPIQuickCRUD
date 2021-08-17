@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
@@ -19,14 +20,18 @@ metadata = Base.metadata
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
+
+
+
 engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                              pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+async_session = sessionmaker(bind=engine, class_=AsyncSession)
 
 
 async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
-        yield session
+        async with session.begin():
+            yield session
 
 
 class ExampleTable(Base):
@@ -81,6 +86,7 @@ upsert_many_router = crud_router_builder(db_session=get_transaction_session,
                                          crud_service=UntitledTable256_service,
                                          crud_models=UntitledTable256Model,
                                          prefix="/upsert_many",
+                                         async_mode=True,
                                          tags=["test"]
                                          )
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
@@ -93,6 +99,7 @@ post_redirect_get_router = crud_router_builder(db_session=get_transaction_sessio
                                                crud_service=UntitledTable256_service,
                                                crud_models=UntitledTable256Model,
                                                prefix="/post_redirect_get",
+                                               async_mode=True,
                                                tags=["test"]
                                                )
 
@@ -115,17 +122,23 @@ example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
 example_table_full_router = crud_router_builder(db_session=get_transaction_session,
                                                 crud_service=UntitledTable256_service,
                                                 crud_models=example_table_full_api,
-                                                dependencies=[],
                                                 async_mode=True,
                                                 prefix="/test_CRUD",
                                                 tags=["test"]
                                                 )
 
-async def create_table():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(create_table())
+# unknown reason that will throw error when add the code following
+# async def create_table():
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.create_all)
+#         print('created')
+#
+#
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(create_table())
+# loop.stop()
+# loop.close()
+# print(loop.is_closed())
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
