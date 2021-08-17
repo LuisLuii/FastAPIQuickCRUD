@@ -311,6 +311,7 @@ class ApiParameterSchemaBuilder:
                                 f'multiple primary key not supported; {str(mapper.mapped_table)} ')
         if not primary_column_name:
             raise PrimaryMissing("Primary key is required")
+        assert primary_column_name and primary_columns_model and primary_field_definitions
         return primary_column_name, primary_columns_model, primary_field_definitions
 
     @staticmethod

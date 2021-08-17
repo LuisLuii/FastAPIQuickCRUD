@@ -126,19 +126,5 @@ class JSONBMatchingMode(str, Enum):
     custom_query = 'custom_query'
 
 
-class JSON(str):
-    def __init__(self, a):
-        str.__init__(self)
 
 
-class JSONB(str):
-    def __init__(self, a):
-        str.__init__(self)
-
-
-T = TypeVar('T')
-
-
-class ARRAY(Generic[T]):
-    def __init__(self, a):
-        str.__init__(self)

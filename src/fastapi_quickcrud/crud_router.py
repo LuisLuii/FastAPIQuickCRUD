@@ -20,7 +20,6 @@ from .crud_service import CrudService
 from .misc.crud_model import CRUDModel
 from .misc.exceptions import FindOneApiNotRegister
 from .misc.type import CrudMethods
-from .misc.utils import force_sync
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -315,9 +314,8 @@ def crud_router_builder(
             result_list = []
             for result in query_result:
                 result_list.append(result)
-            else:
-                if not result_list:
-                    return Response(status_code=HTTPStatus.NO_CONTENT)
+            if not result_list:
+                return Response(status_code=HTTPStatus.NO_CONTENT)
 
             result = parse_obj_as(_response_model, result_list)
             await session.commit() if async_mode else session.commit()
