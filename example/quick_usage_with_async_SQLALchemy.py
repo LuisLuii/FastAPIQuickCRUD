@@ -128,15 +128,16 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 )
 
 
+# Base.metadata.create_all(engine)
 # unknown reason that will throw error when add the code following
 # async def create_table():
 #     async with engine.begin() as conn:
 #         await conn.run_sync(Base.metadata.create_all)
 #         print('created')
+#     print('done')
+#     return
 #
-#
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(create_table())
+# asyncio.run(create_table())
 # loop.stop()
 # loop.close()
 # print(loop.is_closed())

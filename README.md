@@ -21,7 +21,7 @@ This is a CRUD router builder, which allow you to build Pydantic model automatic
     - Post Redirect Get
 
 
-## Install 
+## Installation
 ```commandline
 pip install fastapi-quickcrud
 ```
@@ -321,6 +321,8 @@ primary_key = synonym('id')
 
 ### TODO
 
+- support [databases](https://pypi.org/project/databases/) as db connector -> the next task
+- support pony 
+- support MYSQL and Sqllite
 - Manually create the model for each CRUD API 
 - Apply the comment of each column into docs
-- 
