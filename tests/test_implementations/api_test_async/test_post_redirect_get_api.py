@@ -5,11 +5,11 @@ from http import HTTPStatus
 
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import CrudService
 from src.fastapi_quickcrud import CrudMethods
+from src.fastapi_quickcrud import CrudService
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.api_test_async import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)
 
@@ -72,6 +72,7 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  crud_service=UntitledTable256_service,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
+                                                 async_mode=True,
                                                  tags=["test"]
                                                  )
 
@@ -113,6 +114,7 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     crud_service=UntitledTable256_service,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test_post_direct_get",
+                                    async_mode=True,
                                     tags=["test"]
                                     )
 [app.include_router(i) for i in [test_post_and_redirect_get, test_get_data]]
@@ -131,7 +133,7 @@ def test_create_one_but_no_follow_redirect():
         'Content-Type': 'application/json',
     }
 
-    data = '{ "bool_value": true, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-24T02:54:53.285Z", "timestamptz_value": "2021-07-24T02:54:53.285Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }'
+    data = '{ "bool_value": true, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-24T02:54:53.285", "timestamptz_value": "2021-07-24T02:54:53.285Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }'
 
     response = client.post('/test_post_direct_get', headers=headers, data=data, allow_redirects=False)
     assert response.status_code == HTTPStatus.SEE_OTHER
@@ -211,4 +213,3 @@ def test_create_but_conflict():
 
     response = client.post('/test_post_direct_get', headers=headers, data=json.dumps(data), allow_redirects=True)
     assert response.status_code == HTTPStatus.CONFLICT
-

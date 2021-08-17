@@ -6,11 +6,11 @@ from datetime import date, timedelta, datetime, timezone
 from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.crud_router import CrudService
+from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 from src.fastapi_quickcrud.misc.type import CrudMethods
-from tests.test_implementations.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.api_test_async import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)
 
@@ -69,6 +69,7 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       crud_service=UntitledTable256_service,
                                       crud_models=UntitledTable256Model,
                                       prefix="/test_creation_one",
+                                      async_mode=True,
                                       tags=["test"]
                                       )
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
@@ -130,6 +131,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        crud_service=UntitledTable256_service,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
+                                       async_mode=True,
                                        tags=["test"]
                                        )
 
@@ -197,6 +199,7 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  crud_service=UntitledTable256_service,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
+                                                 async_mode=True,
                                                  tags=["test"]
                                                  )
 
@@ -239,6 +242,7 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     crud_service=UntitledTable256_service,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test",
+                                    async_mode=True,
                                     tags=["test"]
                                     )
 [app.include_router(i) for i in [test_post_and_redirect_get, test_create_one, test_create_many, test_get_data]]
@@ -270,7 +274,7 @@ def test_try_only_input_required_fields():
         'Content-Type': 'application/json',
     }
 
-    data = {"float4_value": 0.0, "int2_value": 0, "int4_value": 0, 'uuid_value':'3fa85f64-5717-4562-b3fc-2c963f66afa6'}
+    data = {"float4_value": 0.0, "int2_value": 0, "int4_value": 0, 'uuid_value': '3fa85f64-5717-4562-b3fc-2c963f66afa6'}
 
     response = client.post('/test_creation_one', headers=headers, data=json.dumps(data))
     assert response.status_code == 201
@@ -511,4 +515,3 @@ def test_update_specific_columns_when_conflict():
 
     update_all_fields()
     update_partial_fields()
-

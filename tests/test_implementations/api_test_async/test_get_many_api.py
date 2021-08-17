@@ -4,12 +4,11 @@ from urllib.parse import urlencode
 
 from starlette.testclient import TestClient
 
-
-from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.crud_router import CrudService
+from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
-from tests.test_implementations.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.api_test_async import get_transaction_session, app, UntitledTable256
 
 UntitledTable256_service = CrudService(model=UntitledTable256)
 
@@ -74,6 +73,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        crud_service=UntitledTable256_service,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
+                                       async_mode=True,
                                        tags=["test"]
                                        )
 
@@ -87,6 +87,7 @@ test_find_many = crud_router_builder(db_session=get_transaction_session,
                                      crud_service=UntitledTable256_service,
                                      crud_models=UntitledTable256Model,
                                      prefix="/test_get_many",
+                                     async_mode=True,
                                      tags=["test"]
                                      )
 
@@ -118,7 +119,7 @@ def create_example_data(num=1, **kwargs):
                           "jsonb_value": kwargs.get('jsonb_value', {}),
                           "numeric_value": kwargs.get('numeric_value', 110),
                           "text_value": kwargs.get('text_value', 'string'),
-                          "timestamp_value": kwargs.get('timestamp_value', "2021-07-23T02:38:24.963Z"),
+                          "timestamp_value": kwargs.get('timestamp_value', "2021-07-23T02:38:24.963"),
                           "timestamptz_value": kwargs.get('timestamptz_value', "2021-07-23T02:38:24.963Z"),
                           "uuid_value": kwargs.get('uuid_value', "3fa85f64-5717-4562-b3fc-2c963f66afa6"),
                           "varchar_value": kwargs.get('varchar_value', 'string'),
@@ -1682,7 +1683,6 @@ def test_create_a_more_than_one_data_and_get_many_2():
     # <= 0.4
     # result = []
 
-
     # data  = 0.4
     # <= 0.5
     # result = [0.4]
@@ -1711,7 +1711,6 @@ def test_create_a_more_than_one_data_and_get_many_2():
         for i in num_two_sample_data:
             assert i in response.json()
 
-
     # data = 10.7
     # < 10.7
     # still got 10.7 but if data is 10.6
@@ -1721,7 +1720,7 @@ def test_create_a_more_than_one_data_and_get_many_2():
                   "float4_value____from_____comparison_operator": 'Greater_than',
                   "float4_value____to_____comparison_operator": 'Less_than',
                   "float4_value____from": float_one,
-                  "float4_value____to": float_two+0.1}
+                  "float4_value____to": float_two + 0.1}
         query_string = urlencode(OrderedDict(**params))
         response = client.get(f'/test_get_many?{query_string}')
         response_data = response.json()
@@ -1734,13 +1733,10 @@ def test_create_a_more_than_one_data_and_get_many_2():
     greater_than_or_equal_to_Less_than_or_equal_to()
     less_than_or_equal_to_less_than()
 
-
-
     # float 4 < will round down to the odd floating odd
     # data  = 0.3
     # <= 0.4
     # result = []
-
 
     # data  = 0.4
     # <= 0.5
@@ -1777,7 +1773,7 @@ def test_create_a_more_than_one_data_and_get_many_2():
                   "float8_value____from_____comparison_operator": 'Greater_than',
                   "float8_value____to_____comparison_operator": 'Less_than',
                   "float8_value____from": float_one,
-                  "float8_value____to": float_two+0.1}
+                  "float8_value____to": float_two + 0.1}
         query_string = urlencode(OrderedDict(**params))
         response = client.get(f'/test_get_many?{query_string}')
         response_data = response.json()
@@ -1790,7 +1786,4 @@ def test_create_a_more_than_one_data_and_get_many_2():
     greater_than_or_equal_to_Less_than_or_equal_to()
     less_than_or_equal_to_less_than()
 
-
 # test order_by_columns regex validation
-
-
