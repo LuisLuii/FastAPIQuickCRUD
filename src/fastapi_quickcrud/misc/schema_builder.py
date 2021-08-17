@@ -322,7 +322,7 @@ class ApiParameterSchemaBuilder:
             insert_str_list = []
             for insert_item in request_or_response_object.__dict__['insert']:
                 for column in columns:
-                    for insert_item_column, insert_item_value in insert_item.__dict__.items():
+                    for insert_item_column, _ in insert_item.__dict__.items():
                         if column in insert_item_column:
                             value_ = insert_item.__dict__[insert_item_column]
                             if value_ is not None:

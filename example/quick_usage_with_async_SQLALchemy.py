@@ -1,11 +1,8 @@
-import asyncio
-
 import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
@@ -19,9 +16,6 @@ Base = declarative_base()
 metadata = Base.metadata
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-
-
 
 engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                              pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
@@ -126,7 +120,6 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 prefix="/test_CRUD",
                                                 tags=["test"]
                                                 )
-
 
 # Base.metadata.create_all(engine)
 # unknown reason that will throw error when add the code following

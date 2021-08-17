@@ -1,22 +1,16 @@
 import asyncio
-import datetime
-import decimal
 import functools
 import re
-import uuid
-from functools import singledispatch, wraps
-from typing import Type, List, Union, TypeVar, Dict
+from typing import Type, List, Union, TypeVar
 
 from fastapi import FastAPI, APIRouter
+from pydantic import BaseModel, BaseConfig
 from sqlalchemy.ext.declarative import declarative_base
-
-from .crud_model import RequestResponseModel, CRUDModel
-from pydantic import BaseModel, create_model, BaseConfig
-from sqlalchemy import any_, text, Integer
 from sqlalchemy.sql.elements import \
     or_, \
-    and_, BinaryExpression
+    BinaryExpression
 
+from .crud_model import RequestResponseModel, CRUDModel
 from .exceptions import QueryOperatorNotFound
 from .schema_builder import ApiParameterSchemaBuilder
 from .type import \
@@ -29,6 +23,7 @@ from .type import \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
     ItemComparisonOperators
+
 Base = TypeVar("Base", bound=declarative_base)
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
@@ -205,6 +200,7 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
 class OrmConfig(BaseConfig):
     orm_mode = True
 
+
 def sqlalchemy_to_pydantic(
         db_model: Type, *, crud_methods: List[CrudMethods], exclude_columns: List[str] = None) -> CRUDModel:
     if exclude_columns is None:
@@ -326,7 +322,6 @@ process_type_map = {
     ExtraFieldTypePrefix.Str: ExtraFieldType.Matching_pattern,
 }
 
-
 process_map = {
     RangeFromComparisonOperators.Greater_than:
         lambda field, value: field > value,
@@ -384,11 +379,11 @@ process_map = {
 }
 
 
-
 def force_sync(fn):
     '''
     turn an async function to sync function
     '''
+
     # import asyncio
 
     @functools.wraps(fn)

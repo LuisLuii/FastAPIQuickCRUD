@@ -362,8 +362,6 @@ def test_create_one_and_delete_one():
               }
     from urllib.parse import urlencode
     query_string = urlencode(OrderedDict(**params))
-    update_data = {"bool_value": False}
     response = client.delete(f'/test_delete_one/{primary_key}?{query_string}')
-    response_data = response.json()
     assert response.status_code == 200
     assert response.headers['x-total-count'] == '1'

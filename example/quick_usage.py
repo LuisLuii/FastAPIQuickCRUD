@@ -1,20 +1,15 @@
-import uuid
-from typing import Optional
-
 import uvicorn
-from fastapi import FastAPI, Depends, Security, Request
-from fastapi.security import HTTPBearer, APIKeyHeader, APIKeyQuery
-from sqlalchemy import TypeDecorator, Table, ForeignKey
+from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
-from sqlalchemy.sql.sqltypes import NullType
 
-from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import CrudService
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
+from src.fastapi_quickcrud import CrudService
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
+
 app = FastAPI()
 
 Base = declarative_base()
