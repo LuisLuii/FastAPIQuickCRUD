@@ -1,5 +1,7 @@
+import urllib
 from abc import ABC, abstractmethod
 from http import HTTPStatus
+from urllib.parse import urlencode
 
 from pydantic import parse_obj_as
 from starlette.responses import Response, RedirectResponse
@@ -173,6 +175,7 @@ class SQLALchemyResultParse(ResultParseABC):
         redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
         redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
         redirect_url_exist = False
+        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in  fastapi_request.headers.__dict__['_list']}
         for route in fastapi_request.app.routes:
             if route.path == redirect_end_point:
                 route_request_method, = route.methods
@@ -185,6 +188,7 @@ class SQLALchemyResultParse(ResultParseABC):
                                         f' with GET method not found')
         # FIXME support auth
         await self.commit(kwargs.get('session'))
+        redirect_url += f'?{urlencode(header_dict)}'
         return RedirectResponse(redirect_url,
-                                status_code=HTTPStatus.SEE_OTHER,
+                                status_code=HTTPStatus.SEE_OTHER
                                 )

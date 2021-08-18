@@ -67,6 +67,7 @@ def crud_router_builder(
 
         @api.get(path, status_code=200, response_model=_response_model, dependencies=dependencies)
         async def get_one_by_primary_key(response: Response,
+                                         request: Request,
                                          url_param: _request_url_param_model = Depends(),
                                          query=Depends(_request_query_model),
                                          session=Depends(db_session)):

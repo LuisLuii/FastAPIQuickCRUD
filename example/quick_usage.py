@@ -88,7 +88,8 @@ upsert_many_router = crud_router_builder(db_session=get_transaction_session,
                                          tags=["test"]
                                          )
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
-                                               crud_methods=[
+                                               crud_methods=[                                                    # CrudRouter.FIND_ONE,
+                                                   CrudRouter.FIND_ONE,
                                                    CrudRouter.POST_REDIRECT_GET
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
@@ -103,7 +104,6 @@ post_redirect_get_router = crud_router_builder(db_session=get_transaction_sessio
 example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                 crud_methods=[
                                                     CrudRouter.FIND_MANY,
-                                                    # CrudRouter.FIND_ONE,
                                                     CrudRouter.UPSERT_ONE,
                                                     CrudRouter.UPDATE_MANY,
                                                     CrudRouter.UPDATE_ONE,
