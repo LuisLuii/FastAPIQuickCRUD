@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import \
     Any, \
@@ -26,20 +27,206 @@ CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
 OnConflictModelType = TypeVar("OnConflictModelType", bound=BaseModel)
 
 
+class ResultParseABC(ABC):
+
+    @abstractmethod
+    def find_one(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def find_many(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_one(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_many(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def patch_one(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def patch_many(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def upsert_one(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def upsert_many(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_one(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_many(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def post_redirect_get(self):
+        raise NotImplementedError
+
+
+class SQLALchemyResultParse(ResultParseABC):
+
+    def __init__(self, async_model, crud_models, autocommit):
+        self.async_mode = async_model
+        self.crud_models = crud_models
+        self.primary_name = crud_models.PRIMARY_KEY_NAME
+        self.autocommit = autocommit
+
+    async def commit(self, session):
+        if self.autocommit:
+            await session.commit() if self.async_mode else session.commit()
+
+    async def find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        one_row_data = sql_execute_result.one_or_none()
+        if one_row_data:
+            result = parse_obj_as(response_model, one_row_data[0])
+            fastapi_response.headers["x-total-count"] = str(1)
+        else:
+            result = Response(status_code=HTTPStatus.NO_CONTENT)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        result_list = [i for i in sql_execute_result.scalars()]
+        result = parse_obj_as(response_model, result_list)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+
+        try:
+            query_result = next(query_result)
+        except StopIteration:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
+
+        fastapi_response.headers["x-total-count"] = str(1)
+        result = parse_obj_as(response_model, query_result)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        result_list = []
+        for result in query_result:
+            result_list.append(result)
+        else:
+            if not result_list:
+                return Response(status_code=HTTPStatus.NO_CONTENT)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        result = parse_obj_as(response_model, result_list)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        try:
+            query_result = next(query_result)
+        except StopIteration:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
+        fastapi_response.headers["x-total-count"] = str(1)
+        result = parse_obj_as(response_model, query_result)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        result_list = []
+        for result in query_result:
+            result_list.append(result)
+        if not result_list:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        result = parse_obj_as(response_model, result_list)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        result = parse_obj_as(response_model, sql_execute_result)
+        fastapi_response.headers["x-total-count"] = str(1)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        insert_result_list = sql_execute_result.fetchall()
+        result = parse_obj_as(response_model, insert_result_list)
+        fastapi_response.headers["x-total-count"] = str(len(insert_result_list))
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        if sql_execute_result.rowcount:
+            result, = [parse_obj_as(response_model, {self.primary_name: i}) for i in sql_execute_result.scalars()]
+            fastapi_response.headers["x-total-count"] = str(1)
+        else:
+            result = Response(status_code=HTTPStatus.NO_CONTENT)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+
+        if sql_execute_result.rowcount:
+            result_list = [{self.primary_name: i} for i in sql_execute_result.scalars()]
+            result = parse_obj_as(response_model, result_list)
+            fastapi_response.headers["x-total-count"] = str(len(result_list))
+        else:
+            result = Response(status_code=HTTPStatus.NO_CONTENT)
+        await self.commit(kwargs.get('session'))
+        return result
+
+    async def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        session = kwargs['session']
+        result = parse_obj_as(response_model, sql_execute_result)
+        primary_key_field = result.__dict__.pop(self.primary_name, None)
+        assert primary_key_field is not None
+        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+        redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
+        redirect_url_exist = False
+        for route in fastapi_request.app.routes:
+            if route.path == redirect_end_point:
+                route_request_method, = route.methods
+                if route_request_method.upper() == 'GET':
+                    redirect_url_exist = True
+        if not redirect_url_exist:
+            await session.rollback() if self.async_mode else session.rollback()
+            raise FindOneApiNotRegister(404,
+                                        f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
+                                        f' with GET method not found')
+        # FIXME support auth
+        await self.commit(kwargs.get('session'))
+        return RedirectResponse(redirect_url,
+                                status_code=HTTPStatus.SEE_OTHER,
+                                )
+
+
 def crud_router_builder(
         *,
         db_session,
         crud_service: CrudService,
         crud_models: CRUDModel,
-        # db_model: Any,
         dependencies: List[callable] = None,
         async_mode=False,
+        autocommit=True,
         **router_kwargs: Any) -> APIRouter:
     """
 
     :param db_session: db_session
     :param crud_service:
     :param crud_models:
+    :param dependencies:
+    :param async_mode:
+    :param autocommit:
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
@@ -54,6 +241,9 @@ def crud_router_builder(
     unique_list: List[str] = crud_models.UNIQUE_LIST
 
     dependencies = [Depends(dep) for dep in dependencies]
+    result_parser = SQLALchemyResultParse(async_model=async_mode,
+                                          crud_models=crud_models,
+                                          autocommit=autocommit)
     router = APIRouter()
 
     def find_one_api(request_response_model: dict, dependencies):
@@ -68,17 +258,12 @@ def crud_router_builder(
                                          session=Depends(db_session)):
             stmt = crud_service.get_one(filter_args=query.__dict__,
                                         extra_args=url_param.__dict__)
-            query_result = session.execute(stmt)
-
-            query_result = await query_result if async_mode else query_result
-            one_row_data = query_result.one_or_none()
-            if one_row_data:
-                result = parse_obj_as(_response_model, one_row_data[0])
-                response.headers["x-total-count"] = str(1)
-            else:
-                result = Response(status_code=HTTPStatus.NO_CONTENT)
-            await session.commit() if async_mode else session.commit()
-            return result
+            _ = session.execute(stmt)
+            query_result = await _ if async_mode else _
+            return await result_parser.find_one(response_model=_response_model,
+                                                sql_execute_result=query_result,
+                                                fastapi_response=response,
+                                                session=session)
 
     def find_many_api(request_response_model: dict, dependencies):
 
@@ -102,11 +287,10 @@ def crud_router_builder(
                 session=session)
             query_result = session.execute(stmt)
             query_result = await query_result if async_mode else query_result
-            result_list = [i for i in query_result.scalars()]
-            result = parse_obj_as(_response_model, result_list)
-            response.headers["x-total-count"] = str(len(result_list))
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.find_many(response_model=_response_model,
+                                                 sql_execute_result=query_result,
+                                                 fastapi_response=response,
+                                                 session=session)
 
     def upsert_one_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -120,8 +304,8 @@ def crud_router_builder(
         ):
             try:
                 stmt = crud_service.upsert(query, unique_list, session)
-                query_result = session.execute(stmt)
-                query_result, = await query_result if async_mode else query_result
+                _ = session.execute(stmt)
+                query_result, = await _ if async_mode else _
 
             except IntegrityError as e:
                 err_msg, = e.orig.args
@@ -129,10 +313,10 @@ def crud_router_builder(
                     raise e
                 result = Response(status_code=HTTPStatus.CONFLICT)
                 return result
-            result = parse_obj_as(_response_model, query_result)
-            response.headers["x-total-count"] = str(1)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.upsert_one(response_model=_response_model,
+                                                  sql_execute_result=query_result,
+                                                  fastapi_response=response,
+                                                  session=session)
 
     def upsert_many_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -155,12 +339,11 @@ def crud_router_builder(
                     raise e
                 result = Response(status_code=HTTPStatus.CONFLICT)
                 return result
-            insert_result_list = query_result.fetchall()
-            req = parse_obj_as(_response_model, insert_result_list)
-            response.headers["x-total-count"] = str(len(insert_result_list))
 
-            await session.commit() if async_mode else session.commit()
-            return req
+            return await result_parser.upsert_many(response_model=_response_model,
+                                                   sql_execute_result=query_result,
+                                                   fastapi_response=response,
+                                                   session=session)
 
     def delete_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -172,25 +355,17 @@ def crud_router_builder(
                                             query=Depends(_request_query_model),
                                             request_url_param_model=Depends(_request_url_model),
                                             session=Depends(db_session)):
-
-            # query_result: CursorResult = crud_service.delete(primary_key=request_url_param_model.__dict__,
             stmt = crud_service.delete(primary_key=request_url_param_model.__dict__,
                                        delete_args=query.__dict__,
                                        session=session)
 
             query_result = session.execute(stmt)
-            # if Sqlalchemy
             session.expire_all()
             query_result = await query_result if async_mode else query_result
-
-            if query_result.rowcount:
-                result, = [parse_obj_as(_response_model, {primary_name: i}) for i in query_result.scalars()]
-                response.headers["x-total-count"] = str(1)
-            else:
-                result = Response(status_code=HTTPStatus.NO_CONTENT)
-
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.delete_one(response_model=_response_model,
+                                                  sql_execute_result=query_result,
+                                                  fastapi_response=response,
+                                                  session=session)
 
     def delete_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -201,7 +376,6 @@ def crud_router_builder(
         async def delete_many_by_query(response: Response,
                                        query=Depends(_request_query_model),
                                        session=Depends(db_session)):
-
             # query_result: CursorResult = crud_service.delete(
             stmt = crud_service.delete(
                 delete_args=query.__dict__,
@@ -212,15 +386,10 @@ def crud_router_builder(
             session.expire_all()
             query_result = await query_result if async_mode else query_result
 
-            if query_result.rowcount:
-                # result = [parse_obj_as(_response_model, {primary_name: i}) for i in query_result.scalars()]
-                result_list = [{primary_name: i} for i in query_result.scalars()]
-                result = parse_obj_as(_response_model, result_list)
-                response.headers["x-total-count"] = str(len(result_list))
-            else:
-                result = Response(status_code=HTTPStatus.NO_CONTENT)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.delete_many(response_model=_response_model,
+                                                   sql_execute_result=query_result,
+                                                   fastapi_response=response,
+                                                   session=session)
 
     def post_redirect_get_api(request_response_model: dict, dependencies):
 
@@ -236,8 +405,8 @@ def crud_router_builder(
 
             try:
                 stmt = crud_service.insert_one(insert_args.__dict__, session)
-                query_result = session.execute(stmt)
-                query_result_, = await query_result if async_mode else query_result
+                _ = session.execute(stmt)
+                query_result, = await _ if async_mode else _
 
             except IntegrityError as e:
                 err_msg, = e.orig.args
@@ -245,28 +414,11 @@ def crud_router_builder(
                     raise e
                 result = Response(status_code=HTTPStatus.CONFLICT)
                 return result
-            result = parse_obj_as(_response_model, query_result_)
 
-            primary_key_field = result.__dict__.pop(primary_name, None)
-            assert primary_key_field is not None
-            redirect_url = request.url.path + "/" + str(primary_key_field)
-            redirect_url_exist = False
-            redirect_end_point = request.url.path + "/{" + primary_name + "}"
-            for route in request.app.routes:
-                if route.path == redirect_end_point:
-                    route_request_method, = route.methods
-                    if route_request_method.upper() == 'GET':
-                        redirect_url_exist = True
-            if not redirect_url_exist:
-                raise FindOneApiNotRegister(404,
-                                            f'EndPoint {request.url.path}/{ {primary_name} }  with GET method not found')
-            # FIXME support auth
-            result = RedirectResponse(redirect_url,
-                                      status_code=HTTPStatus.SEE_OTHER,
-                                      # headers=request.headers
-                                      )
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.post_redirect_get(response_model=_response_model,
+                                                         sql_execute_result=query_result,
+                                                         fastapi_request=request,
+                                                         session=session)
 
     def patch_one_api(request_response_model: dict, dependencies):
 
@@ -280,6 +432,7 @@ def crud_router_builder(
                    response_model=Union[_response_model],
                    dependencies=dependencies)
         async def partial_update_one_by_primary_key(
+                response: Response,
                 primary_key: _request_url_param_model = Depends(),
                 patch_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
@@ -291,19 +444,13 @@ def crud_router_builder(
                                        session=session)
 
             query_result = session.execute(stmt)
-            # if SQLALchemy
             session.expire_all()
             query_result = await query_result if async_mode else query_result
-            query_result = query_result.__iter__()
 
-            try:
-                query_result = next(query_result)
-            except StopIteration:
-                return Response(status_code=HTTPStatus.NO_CONTENT)
-
-            result = parse_obj_as(_response_model, query_result)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.patch_one(response_model=_response_model,
+                                                 sql_execute_result=query_result,
+                                                 fastapi_response=response,
+                                                 session=session)
 
     def patch_many_api(request_response_model: dict, dependencies):
 
@@ -317,9 +464,10 @@ def crud_router_builder(
                    response_model=_response_model,
                    dependencies=dependencies)
         async def partial_update_many_by_query(
+                response: Response,
                 patch_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
-                session=Depends(db_session),
+                session=Depends(db_session)
         ):
             stmt = crud_service.update(update_args=patch_data.__dict__,
                                        extra_query=extra_query.__dict__,
@@ -329,17 +477,11 @@ def crud_router_builder(
             # if SQLALchemy
             session.expire_all()
             query_result = await query_result if async_mode else query_result
-            query_result = query_result.__iter__()
 
-            result_list = []
-            for result in query_result:
-                result_list.append(result)
-            if not result_list:
-                return Response(status_code=HTTPStatus.NO_CONTENT)
-
-            result = parse_obj_as(_response_model, result_list)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.patch_many(response_model=_response_model,
+                                                  sql_execute_result=query_result,
+                                                  fastapi_response=response,
+                                                  session=session)
 
     def put_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -349,30 +491,25 @@ def crud_router_builder(
 
         @api.put(path, status_code=200, response_model=_response_model, dependencies=dependencies)
         async def entire_update_by_primary_key(
+                response:Response,
                 primary_key: _request_url_param_model = Depends(),
                 update_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
         ):
-
             stmt = crud_service.update(primary_key=primary_key.__dict__,
-                                               update_args=update_data.__dict__,
-                                               extra_query=extra_query.__dict__,
-                                               session=session)
+                                       update_args=update_data.__dict__,
+                                       extra_query=extra_query.__dict__,
+                                       session=session)
             query_result = session.execute(stmt)
             # if SQLALchemy
             session.expire_all()
             query_result = await query_result if async_mode else query_result
-            query_result = query_result.__iter__()
 
-            try:
-                query_result = next(query_result)
-            except StopIteration:
-                return Response(status_code=HTTPStatus.NO_CONTENT)
-
-            result = parse_obj_as(_response_model, query_result)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.update_one(response_model=_response_model,
+                                                  sql_execute_result=query_result,
+                                                  fastapi_response=response,
+                                                  session=session)
 
     def put_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -382,32 +519,24 @@ def crud_router_builder(
 
         @api.put("", status_code=200, response_model=_response_model, dependencies=dependencies)
         async def entire_update_many_by_query(
+                response: Response,
                 update_data: _request_body_model = Depends(),
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
         ):
-
             stmt = crud_service.update(update_args=update_data.__dict__,
-                                               extra_query=extra_query.__dict__,
-                                               session=session)
-
+                                       extra_query=extra_query.__dict__,
+                                       session=session)
 
             query_result = session.execute(stmt)
             # if SQLALchemy
             session.expire_all()
             query_result = await query_result if async_mode else query_result
-            query_result = query_result.__iter__()
 
-            result_list = []
-            for result in query_result:
-                result_list.append(result)
-            else:
-                if not result_list:
-                    return Response(status_code=HTTPStatus.NO_CONTENT)
-
-            result = parse_obj_as(_response_model, result_list)
-            await session.commit() if async_mode else session.commit()
-            return result
+            return await result_parser.update_many(response_model=_response_model,
+                                                   sql_execute_result=query_result,
+                                                   fastapi_response=response,
+                                                   session=session)
 
     api_register = {
         CrudMethods.FIND_ONE.value: find_one_api,

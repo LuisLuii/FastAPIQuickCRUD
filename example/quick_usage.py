@@ -18,19 +18,23 @@ metadata = Base.metadata
 
 engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-sync_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+sync_session = sessionmaker(autocommit=True, autoflush=False, bind=engine)
 
 
 def get_transaction_session():
     try:
         db = sync_session()
         yield db
+        # db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
     finally:
         db.close()
 
 
 class ExampleTable(Base):
-    __tablename__ = 'example_table'
+    __tablename__ = 'untitled_table_256'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
@@ -99,7 +103,7 @@ post_redirect_get_router = crud_router_builder(db_session=get_transaction_sessio
 example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                 crud_methods=[
                                                     CrudRouter.FIND_MANY,
-                                                    CrudRouter.FIND_ONE,
+                                                    # CrudRouter.FIND_ONE,
                                                     CrudRouter.UPSERT_ONE,
                                                     CrudRouter.UPDATE_MANY,
                                                     CrudRouter.UPDATE_ONE,
@@ -112,12 +116,15 @@ example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                 exclude_columns=['array_str__value', 'bytea_value', 'xml_value',
                                                                  'box_valaue'])
 
+UntitledTable256_service = CrudService(model=ExampleTable)
 example_table_full_router = crud_router_builder(db_session=get_transaction_session,
                                                 crud_service=UntitledTable256_service,
                                                 crud_models=example_table_full_api,
                                                 dependencies=[],
+                                                # db_model=ExampleTable,
                                                 prefix="/test_CRUD",
-                                                tags=["test"]
+                                                tags=["test"],
+                                                autocommit=True
                                                 )
 
 ExampleTable.__table__.create(engine, checkfirst=True)

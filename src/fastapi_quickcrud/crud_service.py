@@ -22,6 +22,8 @@ class CrudService:
             *,
             model,
     ):
+        print(type(model))
+
         self.model = model
 
     def insert_one(self,
