@@ -34,7 +34,7 @@ def get_transaction_session():
 
 
 class ExampleTable(Base):
-    __tablename__ = 'untitled_table_256'
+    __tablename__ = 'example_table'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )

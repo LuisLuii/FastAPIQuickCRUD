@@ -1,11 +1,15 @@
+import uuid
 import warnings
 from copy import deepcopy
 from dataclasses import make_dataclass, field
+from typing import Optional
 from typing import Type, Dict, List, Tuple, TypeVar, NewType, Union
 
 import pydantic
+from fastapi import Body, Query
 from pydantic import BaseModel, create_model, root_validator, BaseConfig
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
 
@@ -14,13 +18,7 @@ from .exceptions import MultipleSingleUniqueNotSupportedException, \
     CompositePrimaryKeyConstraintNotSupportedException, \
     MultiplePrimaryKeyNotSupportedException, \
     ColumnTypeNotSupportedException, \
-    UnknownError, PrimaryMissing
-import uuid
-from typing import Optional
-
-from fastapi import Body, Query
-from sqlalchemy import UniqueConstraint
-
+    UnknownError
 from .type import MatchingPatternInString, \
     RangeFromComparisonOperators, \
     Ordering, \
@@ -240,79 +238,70 @@ class ApiParameterSchemaBuilder:
                 if isinstance(constraints, PrimaryKeyConstraint):
                     raise CompositePrimaryKeyConstraintNotSupportedException(
                         'Primary Key Constraint not supported')
-
         mapper = inspect(self.__db_model)
-        for attr in mapper.attrs:
-            if isinstance(attr, ColumnProperty):
-                if attr.columns:
-                    column, = attr.columns
-                    if column.primary_key:
-                        if not primary:
-                            column_type = str(column.type)
-                            try:
-                                python_type = column.type.python_type
-                                if column_type in self.unsupported_data_types:
-                                    raise ColumnTypeNotSupportedException(
-                                        f'The type of column {attr.key} ({column_type}) not supported yet')
-                                if column_type in self.partial_supported_data_types:
-                                    warnings.warn(
-                                        f'The type of column {attr.key} ({column_type}) '
-                                        f'is not support data query (as a query parameters )')
+        primary_list = self.__db_model.__table__.primary_key.columns.values()
+        if len(primary_list) > 1: raise MultiplePrimaryKeyNotSupportedException(
+            f'multiple primary key not supported; {str(mapper.mapped_table)} ')
+        primary_key_column, = primary_list
+        column_type = str(primary_key_column.type)
+        try:
+            python_type = primary_key_column.type.python_type
+            if column_type in self.unsupported_data_types:
+                raise ColumnTypeNotSupportedException(
+                    f'The type of column {primary_key_column.key} ({column_type}) not supported yet')
+            if column_type in self.partial_supported_data_types:
+                warnings.warn(
+                    f'The type of column {primary_key_column.key} ({column_type}) '
+                    f'is not support data query (as a query parameters )')
 
-                            except NotImplementedError:
-                                if column_type == "UUID":
-                                    python_type = uuid.UUID
-                                else:
-                                    raise ColumnTypeNotSupportedException(
-                                        f'The type of column {attr.key} ({column_type}) not supported yet')
-                            # handle if python type is UUID
-                            if python_type.__name__ in ['str',
-                                                        'int',
-                                                        'float',
-                                                        'Decimal',
-                                                        'UUID',
-                                                        'bool',
-                                                        'date',
-                                                        'time',
-                                                        'datetime']:
-                                column_type = python_type
-                            else:
-                                raise ColumnTypeNotSupportedException(
-                                    f'The type of column {attr.key} ({column_type}) not supported yet')
+        except NotImplementedError:
+            if column_type == "UUID":
+                python_type = uuid.UUID
+            else:
+                raise ColumnTypeNotSupportedException(
+                    f'The type of column {primary_key_column.key} ({column_type}) not supported yet')
+        # handle if python type is UUID
+        if python_type.__name__ in ['str',
+                                    'int',
+                                    'float',
+                                    'Decimal',
+                                    'UUID',
+                                    'bool',
+                                    'date',
+                                    'time',
+                                    'datetime']:
+            column_type = python_type
+        else:
+            raise ColumnTypeNotSupportedException(
+                f'The type of column {primary_key_column.key} ({column_type}) not supported yet')
 
-                            default = self._extra_default_value(column)
-                            if default is ...:
-                                warnings.warn(
-                                    f'The column of {attr.key} has not default value '
-                                    f'and it is not nullable but in exclude_list'
-                                    f'it may throw error when you write data through Fast-qucikcrud greated API')
-                            if attr.key in self._exclude_column:
-                                continue
-                            column_name = attr.key
-                            if column_name in self.alias_mapper:
-                                primary_column_name = self.alias_mapper[column_name]
-                            else:
-                                primary_column_name = attr.key
-                            primary_field_definitions = (primary_column_name, column_type, default)
+        default = self._extra_default_value(primary_key_column)
+        if default is ...:
+            warnings.warn(
+                f'The column of {primary_key_column.key} has not default value '
+                f'and it is not nullable but in exclude_list'
+                f'it may throw error when you write data through Fast-qucikcrud greated API')
+        column_name = primary_key_column.key
+        if column_name in self.alias_mapper:
+            primary_column_name = self.alias_mapper[column_name]
+        else:
+            primary_column_name = primary_key_column.key
+        primary_field_definitions = (primary_column_name, column_type, default)
 
-                            primary_columns_model = make_dataclass('PrimaryKeyModel',
-                                                                   [(primary_field_definitions[0],
-                                                                     primary_field_definitions[1],
-                                                                     Query(primary_field_definitions[2]))],
-                                                                   namespace={
-                                                                       '__post_init__': lambda
-                                                                           self_object: self._value_of_list_to_str(
-                                                                           self_object,
-                                                                           self.uuid_type_columns)
-                                                                   })
-                            primary = True
-                        else:
-                            raise MultiplePrimaryKeyNotSupportedException(
-                                f'multiple primary key not supported; {str(mapper.mapped_table)} ')
-        if not primary_column_name:
-            raise PrimaryMissing("Primary key is required")
+        primary_columns_model = make_dataclass('PrimaryKeyModel',
+                                               [(primary_field_definitions[0],
+                                                 primary_field_definitions[1],
+                                                 Query(primary_field_definitions[2]))],
+                                               namespace={
+                                                   '__post_init__': lambda
+                                                       self_object: self._value_of_list_to_str(
+                                                       self_object,
+                                                       self.uuid_type_columns)
+                                               })
+
         assert primary_column_name and primary_columns_model and primary_field_definitions
         return primary_column_name, primary_columns_model, primary_field_definitions
+
 
     @staticmethod
     def _value_of_list_to_str(request_or_response_object, columns):
@@ -346,26 +335,29 @@ class ApiParameterSchemaBuilder:
                                 str_value_ = str(value_)
                             setattr(request_or_response_object, received_column_name, str_value_)
 
+
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
         return '''<br >Composite string field matching pattern<h5/> 
-               <br /> Allow to select more than one pattern for string query
-               <br /> <a> https://www.postgresql.org/docs/9.3/functions-matching.html <a/>'''
+                   <br /> Allow to select more than one pattern for string query
+                   <br /> <a> https://www.postgresql.org/docs/9.3/functions-matching.html <a/>'''
+
 
     @staticmethod
     def _get_many_order_by_columns_description_builder(all_columns, regex_validation, primary_name):
         return f'''<br> support column: 
-        <br> {all_columns} <hr><br> support ordering:  
-        <br> {list(map(str, Ordering))} 
-        <hr> 
-        <br> field input validation regex
-        <br> {regex_validation}
-        <hr> 
-        <br />example: 
-        <br />&emsp;&emsp;{primary_name}:ASC
-        <br />&emsp;&emsp;{primary_name}: DESC 
-        <br />&emsp;&emsp;{primary_name}    :    DESC
-        <br />&emsp;&emsp;{primary_name} (default sort by ASC)'''
+            <br> {all_columns} <hr><br> support ordering:  
+            <br> {list(map(str, Ordering))} 
+            <hr> 
+            <br> field input validation regex
+            <br> {regex_validation}
+            <hr> 
+            <br />example: 
+            <br />&emsp;&emsp;{primary_name}:ASC
+            <br />&emsp;&emsp;{primary_name}: DESC 
+            <br />&emsp;&emsp;{primary_name}    :    DESC
+            <br />&emsp;&emsp;{primary_name} (default sort by ASC)'''
+
 
     @staticmethod
     def _extra_default_value(column):
@@ -384,6 +376,7 @@ class ApiParameterSchemaBuilder:
             else:
                 default = None
         return default
+
 
     def _extract_all_field(self) -> List[dict]:
         fields: List[dict] = []
@@ -462,6 +455,7 @@ class ApiParameterSchemaBuilder:
                                        'column_default': default})
         return fields
 
+
     @staticmethod
     def _assign_str_matching_pattern(field_of_param: dict, result_: List[dict]) -> List[dict]:
         for i in [
@@ -474,6 +468,7 @@ class ApiParameterSchemaBuilder:
         ]:
             result_.append(i)
         return result_
+
 
     @staticmethod
     def _assign_list_comparison(field_of_param, result_: List[dict]) -> List[dict]:
@@ -490,6 +485,7 @@ class ApiParameterSchemaBuilder:
         ]:
             result_.append(i)
         return result_
+
 
     @staticmethod
     def _assign_range_comparison(field_of_param, result_: List[dict]) -> List[dict]:
@@ -519,8 +515,8 @@ class ApiParameterSchemaBuilder:
             result_.append(i)
         return result_
 
-    def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
 
+    def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
         if not exclude_column:
             exclude_column = []
         fields_: dict = deepcopy(self.all_field)
@@ -544,6 +540,7 @@ class ApiParameterSchemaBuilder:
 
         return result
 
+
     def _assign_pagination_param(self, result_: List[dict]) -> List[dict]:
         all_column_ = [i['column_name'] for i in self.all_field]
 
@@ -563,6 +560,7 @@ class ApiParameterSchemaBuilder:
         ]:
             result_.append(i)
         return result_
+
 
     def upsert_one(self) -> Tuple:
         request_validation = [lambda self_object: _filter_none(self_object)]
@@ -614,8 +612,8 @@ class ApiParameterSchemaBuilder:
 
         return None, request_body_model, response_model
 
-    def upsert_many(self) -> Tuple:
 
+    def upsert_many(self) -> Tuple:
         insert_fields = []
         response_fields = []
 
@@ -694,8 +692,8 @@ class ApiParameterSchemaBuilder:
 
         return None, request_body_model, response_model
 
-    def find_many(self) -> Tuple:
 
+    def find_many(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param()
         query_param: List[dict] = self._assign_pagination_param(query_param)
 
@@ -744,8 +742,8 @@ class ApiParameterSchemaBuilder:
 
         return request_query_model, None, response_model
 
-    def find_one(self) -> Tuple:
 
+    def find_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
 
         response_fields = []
@@ -791,8 +789,8 @@ class ApiParameterSchemaBuilder:
         response_model = _add_orm_model_config_into_pydantic_model(response_model)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
-    def delete_one(self) -> Tuple:
 
+    def delete_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
         response_fields = []
         all_field = deepcopy(self.all_field)
@@ -837,8 +835,8 @@ class ApiParameterSchemaBuilder:
         response_model = _model_from_dataclass(response_model)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
-    def delete_many(self) -> Tuple:
 
+    def delete_many(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param()
         response_fields = []
         all_field = deepcopy(self.all_field)
@@ -888,6 +886,7 @@ class ApiParameterSchemaBuilder:
         )
 
         return None, request_query_model, None, response_model
+
 
     def patch(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
@@ -949,6 +948,7 @@ class ApiParameterSchemaBuilder:
             response_model = _add_validators(response_model, {"root_validator": validator_function})
 
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
+
 
     def update_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
@@ -1013,6 +1013,7 @@ class ApiParameterSchemaBuilder:
             response_model = _add_validators(response_model, {"root_validator": validator_function})
 
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
+
 
     def update_many(self) -> Tuple:
         '''
@@ -1088,6 +1089,7 @@ class ApiParameterSchemaBuilder:
 
         return None, request_query_model, request_body_model, response_model
 
+
     def patch_many(self) -> Tuple:
         '''
         In update many, it allow you update some columns into the same value in limit of a scope,
@@ -1162,6 +1164,7 @@ class ApiParameterSchemaBuilder:
         )
 
         return None, request_query_model, request_body_model, response_model
+
 
     def post_redirect_get(self) -> Tuple:
         request_validation = [lambda self_object: _filter_none(self_object)]
