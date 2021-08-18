@@ -4,7 +4,7 @@ from http import HTTPStatus
 from pydantic import parse_obj_as
 from starlette.responses import Response, RedirectResponse
 
-from fastapi_quickcrud.misc.exceptions import FindOneApiNotRegister
+from .exceptions import FindOneApiNotRegister
 
 
 class ResultParseABC(ABC):
