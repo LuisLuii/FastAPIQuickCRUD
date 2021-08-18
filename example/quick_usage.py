@@ -18,14 +18,14 @@ metadata = Base.metadata
 
 engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-sync_session = sessionmaker(autocommit=True, autoflush=False, bind=engine)
+sync_session = sessionmaker(autoflush=False, bind=engine)
 
 
 def get_transaction_session():
     try:
         db = sync_session()
         yield db
-        # db.commit()
+        db.commit()
     except Exception as e:
         db.rollback()
         raise e
@@ -124,7 +124,7 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 # db_model=ExampleTable,
                                                 prefix="/test_CRUD",
                                                 tags=["test"],
-                                                autocommit=True
+                                                autocommit=False
                                                 )
 
 ExampleTable.__table__.create(engine, checkfirst=True)

@@ -1,33 +1,35 @@
 import asyncio
-import uuid
-from typing import Optional
+import os
 
-from guid import GUID
-import uvicorn
 from fastapi import FastAPI
-from sqlalchemy import UniqueConstraint
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
-from sqlalchemy.sql.sqltypes import NullType
-import os
-TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL','postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-engine = create_async_engine(TEST_DATABASE_URL, future=True, echo=True,
-                       pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+engine = create_async_engine(TEST_DATABASE_URL,
+                             future=True,
+                             echo=True,
+                             pool_use_lifo=True,
+                             pool_pre_ping=True,
+                             pool_recycle=7200)
+async_session = sessionmaker(autocommit=False,
+                             autoflush=False,
+                             bind=engine,
+                             class_=AsyncSession)
 
 
 async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
-         yield session
-
+        yield session
 
 
 class UntitledTable256(Base):
@@ -65,10 +67,10 @@ class UntitledTable256(Base):
     # box_valaue = Column(NullType)
 
 
-
 async def create_table():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(create_table())
