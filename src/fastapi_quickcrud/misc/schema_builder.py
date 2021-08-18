@@ -615,7 +615,6 @@ class ApiParameterSchemaBuilder:
         return None, request_body_model, response_model
 
     def upsert_many(self) -> Tuple:
-        request_validator_dict = {}
 
         insert_fields = []
         response_fields = []

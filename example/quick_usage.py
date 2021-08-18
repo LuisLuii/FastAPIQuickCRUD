@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
+from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
@@ -15,8 +16,6 @@ app = FastAPI()
 Base = declarative_base()
 metadata = Base.metadata
 
-from sqlalchemy import create_engine
-
 engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
 sync_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -28,7 +27,6 @@ def get_transaction_session():
         yield db
     finally:
         db.close()
-
 
 
 class ExampleTable(Base):
@@ -65,9 +63,6 @@ class ExampleTable(Base):
     array_str__value = Column(ARRAY(String()))
 
 
-
-
-
 UntitledTable256_service = CrudService(model=ExampleTable)
 
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
@@ -102,35 +97,29 @@ post_redirect_get_router = crud_router_builder(db_session=get_transaction_sessio
                                                )
 
 example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
-                                               crud_methods=[
-                                                   CrudRouter.FIND_MANY,
-                                                   CrudRouter.FIND_ONE,
-                                                   CrudRouter.UPSERT_ONE,
-                                                   CrudRouter.UPDATE_MANY,
-                                                   CrudRouter.UPDATE_ONE,
-                                                   CrudRouter.DELETE_ONE,
-                                                   CrudRouter.DELETE_MANY,
-                                                   CrudRouter.PATCH_MANY,
-                                                   CrudRouter.PATCH_ONE,
+                                                crud_methods=[
+                                                    CrudRouter.FIND_MANY,
+                                                    CrudRouter.FIND_ONE,
+                                                    CrudRouter.UPSERT_ONE,
+                                                    CrudRouter.UPDATE_MANY,
+                                                    CrudRouter.UPDATE_ONE,
+                                                    CrudRouter.DELETE_ONE,
+                                                    CrudRouter.DELETE_MANY,
+                                                    CrudRouter.PATCH_MANY,
+                                                    CrudRouter.PATCH_ONE,
 
-                                               ],
-                                               exclude_columns=['array_str__value','bytea_value', 'xml_value', 'box_valaue'])
-
-
-
+                                                ],
+                                                exclude_columns=['array_str__value', 'bytea_value', 'xml_value',
+                                                                 'box_valaue'])
 
 example_table_full_router = crud_router_builder(db_session=get_transaction_session,
                                                 crud_service=UntitledTable256_service,
                                                 crud_models=example_table_full_api,
-                                                dependencies= [],
+                                                dependencies=[],
                                                 prefix="/test_CRUD",
                                                 tags=["test"]
                                                 )
 
-
-
 ExampleTable.__table__.create(engine, checkfirst=True)
-[app.include_router(i) for i in [example_table_full_router,post_redirect_get_router,upsert_many_router]]
+[app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
 uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
-
-
