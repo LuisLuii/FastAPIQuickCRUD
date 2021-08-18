@@ -2,6 +2,7 @@
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLuisLuii%2FFastAPIQuickCRUD.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLuisLuii%2FFastAPIQuickCRUD?ref=badge_shield)
 
 ---
 
@@ -331,3 +332,7 @@ primary_key = synonym('id')
 - support MYSQL and Sqllite
 - Manually create the model for each CRUD API 
 - Apply the comment of each column into docs
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLuisLuii%2FFastAPIQuickCRUD.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FLuisLuii%2FFastAPIQuickCRUD?ref=badge_large)
