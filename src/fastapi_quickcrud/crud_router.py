@@ -31,6 +31,7 @@ def crud_router_builder(
         db_session,
         crud_service: CrudService,
         crud_models: CRUDModel,
+        # db_model: Any,
         dependencies: List[callable] = None,
         async_mode=False,
         **router_kwargs: Any) -> APIRouter:
@@ -45,6 +46,7 @@ def crud_router_builder(
     if dependencies is None:
         dependencies = []
     api = APIRouter()
+    # crud_service = CrudService(model=db_model)
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
 
@@ -64,9 +66,10 @@ def crud_router_builder(
                                          url_param: _request_url_param_model = Depends(),
                                          query=Depends(_request_query_model),
                                          session=Depends(db_session)):
-            query_result = crud_service.get_one(filter_args=query.__dict__,
-                                                extra_args=url_param.__dict__,
-                                                session=session)
+            stmt = crud_service.get_one(filter_args=query.__dict__,
+                                        extra_args=url_param.__dict__)
+            query_result = session.execute(stmt)
+
             query_result = await query_result if async_mode else query_result
             one_row_data = query_result.one_or_none()
             if one_row_data:
@@ -92,13 +95,12 @@ def crud_router_builder(
             limit = query_dict.pop('limit', None)
             offset = query_dict.pop('offset', None)
             order_by_columns = query_dict.pop('order_by_columns', None)
-            query_result = crud_service.get_many(
-                # query_result: ChunkedIteratorResult = crud_service.get_many(
+            stmt = crud_service.get_many(
                 filter_args=query_dict,
                 limit=limit,
                 offset=offset, order_by_columns=order_by_columns,
                 session=session)
-
+            query_result = session.execute(stmt)
             query_result = await query_result if async_mode else query_result
             result_list = [i for i in query_result.scalars()]
             result = parse_obj_as(_response_model, result_list)
@@ -117,7 +119,8 @@ def crud_router_builder(
                 session=Depends(db_session)
         ):
             try:
-                query_result = crud_service.upsert(query, unique_list, session)
+                stmt = crud_service.upsert(query, unique_list, session)
+                query_result = session.execute(stmt)
                 query_result, = await query_result if async_mode else query_result
 
             except IntegrityError as e:
@@ -143,7 +146,8 @@ def crud_router_builder(
                 session=Depends(db_session)
         ):
             try:
-                query_result = crud_service.upsert(query, unique_list, session, upsert_one=False)
+                stmt = crud_service.upsert(query, unique_list, session, upsert_one=False)
+                query_result = session.execute(stmt)
                 query_result = await query_result if async_mode else query_result
             except IntegrityError as e:
                 err_msg, = e.orig.args
@@ -170,9 +174,13 @@ def crud_router_builder(
                                             session=Depends(db_session)):
 
             # query_result: CursorResult = crud_service.delete(primary_key=request_url_param_model.__dict__,
-            query_result = crud_service.delete(primary_key=request_url_param_model.__dict__,
-                                               delete_args=query.__dict__,
-                                               session=session)
+            stmt = crud_service.delete(primary_key=request_url_param_model.__dict__,
+                                       delete_args=query.__dict__,
+                                       session=session)
+
+            query_result = session.execute(stmt)
+            # if Sqlalchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
 
             if query_result.rowcount:
@@ -195,9 +203,13 @@ def crud_router_builder(
                                        session=Depends(db_session)):
 
             # query_result: CursorResult = crud_service.delete(
-            query_result = crud_service.delete(
+            stmt = crud_service.delete(
                 delete_args=query.__dict__,
                 session=session)
+
+            query_result = session.execute(stmt)
+            # if Sqlalchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
 
             if query_result.rowcount:
@@ -223,7 +235,8 @@ def crud_router_builder(
         ):
 
             try:
-                query_result = crud_service.insert_one(insert_args.__dict__, session)
+                stmt = crud_service.insert_one(insert_args.__dict__, session)
+                query_result = session.execute(stmt)
                 query_result_, = await query_result if async_mode else query_result
 
             except IntegrityError as e:
@@ -272,11 +285,14 @@ def crud_router_builder(
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
         ):
-            # FIXME unify the return
-            query_result = crud_service.update(primary_key=primary_key.__dict__,
-                                               update_args=patch_data.__dict__,
-                                               extra_query=extra_query.__dict__,
-                                               session=session)
+            stmt = crud_service.update(primary_key=primary_key.__dict__,
+                                       update_args=patch_data.__dict__,
+                                       extra_query=extra_query.__dict__,
+                                       session=session)
+
+            query_result = session.execute(stmt)
+            # if SQLALchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
             query_result = query_result.__iter__()
 
@@ -305,9 +321,13 @@ def crud_router_builder(
                 extra_query: _request_query_model = Depends(),
                 session=Depends(db_session),
         ):
-            query_result = crud_service.update(update_args=patch_data.__dict__,
-                                               extra_query=extra_query.__dict__,
-                                               session=session)
+            stmt = crud_service.update(update_args=patch_data.__dict__,
+                                       extra_query=extra_query.__dict__,
+                                       session=session)
+
+            query_result = session.execute(stmt)
+            # if SQLALchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
             query_result = query_result.__iter__()
 
@@ -335,10 +355,13 @@ def crud_router_builder(
                 session=Depends(db_session),
         ):
 
-            query_result = crud_service.update(primary_key=primary_key.__dict__,
+            stmt = crud_service.update(primary_key=primary_key.__dict__,
                                                update_args=update_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+            query_result = session.execute(stmt)
+            # if SQLALchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
             query_result = query_result.__iter__()
 
@@ -364,9 +387,14 @@ def crud_router_builder(
                 session=Depends(db_session),
         ):
 
-            query_result = crud_service.update(update_args=update_data.__dict__,
+            stmt = crud_service.update(update_args=update_data.__dict__,
                                                extra_query=extra_query.__dict__,
                                                session=session)
+
+
+            query_result = session.execute(stmt)
+            # if SQLALchemy
+            session.expire_all()
             query_result = await query_result if async_mode else query_result
             query_result = query_result.__iter__()
 

@@ -31,8 +31,7 @@ class CrudService:
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
         insert_stmt = insert_stmt.returning(text("*"))
-        query_result = session.execute(insert_stmt)
-        return query_result
+        return insert_stmt
 
     def get_many(self,
                  *,
@@ -60,18 +59,12 @@ class CrudService:
                     raise UnknownOrderType(f"Unknown order type {order_by}, oly accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        query_result = session.execute(stmt)
-        return query_result
+        return stmt
 
     def get_one(self,
                 *,
                 extra_args,
-                filter_args,
-                # json_filter_args,
-                # jsonb_filter_args,
-                # array_filter_args,
-                # array_types,
-                session) :
+                filter_args) :
                 # session) -> ChunkedIteratorResult:
 
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
@@ -80,8 +73,7 @@ class CrudService:
         extra_query_expression: List[BinaryExpression] = find_query_builder(param=extra_args,
                                                                             model=self.model)
         stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
-        query_result = session.execute(stmt)
-        return query_result
+        return stmt
 
     def upsert(self,
                insert_arg,
@@ -128,16 +120,14 @@ class CrudService:
         #         raise Exception(f'{conflict_field} is required to input, when you used it in on_conflict_columns')
 
         # FIXME handle by user
-        query_result = session.execute(insert_stmt)
 
-        return query_result
+        return insert_stmt
 
     def delete(self,
                *,
                delete_args,
                session,
                primary_key=None):
-               # primary_key=None) -> CursorResult:
 
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
@@ -149,9 +139,7 @@ class CrudService:
         delete_stmt = delete_stmt.returning(text('*'))
         delete_stmt = delete_stmt.execution_options(synchronize_session=False)
 
-        query_result = session.execute(delete_stmt)
-        session.expire_all()
-        return query_result
+        return delete_stmt
 
     def update(self,
                update_args,
@@ -168,7 +156,5 @@ class CrudService:
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
-        query_result = session.execute(update_stmt)
-        session.expire_all()
-        return query_result
+        return update_stmt
 
