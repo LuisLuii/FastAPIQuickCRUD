@@ -833,6 +833,7 @@ class ApiParameterSchemaBuilder:
                                                                                   response_validation]}
                                         )
         response_model = _model_from_dataclass(response_model)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
 

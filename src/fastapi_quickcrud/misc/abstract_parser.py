@@ -1,4 +1,3 @@
-import urllib
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 from urllib.parse import urlencode
@@ -9,7 +8,7 @@ from starlette.responses import Response, RedirectResponse
 from .exceptions import FindOneApiNotRegister
 
 
-class ResultParseABC(ABC):
+class ResultParserBase(ABC):
 
     @abstractmethod
     def find_one(self):
@@ -56,7 +55,7 @@ class ResultParseABC(ABC):
         raise NotImplementedError
 
 
-class SQLALchemyResultParse(ResultParseABC):
+class SQLALchemyResultParse(ResultParserBase):
 
     def __init__(self, async_model, crud_models, autocommit):
         self.async_mode = async_model
@@ -149,7 +148,8 @@ class SQLALchemyResultParse(ResultParseABC):
 
     async def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         if sql_execute_result.rowcount:
-            result, = [parse_obj_as(response_model, {self.primary_name: i}) for i in sql_execute_result.scalars()]
+            deleted_primary_key_value, = [i for i in sql_execute_result.scalars()]
+            result = parse_obj_as(response_model, {self.primary_name: deleted_primary_key_value})
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response(status_code=HTTPStatus.NO_CONTENT)
@@ -175,7 +175,7 @@ class SQLALchemyResultParse(ResultParseABC):
         redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
         redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
         redirect_url_exist = False
-        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in  fastapi_request.headers.__dict__['_list']}
+        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
         for route in fastapi_request.app.routes:
             if route.path == redirect_end_point:
                 route_request_method, = route.methods
