@@ -73,7 +73,7 @@ class SQLALchemyResultParse(ResultParserBase):
             result = parse_obj_as(response_model, one_row_data[0])
             fastapi_response.headers["x-total-count"] = str(1)
         else:
-            result = Response(status_code=HTTPStatus.NO_CONTENT)
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
         await self.commit(kwargs.get('session'))
         return result
 
@@ -90,7 +90,7 @@ class SQLALchemyResultParse(ResultParserBase):
         try:
             query_result = next(query_result)
         except StopIteration:
-            return Response(status_code=HTTPStatus.NO_CONTENT)
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
 
         fastapi_response.headers["x-total-count"] = str(1)
         result = parse_obj_as(response_model, query_result)
@@ -115,7 +115,7 @@ class SQLALchemyResultParse(ResultParserBase):
         try:
             query_result = next(query_result)
         except StopIteration:
-            return Response(status_code=HTTPStatus.NO_CONTENT)
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
         fastapi_response.headers["x-total-count"] = str(1)
         result = parse_obj_as(response_model, query_result)
         await self.commit(kwargs.get('session'))
@@ -152,7 +152,7 @@ class SQLALchemyResultParse(ResultParserBase):
             result = parse_obj_as(response_model, {self.primary_name: deleted_primary_key_value})
             fastapi_response.headers["x-total-count"] = str(1)
         else:
-            result = Response(status_code=HTTPStatus.NO_CONTENT)
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
         await self.commit(kwargs.get('session'))
         return result
 

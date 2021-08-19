@@ -324,6 +324,30 @@ id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, serve
 primary_key = synonym('id')
 ```
 
+#### FastAPI_quickcrud Response Status Code standard 
+
+
+When you ask for a specific resource, say a user or with query param, and the user doesn't exist
+
+ ```GET: get one : https://0.0.0.0:8080/api/:userid?xx=xx```
+ ```UPDATE: update one : https://0.0.0.0:8080/api/:userid?xx=xx```
+ ```PATCH: patch one : https://0.0.0.0:8080/api/:userid?xx=xx```
+ ```DELETE: delete one : https://0.0.0.0:8080/api/:userid?xx=xx```
+ 
+then fastapi-qucikcrud should return 404. In this case, the client requested a resource that doesn't exist.
+
+----
+
+In the other case, you have an api that operate data on batch in the system using the following url:
+
+ ```GET: get many : https://0.0.0.0:8080/api/user?xx=xx```
+ ```UPDATE: update many : https://0.0.0.0:8080/api/user?xx=xx```
+ ```DELETE: delete many : https://0.0.0.0:8080/api/user?xx=xx```
+ ```PATCH: patch many : https://0.0.0.0:8080/api/user?xx=xx```
+
+If there are no users in the system, then, in this case, you should return 204.
+
+
 ### TODO
 
 - support [databases](https://pypi.org/project/databases/) as db connector -> the next task
