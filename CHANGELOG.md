@@ -8,15 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - 2021-08-19
  
 ### Added
+- User don't need to declare crud_service
 
-- query abstract
-    - Sqlalchemy
+
 
 ### Changed
-- Refactor 
-    - Separate the sql querying
-    - User don't need to declare crud_service
-
+- query abstract
+    - Sqlalchemy
+- route abstract
 ### Fixed
 
 When you ask for a specific resource, say a user or with query param, and the user doesn't exist

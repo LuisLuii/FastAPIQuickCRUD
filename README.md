@@ -105,13 +105,7 @@ pip install fastapi-quickcrud
     from fastapi_quickcrud import sqlalchemy_to_pydantic
     ```
 
-4. register CrudService  
-
-    ```python
-    test_crud_service = CrudService(model=CRUDTest)
-    ```
-
-5. convert the sqlalchemy model to Pydantic model
+4. convert the sqlalchemy model to Pydantic model
 
     ```python
     test_crud_model = sqlalchemy_to_pydantic(db_model = CRUDTest,
@@ -151,11 +145,36 @@ pip install fastapi-quickcrud
 
         - exclude_columns: set the columns that not to be operated but the columns should nullable or set the default value)
 
-6. user CrudRouter to register API
+5. user CrudRouter to register API
+                                            
+    - db_session: `session generator` 
+        - example:
+            - sync SQLALchemy:
+                ```python
+                    def get_transaction_session():
+                        try:
+                            db = sessionmaker(...)
+                            yield db
+                            db.commit()
+                        except Exception as e:
+                            db.rollback()
+                            raise e
+                        finally:
+                            db.close()
+              ```
+            - Async SQLALchemy
+                ```python
+                async def get_transaction_session() -> AsyncSession:
+                    async with async_session() as session:
+                        async with session.begin():
+                            yield session
+                ```
 
-    - db_session: `get_transaction_session`
+    - db_model: `SQLALchemy Declarative Base Class`
 
-    - crud_service: `CrudService`
+    - async_mode: `bool` if your db session is async
+    
+    - autocommit: `bool` if you don't need to commit by your self    
 
     - crud_models: `sqlalchemy_to_pydantic` 
 

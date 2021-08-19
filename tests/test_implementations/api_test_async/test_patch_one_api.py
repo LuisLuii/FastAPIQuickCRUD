@@ -408,3 +408,4 @@ def test_create_one_and_patch_one():
     assert response_data
     for i in update_data:
         assert response_data[i] == update_data[i]
+

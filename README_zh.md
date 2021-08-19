@@ -102,13 +102,7 @@ pip install fastapi-quickcrud
     from fastapi_quickcrud import sqlalchemy_to_pydantic
     ```
 
-4. 聲明 crud service 實例
-
-    ```python
-    test_crud_service = CrudService(model=CRUDTest)
-    ```
-
-5. 轉換Sqlalchemy Schema 去 Pydantic model 以用作API 生成
+4. 轉換Sqlalchemy Schema 去 Pydantic model 以用作API 生成
 
     ```python
     test_crud_model = sqlalchemy_to_pydantic(db_model = CRUDTest,
@@ -148,9 +142,36 @@ pip install fastapi-quickcrud
 
         - exclude_columns: 哪些columns 不想通過自動生成的API進行操作，但如果你生成insert data 相關的api 而該column 又不是nullable 或 有設置default value 便會出現錯誤
     
-6. 使用CrudRouter生成 routes
+5. 使用CrudRouter生成 routes
 
-    - db_session: `get_transaction_session`
+    - db_session: `session 生成器` 
+        - 例子:
+            - sync SQLALchemy:
+                ```python
+                    def get_transaction_session():
+                        try:
+                            db = sessionmaker(...)
+                            yield db
+                            db.commit()
+                        except Exception as e:
+                            db.rollback()
+                            raise e
+                        finally:
+                            db.close()
+              ```
+            - Async SQLALchemy
+                ```python
+                async def get_transaction_session() -> AsyncSession:
+                    async with async_session() as session:
+                        async with session.begin():
+                            yield session
+                ```
+
+    - db_model: `SQLALchemy Declarative Base Class`
+
+    - async_mode: `bool` 如果session 是async
+    
+    - autocommit: `bool`  可以自已控制什麼時侯commit
 
     - crud_service: `CrudService`
 
