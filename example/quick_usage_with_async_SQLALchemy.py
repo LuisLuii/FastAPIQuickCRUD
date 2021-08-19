@@ -6,7 +6,6 @@ from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
-from src.fastapi_quickcrud import CrudService
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 
@@ -62,7 +61,6 @@ class ExampleTable(Base):
     array_str__value = Column(ARRAY(String()))
 
 
-UntitledTable256_service = CrudService(model=ExampleTable)
 
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                crud_methods=[
@@ -77,7 +75,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 upsert_many_router = crud_router_builder(db_session=get_transaction_session,
-                                         crud_service=UntitledTable256_service,
+                                         db_model=ExampleTable,
                                          crud_models=UntitledTable256Model,
                                          prefix="/upsert_many",
                                          async_mode=True,
@@ -90,7 +88,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 post_redirect_get_router = crud_router_builder(db_session=get_transaction_session,
-                                               crud_service=UntitledTable256_service,
+                                               db_model=ExampleTable,
                                                crud_models=UntitledTable256Model,
                                                prefix="/post_redirect_get",
                                                async_mode=True,
@@ -114,7 +112,7 @@ example_table_full_api = sqlalchemy_to_pydantic(ExampleTable,
                                                                  'box_valaue'])
 
 example_table_full_router = crud_router_builder(db_session=get_transaction_session,
-                                                crud_service=UntitledTable256_service,
+                                                db_model=ExampleTable,
                                                 crud_models=example_table_full_api,
                                                 async_mode=True,
                                                 prefix="/test_CRUD",

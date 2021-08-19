@@ -63,41 +63,81 @@ class SQLALchemyResultParse(ResultParserBase):
         self.primary_name = crud_models.PRIMARY_KEY_NAME
         self.autocommit = autocommit
 
-    async def commit(self, session):
+    async def async_commit(self, session):
         if self.autocommit:
-            await session.commit() if self.async_mode else session.commit()
+            await session.commit()
 
-    async def find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def commit(self, session):
+        if self.autocommit:
+            session.commit()
+
+    async def async_rollback(self, session):
+        await session.rollback()
+
+    def rollback(self, session):
+        session.rollback()
+
+    async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         one_row_data = sql_execute_result.one_or_none()
         if one_row_data:
             result = parse_obj_as(response_model, one_row_data[0])
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        one_row_data = sql_execute_result.one_or_none()
+        if one_row_data:
+            result = parse_obj_as(response_model, one_row_data[0])
+            fastapi_response.headers["x-total-count"] = str(1)
+        else:
+            result = Response('specific data not found',status_code=HTTPStatus.NOT_FOUND)
+        self.commit(kwargs.get('session'))
+        return result
+
+    async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         result_list = [i for i in sql_execute_result.scalars()]
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        result_list = [i for i in sql_execute_result.scalars()]
+        result = parse_obj_as(response_model, result_list)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        self.commit(kwargs.get('session'))
+        return result
+
+    async def async_update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         query_result = sql_execute_result.__iter__()
 
         try:
             query_result = next(query_result)
+            fastapi_response.headers["x-total-count"] = str(1)
+            result = parse_obj_as(response_model, query_result)
+            await self.async_commit(kwargs.get('session'))
         except StopIteration:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
 
-        fastapi_response.headers["x-total-count"] = str(1)
-        result = parse_obj_as(response_model, query_result)
-        await self.commit(kwargs.get('session'))
         return result
 
-    async def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+
+        try:
+            query_result = next(query_result)
+            fastapi_response.headers["x-total-count"] = str(1)
+            result = parse_obj_as(response_model, query_result)
+            self.commit(kwargs.get('session'))
+        except StopIteration:
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
+
+        return result
+
+    async def async_update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         query_result = sql_execute_result.__iter__()
         result_list = []
         for result in query_result:
@@ -107,21 +147,47 @@ class SQLALchemyResultParse(ResultParserBase):
                 return Response(status_code=HTTPStatus.NO_CONTENT)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         result = parse_obj_as(response_model, result_list)
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        result_list = []
+        for result in query_result:
+            result_list.append(result)
+        else:
+            if not result_list:
+                return Response(status_code=HTTPStatus.NO_CONTENT)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        result = parse_obj_as(response_model, result_list)
+        self.commit(kwargs.get('session'))
+        return result
+
+    async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         query_result = sql_execute_result.__iter__()
         try:
             query_result = next(query_result)
+            fastapi_response.headers["x-total-count"] = str(1)
+            result = parse_obj_as(response_model, query_result)
+            await self.async_commit(kwargs.get('session'))
         except StopIteration:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
-        fastapi_response.headers["x-total-count"] = str(1)
-        result = parse_obj_as(response_model, query_result)
-        await self.commit(kwargs.get('session'))
+
         return result
 
-    async def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        try:
+            query_result = next(query_result)
+            fastapi_response.headers["x-total-count"] = str(1)
+            result = parse_obj_as(response_model, query_result)
+            self.commit(kwargs.get('session'))
+        except StopIteration:
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
+
+        return result
+
+    async def async_patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         query_result = sql_execute_result.__iter__()
         result_list = []
         for result in query_result:
@@ -130,33 +196,68 @@ class SQLALchemyResultParse(ResultParserBase):
             return Response(status_code=HTTPStatus.NO_CONTENT)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         result = parse_obj_as(response_model, result_list)
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        query_result = sql_execute_result.__iter__()
+        result_list = []
+        for result in query_result:
+            result_list.append(result)
+        if not result_list:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
+        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        result = parse_obj_as(response_model, result_list)
+        self.commit(kwargs.get('session'))
+        return result
+
+    async def async_upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         result = parse_obj_as(response_model, sql_execute_result)
         fastapi_response.headers["x-total-count"] = str(1)
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        result = parse_obj_as(response_model, sql_execute_result)
+        fastapi_response.headers["x-total-count"] = str(1)
+        self.commit(kwargs.get('session'))
+        return result
+
+    async def async_upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         insert_result_list = sql_execute_result.fetchall()
         result = parse_obj_as(response_model, insert_result_list)
         fastapi_response.headers["x-total-count"] = str(len(insert_result_list))
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(kwargs.get('session'))
         return result
 
-    async def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        insert_result_list = sql_execute_result.fetchall()
+        result = parse_obj_as(response_model, insert_result_list)
+        fastapi_response.headers["x-total-count"] = str(len(insert_result_list))
+        self.commit(kwargs.get('session'))
+        return result
+
+    def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         if sql_execute_result.rowcount:
             deleted_primary_key_value, = [i for i in sql_execute_result.scalars()]
             result = parse_obj_as(response_model, {self.primary_name: deleted_primary_key_value})
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
-        await self.commit(kwargs.get('session'))
+        self.commit(kwargs.get('session'))
         return result
 
-    async def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    async def async_delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        if sql_execute_result.rowcount:
+            deleted_primary_key_value, = [i for i in sql_execute_result.scalars()]
+            result = parse_obj_as(response_model, {self.primary_name: deleted_primary_key_value})
+            fastapi_response.headers["x-total-count"] = str(1)
+        else:
+            result = Response(status_code=HTTPStatus.NOT_FOUND)
+        await self.async_commit(kwargs.get('session'))
+        return result
+
+    def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
 
         if sql_execute_result.rowcount:
             result_list = [{self.primary_name: i} for i in sql_execute_result.scalars()]
@@ -164,10 +265,21 @@ class SQLALchemyResultParse(ResultParserBase):
             fastapi_response.headers["x-total-count"] = str(len(result_list))
         else:
             result = Response(status_code=HTTPStatus.NO_CONTENT)
-        await self.commit(kwargs.get('session'))
+        self.commit(kwargs.get('session'))
         return result
 
-    async def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+    async def async_delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+
+        if sql_execute_result.rowcount:
+            result_list = [{self.primary_name: i} for i in sql_execute_result.scalars()]
+            result = parse_obj_as(response_model, result_list)
+            fastapi_response.headers["x-total-count"] = str(len(result_list))
+        else:
+            result = Response(status_code=HTTPStatus.NO_CONTENT)
+        await self.async_commit(kwargs.get('session'))
+        return result
+
+    async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
         session = kwargs['session']
         result = parse_obj_as(response_model, sql_execute_result)
         primary_key_field = result.__dict__.pop(self.primary_name, None)
@@ -182,12 +294,36 @@ class SQLALchemyResultParse(ResultParserBase):
                 if route_request_method.upper() == 'GET':
                     redirect_url_exist = True
         if not redirect_url_exist:
-            await session.rollback() if self.async_mode else session.rollback()
+            await self.async_rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
-        # FIXME support auth
-        await self.commit(kwargs.get('session'))
+        await self.async_commit(session)
+        redirect_url += f'?{urlencode(header_dict)}'
+        return RedirectResponse(redirect_url,
+                                status_code=HTTPStatus.SEE_OTHER
+                                )
+
+    def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        session = kwargs['session']
+        result = parse_obj_as(response_model, sql_execute_result)
+        primary_key_field = result.__dict__.pop(self.primary_name, None)
+        assert primary_key_field is not None
+        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+        redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
+        redirect_url_exist = False
+        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
+        for route in fastapi_request.app.routes:
+            if route.path == redirect_end_point:
+                route_request_method, = route.methods
+                if route_request_method.upper() == 'GET':
+                    redirect_url_exist = True
+        if not redirect_url_exist:
+            self.rollback(session)
+            raise FindOneApiNotRegister(404,
+                                        f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
+                                        f' with GET method not found')
+        self.commit(session)
         redirect_url += f'?{urlencode(header_dict)}'
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
