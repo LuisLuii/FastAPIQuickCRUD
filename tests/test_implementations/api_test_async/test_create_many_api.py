@@ -7,12 +7,10 @@ from starlette.testclient import TestClient
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 
 from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import CrudService
 from src.fastapi_quickcrud import CrudMethods
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations.api_test_async import get_transaction_session, app, UntitledTable256
 
-UntitledTable256_service = CrudService(model=UntitledTable256)
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
@@ -23,7 +21,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 # Create Many API Test
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
-                                       crud_service=UntitledTable256_service,
+                                       db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
                                        async_mode=True,

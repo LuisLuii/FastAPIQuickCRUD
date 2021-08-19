@@ -6,13 +6,11 @@ from datetime import date, timedelta, datetime, timezone
 from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from src.fastapi_quickcrud.crud_router import CrudService
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.api_test_async import get_transaction_session, app, UntitledTable256
 
-UntitledTable256_service = CrudService(model=UntitledTable256)
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
@@ -66,7 +64,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #         print(f"{v.default=}")
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
-                                      crud_service=UntitledTable256_service,
+                                      db_model=UntitledTable256,
                                       crud_models=UntitledTable256Model,
                                       prefix="/test_creation_one",
                                       async_mode=True,
@@ -128,7 +126,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #             print(f"{v.default=}")
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
-                                       crud_service=UntitledTable256_service,
+                                       db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
                                        async_mode=True,
@@ -196,7 +194,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #     assert v.required
 
 test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
-                                                 crud_service=UntitledTable256_service,
+                                                 db_model=UntitledTable256,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
                                                  async_mode=True,
@@ -239,7 +237,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #         print(f"{v.required=}")
 #         print(f"{v.default=}")
 test_get_data = crud_router_builder(db_session=get_transaction_session,
-                                    crud_service=UntitledTable256_service,
+                                    db_model=UntitledTable256,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test",
                                     async_mode=True,
