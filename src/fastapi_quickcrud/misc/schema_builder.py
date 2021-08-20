@@ -41,28 +41,31 @@ def _uuid_to_str(value, values):
 
 def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs):
     validators = kwargs.get('validators',None)
+    config = kwargs.get('config',None)
     field_definitions = {
         name: (field.outer_type_, field.field_info.default)
         for name, field in pydantic_model.__fields__.items()
     }
     return create_model(f'{pydantic_model.__name__}WithValidators',
                         **field_definitions,
-                        __config__=OrmConfig,
+                        __config__=config,
                         __validators__=validators)
 
 
-def _add_validators(model: Type[BaseModelT], validators) -> Type[BaseModelT]:
+def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseModelT]:
     """
     Create a new BaseModel with the exact same fields as `model`
     but making them all optional and no default
     """
+    config = kwargs.get('config',None)
+
     field_definitions = {
         name: (field.outer_type_, field.field_info.default)
         for name, field in model.__fields__.items()
     }
     return create_model(f'{model.__name__}WithValidators',
                         **field_definitions,
-                        __config__=OrmConfig,
+                        __config__=config,
                         __validators__={**validators})
 
 
@@ -83,7 +86,10 @@ def _original_data_to_alias(alias_name_dict):
     def core(_, values):
         for original_name, alias_name in alias_name_dict.items():
             if original_name in values:
-                values[alias_name] = values.pop(original_name)
+                try:
+                    values[alias_name] = values.pop(original_name)
+                except:
+                    print()
         return values
 
     return core
@@ -608,7 +614,8 @@ class ApiParameterSchemaBuilder:
         if self.alias_mapper and response_model:
             validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
             response_model = _add_validators(response_model, {"root_validator": validator_function})
-
+        else:
+            response_model = _add_orm_model_config_into_pydantic_model(response_model)
         return None, request_body_model, response_model
 
 
@@ -731,12 +738,14 @@ class ApiParameterSchemaBuilder:
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
         if self.alias_mapper and response_list_item_model:
             validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-            response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function})
-        response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model)
+            response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function}, config=OrmConfig)
+        else:
+
+            response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model, config=OrmConfig)
 
         response_model = create_model(
             'FindManyResponseListModel',
-            **{'__root__': (List[response_list_item_model], None)}
+            **{'__root__': (List[response_list_item_model], None),'__config__':OrmConfig}
         )
 
         return request_query_model, None, response_model
@@ -784,9 +793,9 @@ class ApiParameterSchemaBuilder:
         response_model = _model_from_dataclass(response_model_dataclass)
         if self.alias_mapper and response_model:
             validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-            response_model = _add_validators(response_model, {"root_validator": validator_function})
+            response_model = _add_validators(response_model, {"root_validator": validator_function}, config=OrmConfig)
         else:
-            response_model = _add_orm_model_config_into_pydantic_model(response_model)
+            response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
 

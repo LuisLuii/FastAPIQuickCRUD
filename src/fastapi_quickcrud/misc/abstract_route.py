@@ -181,7 +181,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                              extra_args=url_param,
                                              request_obj=request,
                                              session=session)
-                query_result = execute_service.get_one(session, stmt)
+                query_result = execute_service.execute(session, stmt)
                 response_result = parsing_service.find_one(response_model=response_model,
                                                            sql_execute_result=query_result,
                                                            fastapi_response=response,
@@ -195,10 +195,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                    query=Depends(request_query_model),
                                                    session=Depends(db_session)):
                 stmt = query_service.get_one(filter_args=query,
-                                                   extra_args=url_param,
-                                                   request_obj=request,
-                                                   session=session)
-                query_result = await execute_service.async_get_one(session, stmt)
+                                             extra_args=url_param,
+                                             request_obj=request,
+                                             session=session)
+                query_result = await execute_service.async_execute(session, stmt)
 
                 response_result = await parsing_service.async_find_one(response_model=response_model,
                                                                        sql_execute_result=query_result,
@@ -210,6 +210,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
     def find_many(self, api, *,
                   query_service,
                   parsing_service,
+                  execute_service,
                   async_mode,
                   path,
                   response_model,
@@ -225,9 +226,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                      session=Depends(
                                          db_session)
                                      ):
-                query_result = await query_service.async_get_many(query=query,
-                                                                  session=session,
-                                                                  request_obj=request)
+                stmt = await query_service.async_get_many(query=query,
+                                                          session=session,
+                                                          request_obj=request)
+
+                query_result = await execute_service.async_execute(session, stmt)
 
                 parsed_response = await parsing_service.async_find_many(response_model=response_model,
                                                                         sql_execute_result=query_result,
@@ -242,14 +245,15 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                          session=Depends(
                              db_session)
                          ):
-                query_result = query_service.get_many(query=query,
-                                                      session=session,
-                                                      request_obj=request)
+                stmt = query_service.get_many(query=query,
+                                              session=session,
+                                              request_obj=request)
+                query_result = execute_service.execute(session, stmt)
 
-                parsed_response = parsing_service.find_manyp(response_model=response_model,
-                                                             sql_execute_result=query_result,
-                                                             fastapi_response=response,
-                                                             session=session)
+                parsed_response = parsing_service.find_many(response_model=response_model,
+                                                            sql_execute_result=query_result,
+                                                            fastapi_response=response,
+                                                            session=session)
                 return parsed_response
 
     @classmethod
@@ -257,6 +261,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                    path,
                    query_service,
                    parsing_service,
+                   execute_service,
                    async_mode,
                    response_model,
                    request_body_model,
@@ -272,17 +277,20 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     query: request_body_model = Depends(request_body_model),
                     session=Depends(db_session)
             ):
+                stmt = await query_service.async_upsert(insert_arg=query,
+                                                        unique_fields=unique_list,
+                                                        session=session,
+                                                        request_obj=request)
+
                 try:
-                    query_result = await query_service.async_upsert(insert_arg=query,
-                                                                    unique_fields=unique_list,
-                                                                    session=session,
-                                                                    request_obj=request)
+                    query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
+
                 return await parsing_service.async_upsert_one(response_model=response_model,
                                                               sql_execute_result=query_result,
                                                               fastapi_response=response,
@@ -296,11 +304,13 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     query: request_body_model = Depends(request_body_model),
                     session=Depends(db_session)
             ):
+
+                stmt = query_service.upsert(insert_arg=query,
+                                            unique_fields=unique_list,
+                                            session=session,
+                                            request_obj=request)
                 try:
-                    query_result = query_service.upsert(insert_arg=query,
-                                                        unique_fields=unique_list,
-                                                        session=session,
-                                                        request_obj=request)
+                    query_result = execute_service.execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
@@ -322,7 +332,8 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     dependencies,
                     request_body_model,
                     db_session,
-                    unique_list):
+                    unique_list,
+                    execute_service):
 
         if async_mode:
             @api.post(path, status_code=201, response_model=response_model, dependencies=dependencies)
@@ -332,19 +343,19 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     query: request_body_model = Depends(request_body_model),
                     session=Depends(db_session)
             ):
+                stmt = query_service.upsert(insert_arg=query,
+                                            unique_fields=unique_list,
+                                            session=session,
+                                            upsert_one=False,
+                                            request_obj=request)
                 try:
-                    query_result = await query_service.upsert(insert_arg=query,
-                                                              unique_fields=unique_list,
-                                                              session=session,
-                                                              upsert_one=False,
-                                                              request_obj=request)
+                    query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-
                 return await parsing_service.async_upsert_many(response_model=response_model,
                                                                sql_execute_result=query_result,
                                                                fastapi_response=response,
@@ -357,28 +368,30 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     query: request_body_model = Depends(request_body_model),
                     session=Depends(db_session)
             ):
+
+                stmt = query_service.upsert(insert_arg=query,
+                                            unique_fields=unique_list,
+                                            session=session,
+                                            upsert_one=False,
+                                            request_obj=request)
                 try:
-                    query_result = query_service.async_upsert(insert_arg=query,
-                                                              unique_fields=unique_list,
-                                                              session=session,
-                                                              upsert_one=False,
-                                                              request_obj=request)
+                    query_result = execute_service.execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-
-                return parsing_service.async_upsert_many(response_model=response_model,
-                                                         sql_execute_result=query_result,
-                                                         fastapi_response=response,
-                                                         session=session)
+                return parsing_service.upsert_many(response_model=response_model,
+                                                   sql_execute_result=query_result,
+                                                   fastapi_response=response,
+                                                   session=session)
 
     @classmethod
     def delete_one(self, api, *,
                    query_service,
                    parsing_service,
+                   execute_service,
                    async_mode,
                    path,
                    response_model,
@@ -394,11 +407,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                       query=Depends(request_query_model),
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
-                query_result = await query_service.async_delete(primary_key=request_url_param_model,
+                stmt = await query_service.async_delete(primary_key=request_url_param_model,
                                                                 delete_args=query,
                                                                 session=session,
                                                                 request_obj=request)
-
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
                                                               sql_execute_result=query_result,
                                                               fastapi_response=response,
@@ -410,10 +423,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                           query=Depends(request_query_model),
                                           request_url_param_model=Depends(request_url_model),
                                           session=Depends(db_session)):
-                query_result = query_service.delete(primary_key=request_url_param_model,
+                stmt = query_service.delete(primary_key=request_url_param_model,
                                                     delete_args=query,
                                                     session=session,
                                                     request_obj=request)
+                query_result = execute_service.execute_and_expire(session, stmt)
 
                 return parsing_service.delete_one(response_model=response_model,
                                                   sql_execute_result=query_result,
@@ -424,6 +438,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
     def delete_many(self, api, *,
                     query_service,
                     parsing_service,
+                    execute_service,
                     async_mode,
                     path,
                     response_model,
@@ -436,10 +451,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                query_result = await  query_service.async_delete(delete_args=query,
-                                                                 session=session,
-                                                                 request_obj=request)
-
+                stmt = await query_service.async_delete(delete_args=query,
+                                                        session=session,
+                                                        request_obj=request)
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_many(response_model=response_model,
                                                                sql_execute_result=query_result,
                                                                fastapi_response=response,
@@ -451,10 +466,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                      request: Request,
                                      query=Depends(request_query_model),
                                      session=Depends(db_session)):
-                query_result = query_service.delete(delete_args=query,
-                                                    session=session,
-                                                    request_obj=request)
-
+                stmt = query_service.delete(delete_args=query,
+                                            session=session,
+                                            request_obj=request)
+                query_result = execute_service.execute_and_expire(session, stmt)
                 return parsing_service.delete_many(response_model=response_model,
                                                    sql_execute_result=query_result,
                                                    fastapi_response=response,
@@ -467,6 +482,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                           db_session,
                           crud_service,
                           result_parser,
+                          execute_service,
                           async_mode,
                           response_model):
         if async_mode:
@@ -476,17 +492,15 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     insert_args: request_body_model = Depends(),
                     session=Depends(db_session),
             ):
-
+                stmt = await crud_service.async_insert_one(insert_args=insert_args, session=session)
                 try:
-                    query_result = await crud_service.async_insert_one(insert_args=insert_args, session=session)
-
+                    query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-
                 return await result_parser.async_post_redirect_get(response_model=response_model,
                                                                    sql_execute_result=query_result,
                                                                    fastapi_request=request,
@@ -499,9 +513,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     session=Depends(db_session),
             ):
 
-                try:
-                    query_result = crud_service.insert_one(insert_args=insert_args, session=session)
+                stmt = crud_service.insert_one(insert_args=insert_args, session=session)
 
+                try:
+                    query_result = execute_service.execute(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
@@ -522,6 +537,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                   request_url_param_model,
                   request_body_model,
                   request_query_model,
+                  execute_service,
                   db_session,
                   crud_service,
                   result_parser,
@@ -538,11 +554,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = await crud_service.async_update(primary_key=primary_key,
+                stmt = await crud_service.async_update(primary_key=primary_key,
                                                                update_args=patch_data,
                                                                extra_query=extra_query,
                                                                session=session)
-
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await result_parser.async_patch_one(response_model=response_model,
                                                            sql_execute_result=query_result,
                                                            fastapi_response=response,
@@ -559,11 +575,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = crud_service.update(primary_key=primary_key,
+                stmt = crud_service.update(primary_key=primary_key,
                                                    update_args=patch_data,
                                                    extra_query=extra_query,
                                                    session=session)
-
+                query_result = execute_service.execute_and_expire(session, stmt)
                 return result_parser.patch_one(response_model=response_model,
                                                sql_execute_result=query_result,
                                                fastapi_response=response,
@@ -579,6 +595,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                    db_session,
                    crud_service,
                    result_parser,
+                   execute_service,
                    async_mode):
         if async_mode:
             @api.patch(path,
@@ -591,9 +608,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session)
             ):
-                query_result = await crud_service.async_update(update_args=patch_data,
+                stmt = await crud_service.async_update(update_args=patch_data,
                                                                extra_query=extra_query,
                                                                session=session)
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
 
                 return await result_parser.async_patch_many(response_model=response_model,
                                                             sql_execute_result=query_result,
@@ -610,10 +628,11 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session)
             ):
-                query_result = crud_service.update(update_args=patch_data,
+                stmt = crud_service.update(update_args=patch_data,
                                                    extra_query=extra_query,
                                                    session=session)
 
+                query_result = execute_service.execute_and_expire(session, stmt)
                 return result_parser.patch_many(response_model=response_model,
                                                 sql_execute_result=query_result,
                                                 fastapi_response=response,
@@ -630,6 +649,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                 db_session,
                 crud_service,
                 result_parser,
+                execute_service,
                 async_mode):
         if async_mode:
             @api.put(path, status_code=200, response_model=response_model, dependencies=dependencies)
@@ -640,11 +660,12 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = await crud_service.async_update(primary_key=primary_key,
+                stmt = await crud_service.async_update(primary_key=primary_key,
                                                                update_args=update_data,
                                                                extra_query=extra_query,
                                                                session=session)
 
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await result_parser.async_update_one(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,
@@ -658,11 +679,12 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = crud_service.update(primary_key=primary_key,
+                stmt = crud_service.update(primary_key=primary_key,
                                                    update_args=update_data,
                                                    extra_query=extra_query,
                                                    session=session)
 
+                query_result = execute_service.execute_and_expire(session, stmt)
                 return result_parser.update_one(response_model=response_model,
                                                 sql_execute_result=query_result,
                                                 fastapi_response=response,
@@ -678,6 +700,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                  db_session,
                  crud_service,
                  result_parser,
+                 execute_service,
                  async_mode):
         if async_mode:
             @api.put(path, status_code=200, response_model=response_model, dependencies=dependencies)
@@ -687,26 +710,28 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = await crud_service.async_update(update_args=update_data,
+                stmt = await crud_service.async_update(update_args=update_data,
                                                                extra_query=extra_query,
                                                                session=session)
 
+                query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await result_parser.async_update_many(response_model=response_model,
                                                              sql_execute_result=query_result,
                                                              fastapi_response=response,
                                                              session=session)
         else:
             @api.put(path, status_code=200, response_model=response_model, dependencies=dependencies)
-            async def entire_update_many_by_query(
+            def entire_update_many_by_query(
                     response: Response,
                     update_data: request_body_model = Depends(),
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                query_result = crud_service.update(update_args=update_data,
+                stmt = crud_service.update(update_args=update_data,
                                                    extra_query=extra_query,
                                                    session=session)
 
+                query_result = execute_service.execute_and_expire(session, stmt)
                 return result_parser.update_many(response_model=response_model,
                                                  sql_execute_result=query_result,
                                                  fastapi_response=response,

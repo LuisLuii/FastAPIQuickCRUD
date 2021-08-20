@@ -14,57 +14,33 @@ from .utils import find_query_builder
 class DBExecuteServiceBase(ABC):
 
     @abstractmethod
-    def insert_one(self):
+    async def async_execute(self):
         raise NotImplementedError
 
     @abstractmethod
-    def get_many(self):
+    def execute(self):
         raise NotImplementedError
-
-    @abstractmethod
-    def get_one(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def upsert(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def update(self):
-        raise NotImplementedError
-
 
 class SQLALchemyExecuteService(DBExecuteServiceBase):
 
     def __init__(self):
         pass
 
-    def insert_one(self):
-        raise NotImplementedError
+    async def async_execute_and_expire(self,session, stmt):
+        result = await session.execute(stmt)
+        session.expire_all()
+        return result
 
-    def get_many(self):
-        raise NotImplementedError
+    def execute_and_expire(self, session, stmt):
+        result = session.execute(stmt)
+        session.expire_all()
+        return result
 
-    def get_one(self, session, stmt):
-        query_result = session.execute(stmt)
-        return query_result
+    async def async_execute(self,session, stmt):
+        return await session.execute(stmt)
 
-    async def async_get_one(self, session, stmt):
-        query_result = await session.execute(stmt)
-        return query_result
-
-    def upsert(self):
-        raise NotImplementedError
-
-    def delete(self):
-        raise NotImplementedError
-
-    def update(self):
-        raise NotImplementedError
+    def execute(self,session, stmt):
+        return session.execute(stmt)
 
 
 class DatabasesExecuteService(DBExecuteServiceBase):

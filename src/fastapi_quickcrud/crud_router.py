@@ -96,6 +96,7 @@ def crud_router_builder(
                                 db_session=db_session,
                                 query_service=crud_service,
                                 parsing_service=result_parser,
+                                execute_service=execute_service,
                                 dependencies=dependencies,
                                 api=api,
                                 async_mode=async_mode)
@@ -109,6 +110,7 @@ def crud_router_builder(
                                  db_session=db_session,
                                  query_service=crud_service,
                                  parsing_service=result_parser,
+                                 execute_service=execute_service,
                                  dependencies=dependencies,
                                  api=api,
                                  async_mode=async_mode,
@@ -124,6 +126,7 @@ def crud_router_builder(
                                   db_session=db_session,
                                   query_service=crud_service,
                                   parsing_service=result_parser,
+                                  execute_service=execute_service,
                                   dependencies=dependencies,
                                   api=api,
                                   unique_list=unique_list,
@@ -141,6 +144,7 @@ def crud_router_builder(
                                  db_session=db_session,
                                  query_service=crud_service,
                                  parsing_service=result_parser,
+                                 execute_service=execute_service,
                                  dependencies=dependencies,
                                  api=api,
                                  async_mode=async_mode)
@@ -156,6 +160,7 @@ def crud_router_builder(
                                   db_session=db_session,
                                   query_service=crud_service,
                                   parsing_service=result_parser,
+                                  execute_service=execute_service,
                                   dependencies=dependencies,
                                   api=api,
                                   async_mode=async_mode)
@@ -171,6 +176,7 @@ def crud_router_builder(
                                         db_session=db_session,
                                         crud_service=crud_service,
                                         result_parser=result_parser,
+                                        execute_service=execute_service,
                                         async_mode=async_mode,
                                         response_model=_response_model)
 
@@ -190,6 +196,7 @@ def crud_router_builder(
                                 db_session=db_session,
                                 crud_service=crud_service,
                                 result_parser=result_parser,
+                                execute_service=execute_service,
                                 async_mode=async_mode,
                                 response_model=_response_model)
 
@@ -208,6 +215,7 @@ def crud_router_builder(
                                  db_session=db_session,
                                  crud_service=crud_service,
                                  result_parser=result_parser,
+                                 execute_service=execute_service,
                                  async_mode=async_mode,
                                  response_model=_response_model)
 
@@ -224,6 +232,7 @@ def crud_router_builder(
                               db_session=db_session,
                               crud_service=crud_service,
                               result_parser=result_parser,
+                              execute_service=execute_service,
                               async_mode=async_mode,
                               response_model=_response_model,
                               request_url_param_model=_request_url_param_model)
@@ -242,6 +251,7 @@ def crud_router_builder(
                                db_session=db_session,
                                crud_service=crud_service,
                                result_parser=result_parser,
+                               execute_service=execute_service,
                                async_mode=async_mode,
                                response_model=_response_model)
 

@@ -80,7 +80,9 @@ class SQLALchemyResultParse(ResultParserBase):
     async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         one_row_data = sql_execute_result.one_or_none()
         if one_row_data:
-            result = parse_obj_as(response_model, one_row_data[0])
+            row, = one_row_data
+            data_dict = row.__dict__
+            result = parse_obj_as(response_model, data_dict)
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
@@ -90,7 +92,9 @@ class SQLALchemyResultParse(ResultParserBase):
     def find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         one_row_data = sql_execute_result.one_or_none()
         if one_row_data:
-            result = parse_obj_as(response_model, one_row_data[0])
+            row, = one_row_data
+            data_dict = row.__dict__
+            result = parse_obj_as(response_model, data_dict)
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response('specific data not found',status_code=HTTPStatus.NOT_FOUND)
@@ -212,12 +216,14 @@ class SQLALchemyResultParse(ResultParserBase):
         return result
 
     async def async_upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        sql_execute_result, = sql_execute_result
         result = parse_obj_as(response_model, sql_execute_result)
         fastapi_response.headers["x-total-count"] = str(1)
         await self.async_commit(kwargs.get('session'))
         return result
 
     def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        sql_execute_result, = sql_execute_result
         result = parse_obj_as(response_model, sql_execute_result)
         fastapi_response.headers["x-total-count"] = str(1)
         self.commit(kwargs.get('session'))
@@ -280,6 +286,7 @@ class SQLALchemyResultParse(ResultParserBase):
         return result
 
     async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        sql_execute_result, = sql_execute_result
         session = kwargs['session']
         result = parse_obj_as(response_model, sql_execute_result)
         primary_key_field = result.__dict__.pop(self.primary_name, None)
@@ -305,6 +312,7 @@ class SQLALchemyResultParse(ResultParserBase):
                                 )
 
     def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        sql_execute_result, = sql_execute_result
         session = kwargs['session']
         result = parse_obj_as(response_model, sql_execute_result)
         primary_key_field = result.__dict__.pop(self.primary_name, None)

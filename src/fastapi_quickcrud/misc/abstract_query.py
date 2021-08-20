@@ -62,8 +62,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
         insert_stmt = insert_stmt.returning(text("*"))
-        query_result, = self.execute(session=session, stmt=insert_stmt)
-        return query_result
+        return insert_stmt
 
     async def async_insert_one(self, *,
                                insert_args,
@@ -73,8 +72,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
         insert_stmt = insert_stmt.returning(text("*"))
-        query_result, = await self.async_execute(session=session, stmt=insert_stmt)
-        return query_result
+        return insert_stmt
 
     async def async_get_many(self, *,
                              query,
@@ -101,8 +99,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                     raise UnknownOrderType(f"Unknown order type {order_by}, oly accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        query_result = await self.async_execute(session=session, stmt=stmt)
-        return query_result
+        return stmt
 
     def get_many(self, *,
                  query,
@@ -129,8 +126,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                     raise UnknownOrderType(f"Unknown order type {order_by}, oly accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        query_result = self.execute(session=session, stmt=stmt)
-        return query_result
+        return stmt
 
     async def async_get_one(self, *,
                             extra_args,
@@ -200,10 +196,9 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                                                             set_=conflict_update_dict
                                                             )
         insert_stmt = insert_stmt.returning(text('*'))
-        query_result = await self.async_execute(session=session, stmt=insert_stmt)
-        if upsert_one:
-            query_result, = query_result
-        return query_result
+        # if upsert_one:
+        #     query_result, = query_result
+        return insert_stmt
 
     def upsert(self, *, insert_arg,
                unique_fields: List[str],
@@ -242,10 +237,9 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                                                             set_=conflict_update_dict
                                                             )
         insert_stmt = insert_stmt.returning(text('*'))
-        query_result = self.execute(session=session, stmt=insert_stmt)
-        if upsert_one:
-            query_result, = query_result
-        return query_result
+        # if upsert_one:
+        #     query_result, = query_result
+        return insert_stmt
 
     def delete(self,
                *,
@@ -264,9 +258,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         delete_stmt = delete(self.model).where(and_(*filter_list))
         delete_stmt = delete_stmt.returning(text('*'))
         delete_stmt = delete_stmt.execution_options(synchronize_session=False)
-        query_result = self.execute(session=session, stmt=delete_stmt)
-        session.expire_all()
-        return query_result
+        return delete_stmt
 
     async def async_delete(self,
                            *,
@@ -285,9 +277,8 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         delete_stmt = delete(self.model).where(and_(*filter_list))
         delete_stmt = delete_stmt.returning(text('*'))
         delete_stmt = delete_stmt.execution_options(synchronize_session=False)
-        query_result = await self.async_execute(session=session, stmt=delete_stmt)
-        session.expire_all()
-        return query_result
+
+        return delete_stmt
 
     async def async_update(self, *, update_args,
                            extra_query,
@@ -304,9 +295,9 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
-        query_result = await self.async_execute(session=session, stmt=update_stmt)
-        session.expire_all()
-        return query_result
+        # query_result = await self.async_execute(session=session, stmt=update_stmt)
+        # session.expire_all()
+        return update_stmt
 
     def update(self, *,
                update_args,
@@ -324,6 +315,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
-        query_result = self.execute(session=session, stmt=update_stmt)
-        session.expire_all()
-        return query_result
+        # query_result = self.execute(session=session, stmt=update_stmt)
+        # session.expire_all()
+        return update_stmt
