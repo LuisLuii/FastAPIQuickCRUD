@@ -72,7 +72,6 @@ def test_get_by_primary_key_without_any_query_param():
     assert response.status_code == 200
     assert response.json()['primary_key'] == sample_primary_key
 
-test_get_by_primary_key_without_any_query_param()
 
 #   "bool_value": true
 # try find the data by primary key but false by bool

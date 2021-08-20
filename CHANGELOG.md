@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased] - 2021-08-20
+ 
+### Added
+ 
+### Changed
+- primary key will be required if no default value or not nullable
+
+
+### Fixed
+
+
 ## [Unreleased] - 2021-08-19
  
 ### Added
