@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
-from tests.test_implementations.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,

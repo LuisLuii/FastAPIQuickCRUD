@@ -6,7 +6,7 @@ from starlette.testclient import TestClient
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
@@ -239,7 +239,7 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
-                                                   CrudMethods.PATCH_MANY
+                                                   CrudMethods.UPDATE_MANY
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # # Model Test
@@ -272,20 +272,20 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
 #         print(f"{v.name=}")
 #         print(f"{v.required=}")
 #         print(f"{v.default=}")
-test_patch_data = crud_router_builder(db_session=get_transaction_session,
-                                      db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
-                                      prefix="/test_patch_many",
-                                      tags=["test"]
-                                      )
-[app.include_router(i) for i in [test_post_and_redirect_get, test_patch_data, test_create_one, test_create_many, test_get_data]]
+test_update_data = crud_router_builder(db_session=get_transaction_session,
+                                       db_model=UntitledTable256,
+                                       crud_models=UntitledTable256Model,
+                                       prefix="/test_update_many",
+                                       tags=["test"]
+                                       )
+[app.include_router(i) for i in [test_post_and_redirect_get, test_update_data, test_create_one, test_create_many, test_get_data]]
 
 client = TestClient(app)
 
 primary_key_name = UntitledTable256.primary_key_of_table
 unique_fields = UntitledTable256.unique_fields
 
-def test_create_many_and_patch_many():
+def test_create_many_and_update_many():
     headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json',
@@ -371,13 +371,13 @@ def test_create_many_and_patch_many():
               }
     from urllib.parse import urlencode
     query_string = urlencode(OrderedDict(**params))
-    update_data = { "bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24",
-                           "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "interval_value": 3600,
+    update_data = { "bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
+                           "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                            "json_value": {'test':'hello'}, "jsonb_value": {'test':'hello'}, "numeric_value": 10, "text_value": "string_update",
                            "timestamp_value": "2022-07-24T02:54:53.285000", "timestamptz_value": "2022-07-24T02:54:53.285000+00:00",
                            "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afb6", "varchar_value": "string", "array_value": [ 1,2,3,4,5 ],
                            "array_str__value": [ "test" ], "time_value": "18:19:18" , "timetz_value": "18:19:18+00:00"}
-    response = client.patch(f'/test_patch_many?{query_string}', data= json.dumps(update_data))
+    response = client.put(f'/test_update_many?{query_string}', data= json.dumps(update_data))
     response_data = response.json()
     assert len(response_data) == 3
     for k in response_data:
