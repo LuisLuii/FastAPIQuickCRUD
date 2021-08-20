@@ -558,7 +558,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                                update_args=patch_data,
                                                                extra_query=extra_query,
                                                                session=session)
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
+                try:
+                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return await result_parser.async_patch_one(response_model=response_model,
                                                            sql_execute_result=query_result,
                                                            fastapi_response=response,
@@ -579,7 +586,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                    update_args=patch_data,
                                                    extra_query=extra_query,
                                                    session=session)
-                query_result = execute_service.execute_and_expire(session, stmt)
+                try:
+                    query_result = execute_service.execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return result_parser.patch_one(response_model=response_model,
                                                sql_execute_result=query_result,
                                                fastapi_response=response,
@@ -611,8 +625,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                 stmt = await crud_service.async_update(update_args=patch_data,
                                                                extra_query=extra_query,
                                                                session=session)
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
-
+                try:
+                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return await result_parser.async_patch_many(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,
@@ -632,7 +652,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                    extra_query=extra_query,
                                                    session=session)
 
-                query_result = execute_service.execute_and_expire(session, stmt)
+                try:
+                    query_result = execute_service.execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return result_parser.patch_many(response_model=response_model,
                                                 sql_execute_result=query_result,
                                                 fastapi_response=response,
@@ -665,7 +692,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                                extra_query=extra_query,
                                                                session=session)
 
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
+                try:
+                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return await result_parser.async_update_one(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,
@@ -683,8 +717,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                                                    update_args=update_data,
                                                    extra_query=extra_query,
                                                    session=session)
-
-                query_result = execute_service.execute_and_expire(session, stmt)
+                try:
+                    query_result = execute_service.execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return result_parser.update_one(response_model=response_model,
                                                 sql_execute_result=query_result,
                                                 fastapi_response=response,
@@ -713,8 +753,14 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                 stmt = await crud_service.async_update(update_args=update_data,
                                                                extra_query=extra_query,
                                                                session=session)
-
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
+                try:
+                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return await result_parser.async_update_many(response_model=response_model,
                                                              sql_execute_result=query_result,
                                                              fastapi_response=response,
@@ -730,8 +776,15 @@ class SQLALChemyBaseRouteSource(RouteResourceBse):
                 stmt = crud_service.update(update_args=update_data,
                                                    extra_query=extra_query,
                                                    session=session)
+                try:
 
-                query_result = execute_service.execute_and_expire(session, stmt)
+                    query_result = execute_service.execute_and_expire(session, stmt)
+                except IntegrityError as e:
+                    err_msg, = e.orig.args
+                    if 'duplicate key value violates unique constraint' not in err_msg:
+                        raise e
+                    result = Response(status_code=HTTPStatus.CONFLICT)
+                    return result
                 return result_parser.update_many(response_model=response_model,
                                                  sql_execute_result=query_result,
                                                  fastapi_response=response,
