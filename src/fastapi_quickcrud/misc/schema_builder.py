@@ -34,10 +34,6 @@ class OrmConfig(BaseConfig):
     orm_mode = True
 
 
-def _uuid_to_str(value, values):
-    if value is not None:
-        return str(value)
-
 
 def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs):
     validators = kwargs.get('validators',None)
