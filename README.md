@@ -5,8 +5,10 @@
 
 ---
 
-This is a CRUD router builder, which allow you to build Pydantic model automatically via SQLAlchemy schema, and provided that a simple but comprehensive CRUD API:
+# What is this?
 
+I believe that everyone who's working with FastApi and building some RESTful of CRUD services,
+The `FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 

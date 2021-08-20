@@ -9,11 +9,12 @@ from fastapi import \
 from pydantic import \
     BaseModel
 
-from .misc.abstract_parser import SQLALchemyResultParse
+from .misc.abstract_execute import SQLALchemyExecuteService, DatabasesExecuteService
+from .misc.abstract_parser import SQLALchemyResultParse, DatabasesResultParserBase
 from .misc.abstract_query import SQLALchemyQueryService
 from .misc.abstract_route import SQLALChemyBaseRouteSource
 from .misc.crud_model import CRUDModel
-from .misc.type import CrudMethods
+from .misc.type import CrudMethods, SessionObject
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -25,6 +26,7 @@ def crud_router_builder(
         db_session,
         crud_models: CRUDModel,
         db_model,
+        session_object=SessionObject.sqlalchemy,
         dependencies: List[callable] = None,
         async_mode=False,
         autocommit=True,
@@ -34,6 +36,8 @@ def crud_router_builder(
     :param db_session: db_session
     :param crud_service:
     :param crud_models:
+    :param session_object:
+    :param db_model:
     :param dependencies:
     :param async_mode:
     :param autocommit:
@@ -45,119 +49,130 @@ def crud_router_builder(
     api = APIRouter(**router_kwargs)
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
-
     path = '/{' + primary_name + '}'
     unique_list: List[str] = crud_models.UNIQUE_LIST
-
     dependencies = [Depends(dep) for dep in dependencies]
 
-    result_parser = SQLALchemyResultParse(async_model=async_mode,
-                                          crud_models=crud_models,
-                                          autocommit=autocommit)
-    crud_service = SQLALchemyQueryService(model=db_model, async_model=async_mode)
+    if session_object is SessionObject.sqlalchemy:
+        routes_source = SQLALChemyBaseRouteSource
+        result_parser = SQLALchemyResultParse(async_model=async_mode,
+                                              crud_models=crud_models,
+                                              autocommit=autocommit)
+        execute_service = SQLALchemyExecuteService()
+        crud_service = SQLALchemyQueryService(model=db_model, async_mode=async_mode)
+    else:
+        routes_source = SQLALChemyBaseRouteSource
+        if not async_mode:
+            raise Exception('databases session object only support async')
+        result_parser = DatabasesResultParserBase(async_model=async_mode,
+                                                  crud_models=crud_models,
+                                                  autocommit=autocommit)
+        execute_service = DatabasesExecuteService()
+        crud_service = SQLALchemyQueryService(model=db_model, async_mode=async_mode)
 
     def find_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
-        SQLALChemyBaseRouteSource.find_one(path=path,
-                                             request_url_param_model=_request_url_param_model,
-                                             request_query_model=_request_query_model,
-                                             response_model=_response_model,
-                                             db_session=db_session,
-                                             query_service=crud_service,
-                                             parsing_service=result_parser,
-                                             dependencies=dependencies,
-                                             api=api,
-                                             async_mode=async_mode)
+        routes_source.find_one(path=path,
+                               request_url_param_model=_request_url_param_model,
+                               request_query_model=_request_query_model,
+                               response_model=_response_model,
+                               db_session=db_session,
+                               query_service=crud_service,
+                               parsing_service=result_parser,
+                               execute_service=execute_service,
+                               dependencies=dependencies,
+                               api=api,
+                               async_mode=async_mode)
 
     def find_many_api(request_response_model: dict, dependencies):
 
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
-        SQLALChemyBaseRouteSource.find_many(path="",
-                                              request_query_model=_request_query_model,
-                                              response_model=_response_model,
-                                              db_session=db_session,
-                                              query_service=crud_service,
-                                              parsing_service=result_parser,
-                                              dependencies=dependencies,
-                                              api=api,
-                                              async_mode=async_mode)
+        routes_source.find_many(path="",
+                                request_query_model=_request_query_model,
+                                response_model=_response_model,
+                                db_session=db_session,
+                                query_service=crud_service,
+                                parsing_service=result_parser,
+                                dependencies=dependencies,
+                                api=api,
+                                async_mode=async_mode)
 
     def upsert_one_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
-        SQLALChemyBaseRouteSource.upsert_one(path="",
-                                               request_body_model=_request_body_model,
-                                               response_model=_response_model,
-                                               db_session=db_session,
-                                               query_service=crud_service,
-                                               parsing_service=result_parser,
-                                               dependencies=dependencies,
-                                               api=api,
-                                               async_mode=async_mode,
-                                               unique_list=unique_list)
+        routes_source.upsert_one(path="",
+                                 request_body_model=_request_body_model,
+                                 response_model=_response_model,
+                                 db_session=db_session,
+                                 query_service=crud_service,
+                                 parsing_service=result_parser,
+                                 dependencies=dependencies,
+                                 api=api,
+                                 async_mode=async_mode,
+                                 unique_list=unique_list)
 
     def upsert_many_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
-        SQLALChemyBaseRouteSource.upsert_many(path="",
-                                                request_body_model=_request_body_model,
-                                                response_model=_response_model,
-                                                db_session=db_session,
-                                                query_service=crud_service,
-                                                parsing_service=result_parser,
-                                                dependencies=dependencies,
-                                                api=api,
-                                                unique_list=unique_list,
-                                                async_mode=async_mode)
+        routes_source.upsert_many(path="",
+                                  request_body_model=_request_body_model,
+                                  response_model=_response_model,
+                                  db_session=db_session,
+                                  query_service=crud_service,
+                                  parsing_service=result_parser,
+                                  dependencies=dependencies,
+                                  api=api,
+                                  unique_list=unique_list,
+                                  async_mode=async_mode)
 
     def delete_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _request_url_model = request_response_model.get('requestUrlParamModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
-        SQLALChemyBaseRouteSource.delete_one(path=path,
-                                               request_query_model=_request_query_model,
-                                               request_url_model=_request_url_model,
-                                               response_model=_response_model,
-                                               db_session=db_session,
-                                               query_service=crud_service,
-                                               parsing_service=result_parser,
-                                               dependencies=dependencies,
-                                               api=api,
-                                               async_mode=async_mode)
+        routes_source.delete_one(path=path,
+                                 request_query_model=_request_query_model,
+                                 request_url_model=_request_url_model,
+                                 response_model=_response_model,
+                                 db_session=db_session,
+                                 query_service=crud_service,
+                                 parsing_service=result_parser,
+                                 dependencies=dependencies,
+                                 api=api,
+                                 async_mode=async_mode)
 
     def delete_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _request_url_model = request_response_model.get('requestUrlParamModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
-        SQLALChemyBaseRouteSource.delete_many(path="",
-                                                request_query_model=_request_query_model,
-                                                response_model=_response_model,
-                                                db_session=db_session,
-                                                query_service=crud_service,
-                                                parsing_service=result_parser,
-                                                dependencies=dependencies,
-                                                api=api,
-                                                async_mode=async_mode)
+        routes_source.delete_many(path="",
+                                  request_query_model=_request_query_model,
+                                  response_model=_response_model,
+                                  db_session=db_session,
+                                  query_service=crud_service,
+                                  parsing_service=result_parser,
+                                  dependencies=dependencies,
+                                  api=api,
+                                  async_mode=async_mode)
 
     def post_redirect_get_api(request_response_model: dict, dependencies):
 
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
-        SQLALChemyBaseRouteSource.post_redirect_get(api=api,
-                                                      dependencies=dependencies,
-                                                      request_body_model=_request_body_model,
-                                                      db_session=db_session,
-                                                      crud_service=crud_service,
-                                                      result_parser=result_parser,
-                                                      async_mode=async_mode,
-                                                      response_model=_response_model)
+        routes_source.post_redirect_get(api=api,
+                                        dependencies=dependencies,
+                                        request_body_model=_request_body_model,
+                                        db_session=db_session,
+                                        crud_service=crud_service,
+                                        result_parser=result_parser,
+                                        async_mode=async_mode,
+                                        response_model=_response_model)
 
     def patch_one_api(request_response_model: dict, dependencies):
 
@@ -166,17 +181,17 @@ def crud_router_builder(
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
-        SQLALChemyBaseRouteSource.patch_one(api=api,
-                                              path=path,
-                                              request_url_param_model=_request_url_param_model,
-                                              request_query_model=_request_query_model,
-                                              dependencies=dependencies,
-                                              request_body_model=_request_body_model,
-                                              db_session=db_session,
-                                              crud_service=crud_service,
-                                              result_parser=result_parser,
-                                              async_mode=async_mode,
-                                              response_model=_response_model)
+        routes_source.patch_one(api=api,
+                                path=path,
+                                request_url_param_model=_request_url_param_model,
+                                request_query_model=_request_query_model,
+                                dependencies=dependencies,
+                                request_body_model=_request_body_model,
+                                db_session=db_session,
+                                crud_service=crud_service,
+                                result_parser=result_parser,
+                                async_mode=async_mode,
+                                response_model=_response_model)
 
     def patch_many_api(request_response_model: dict, dependencies):
 
@@ -185,33 +200,33 @@ def crud_router_builder(
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
-        SQLALChemyBaseRouteSource.patch_many(api=api,
-                                               path="",
-                                               request_query_model=_request_query_model,
-                                               dependencies=dependencies,
-                                               request_body_model=_request_body_model,
-                                               db_session=db_session,
-                                               crud_service=crud_service,
-                                               result_parser=result_parser,
-                                               async_mode=async_mode,
-                                               response_model=_response_model)
+        routes_source.patch_many(api=api,
+                                 path="",
+                                 request_query_model=_request_query_model,
+                                 dependencies=dependencies,
+                                 request_body_model=_request_body_model,
+                                 db_session=db_session,
+                                 crud_service=crud_service,
+                                 result_parser=result_parser,
+                                 async_mode=async_mode,
+                                 response_model=_response_model)
 
     def put_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
-        SQLALChemyBaseRouteSource.put_one(api=api,
-                                            path=path,
-                                            request_query_model=_request_query_model,
-                                            dependencies=dependencies,
-                                            request_body_model=_request_body_model,
-                                            db_session=db_session,
-                                            crud_service=crud_service,
-                                            result_parser=result_parser,
-                                            async_mode=async_mode,
-                                            response_model=_response_model,
-                                            request_url_param_model=_request_url_param_model)
+        routes_source.put_one(api=api,
+                              path=path,
+                              request_query_model=_request_query_model,
+                              dependencies=dependencies,
+                              request_body_model=_request_body_model,
+                              db_session=db_session,
+                              crud_service=crud_service,
+                              result_parser=result_parser,
+                              async_mode=async_mode,
+                              response_model=_response_model,
+                              request_url_param_model=_request_url_param_model)
 
     def put_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -219,16 +234,16 @@ def crud_router_builder(
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
-        SQLALChemyBaseRouteSource.put_many(api=api,
-                                             path='',
-                                             request_query_model=_request_query_model,
-                                             dependencies=dependencies,
-                                             request_body_model=_request_body_model,
-                                             db_session=db_session,
-                                             crud_service=crud_service,
-                                             result_parser=result_parser,
-                                             async_mode=async_mode,
-                                             response_model=_response_model)
+        routes_source.put_many(api=api,
+                               path='',
+                               request_query_model=_request_query_model,
+                               dependencies=dependencies,
+                               request_body_model=_request_body_model,
+                               db_session=db_session,
+                               crud_service=crud_service,
+                               result_parser=result_parser,
+                               async_mode=async_mode,
+                               response_model=_response_model)
 
     api_register = {
         CrudMethods.FIND_ONE.value: find_one_api,

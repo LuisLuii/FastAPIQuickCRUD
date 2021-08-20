@@ -39,8 +39,8 @@ def _uuid_to_str(value, values):
         return str(value)
 
 
-def _add_orm_model_config_into_pydantic_model(pydantic_model):
-    validators = pydantic_model.__validators__
+def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs):
+    validators = kwargs.get('validators',None)
     field_definitions = {
         name: (field.outer_type_, field.field_info.default)
         for name, field in pydantic_model.__fields__.items()
@@ -56,14 +56,13 @@ def _add_validators(model: Type[BaseModelT], validators) -> Type[BaseModelT]:
     Create a new BaseModel with the exact same fields as `model`
     but making them all optional and no default
     """
-    config = model.Config
     field_definitions = {
         name: (field.outer_type_, field.field_info.default)
         for name, field in model.__fields__.items()
     }
     return create_model(f'{model.__name__}WithValidators',
                         **field_definitions,
-                        __config__=config,
+                        __config__=OrmConfig,
                         __validators__={**validators})
 
 
@@ -786,7 +785,8 @@ class ApiParameterSchemaBuilder:
         if self.alias_mapper and response_model:
             validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
             response_model = _add_validators(response_model, {"root_validator": validator_function})
-        response_model = _add_orm_model_config_into_pydantic_model(response_model)
+        else:
+            response_model = _add_orm_model_config_into_pydantic_model(response_model)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
 

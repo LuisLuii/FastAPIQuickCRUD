@@ -328,3 +328,66 @@ class SQLALchemyResultParse(ResultParserBase):
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )
+
+
+
+class DatabasesResultParserBase(ABC):
+
+    def __init__(self, async_model, crud_models, autocommit):
+        self.async_mode = async_model
+        self.crud_models = crud_models
+        self.primary_name = crud_models.PRIMARY_KEY_NAME
+        self.autocommit = autocommit
+
+    async def async_commit(self, session):
+        if self.autocommit:
+            await session.commit()
+
+    async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        if not sql_execute_result:
+            return Response('specific data not found',status_code=HTTPStatus.NOT_FOUND)
+        result = parse_obj_as(response_model, dict(sql_execute_result))
+        fastapi_response.headers["x-total-count"] = str(1)
+
+        await self.async_commit(kwargs.get('session'))
+        return result
+
+    def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+
+
+    def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        raise NotImplementedError
+

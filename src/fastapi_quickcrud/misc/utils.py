@@ -1,5 +1,3 @@
-import asyncio
-import functools
 import re
 from typing import Type, List, Union, TypeVar
 
@@ -205,6 +203,7 @@ def sqlalchemy_to_pydantic(
     request_response_mode_set = {}
     model_builder = ApiParameterSchemaBuilder(db_model,
                                               exclude_column=exclude_columns)
+
     for crud_method in crud_methods:
         request_url_param_model = None
         request_body_model = None
@@ -374,20 +373,3 @@ process_map = {
     MatchingPatternInString.not_similar_to:
         lambda field, values: or_(field.op("NOT SIMILAR TO")(value) for value in values),
 }
-
-
-def force_sync(fn):
-    '''
-    turn an async function to sync function
-    '''
-
-    # import asyncio
-
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        res = fn(*args, **kwargs)
-        if asyncio.iscoroutine(res):
-            return asyncio.get_event_loop().run_until_complete(res)
-        return res
-
-    return wrapper

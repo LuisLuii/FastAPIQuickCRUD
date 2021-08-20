@@ -40,9 +40,9 @@ class DBQueryServiceBase(ABC):
 
 class SQLALchemyQueryService(DBQueryServiceBase):
 
-    def __init__(self, *, model, async_model):
+    def __init__(self, *, model, async_mode):
         self.model = model
-        self.async_model = async_model
+        self.async_mode = async_mode
 
     async def async_execute(self, *, session, stmt):
         query_result = session.execute(stmt)
@@ -161,8 +161,7 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         extra_query_expression: List[BinaryExpression] = find_query_builder(param=extra_args,
                                                                             model=self.model)
         stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
-        query_result = self.execute(session=session, stmt=stmt)
-        return query_result
+        return stmt
 
     async def async_upsert(self, *, insert_arg,
                            unique_fields: List[str],
@@ -254,12 +253,11 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                session,
                primary_key=None,
                **kwargs):
-        if primary_key is not None:
-            primary_key = primary_key.__dict__
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
         if primary_key:
+            primary_key = primary_key.__dict__
             filter_list += find_query_builder(param=primary_key,
                                               model=self.model)
 
@@ -276,12 +274,11 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                            session,
                            primary_key=None,
                            **kwargs):
-        if primary_key is not None:
-            primary_key = primary_key.__dict__
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
         if primary_key:
+            primary_key = primary_key.__dict__
             filter_list += find_query_builder(param=primary_key,
                                               model=self.model)
 
@@ -299,11 +296,10 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                            **kwargs):
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
-        if primary_key:
-            primary_key = primary_key.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
                                                                  model=self.model)
         if primary_key:
+            primary_key = primary_key.__dict__
             filter_list += find_query_builder(param=primary_key, model=self.model)
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
@@ -320,11 +316,10 @@ class SQLALchemyQueryService(DBQueryServiceBase):
                **kwargs):
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
-        if primary_key:
-            primary_key = primary_key.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
                                                                  model=self.model)
         if primary_key:
+            primary_key = primary_key.__dict__
             filter_list += find_query_builder(param=primary_key, model=self.model)
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))

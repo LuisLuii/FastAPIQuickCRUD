@@ -1,5 +1,6 @@
 from typing import Generic, TypeVar
 
+import strenum as strenum
 from strenum import StrEnum
 from enum import Enum, auto
 
@@ -88,19 +89,6 @@ class ItemComparisonOperators(StrEnum):
     Not_in = auto()
 
 
-class UniqueEnumMeta(type):
-    """
-    Metaclass that makes all produced classes compare equal and hash equal
-    if their respective names match.
-    """
-
-    def __eq__(self, other):
-        return self.__name__ == other.__name__
-
-    def __hash__(self):
-        return hash(self.__name__)
-
-
 class MatchingPatternInString(StrEnum):
     match_regex_with_case_sensitive = auto()
     match_regex_with_case_insensitive = auto()
@@ -126,5 +114,8 @@ class JSONBMatchingMode(str, Enum):
     custom_query = 'custom_query'
 
 
+class SessionObject(StrEnum):
+    sqlalchemy= auto()
+    databases= auto()
 
 
