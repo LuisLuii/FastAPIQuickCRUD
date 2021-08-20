@@ -102,14 +102,14 @@ class SQLALchemyResultParse(ResultParserBase):
         return result
 
     async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result_list = [i for i in sql_execute_result.scalars()]
+        result_list = [i.__dict__ for i in sql_execute_result.scalars()]
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         await self.async_commit(kwargs.get('session'))
         return result
 
     def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result_list = [i for i in sql_execute_result.scalars()]
+        result_list = [i.__dict__ for i in sql_execute_result.scalars()]
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         self.commit(kwargs.get('session'))

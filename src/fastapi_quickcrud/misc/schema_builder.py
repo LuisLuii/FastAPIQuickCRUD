@@ -86,10 +86,7 @@ def _original_data_to_alias(alias_name_dict):
     def core(_, values):
         for original_name, alias_name in alias_name_dict.items():
             if original_name in values:
-                try:
-                    values[alias_name] = values.pop(original_name)
-                except:
-                    print()
+                values[alias_name] = values.pop(original_name)
         return values
 
     return core
