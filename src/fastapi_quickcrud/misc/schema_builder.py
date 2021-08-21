@@ -12,6 +12,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
+from sqlalchemy.orm import declarative_base
 
 from .exceptions import MultipleSingleUniqueNotSupportedException, \
     SchemaException, \
@@ -29,6 +30,7 @@ from .type import MatchingPatternInString, \
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 DataClass = NewType('DataClass', Any)
+DeclarativeClass = NewType('DeclarativeClass', declarative_base)
 
 
 class OrmConfig(BaseConfig):
@@ -49,10 +51,12 @@ def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs):
 
 
 def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseModelT]:
+
     """
     Create a new BaseModel with the exact same fields as `model`
     but making them all optional and no default
     """
+
     config = kwargs.get('config', None)
 
     field_definitions = {
@@ -65,8 +69,10 @@ def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseM
                         __validators__={**validators})
 
 
-def _model_from_dataclass(kls: 'StdlibDataclass') -> Type[BaseModel]:
-    """Converts a stdlib dataclass to a pydantic BaseModel"""
+def _model_from_dataclass(kls: DataClass) -> Type[BaseModel]:
+
+    """ Converts a stdlib dataclass to a pydantic BaseModel """
+
     return pydantic_dataclass(kls).__pydantic_model__
 
 
@@ -126,7 +132,7 @@ class ApiParameterSchemaBuilder:
             self._exclude_column = []
         else:
             self._exclude_column = exclude_column
-        self.__db_model = db_model
+        self.__db_model: DeclarativeClass = db_model
         self.alias_mapper: Dict[str, str] = self._alias_mapping_builder()
 
         self.primary_key_str, self._primary_key_dataclass_model, self._primary_key_field_definition \
@@ -140,7 +146,7 @@ class ApiParameterSchemaBuilder:
         self.bool_type_columns = []
         self.json_type_columns = []
         self.array_type_columns = []
-        self.all_field = self._extract_all_field()
+        self.all_field: List[dict] = self._extract_all_field()
 
     def _alias_mapping_builder(self) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
@@ -213,9 +219,9 @@ class ApiParameterSchemaBuilder:
 
         return unique_column_list or composite_unique_constraint
 
-    def _extract_primary(self) -> tuple[Union[str, Any],
+    def _extract_primary(self) -> Tuple[Union[str, Any],
                                         DataClass,
-                                        tuple[Union[str, Any],
+                                        Tuple[Union[str, Any],
                                               Union[Type[uuid.UUID], Any],
                                               Optional[Any]]]:
         # get the primary columns with alias
@@ -224,10 +230,6 @@ class ApiParameterSchemaBuilder:
         #   exception:
         #       composite primary key constraint not supported
         #       can not more than one primary key
-        primary_columns_model = None
-        primary_field_definitions = {}
-        primary_column_name = None
-        primary = False
         if hasattr(self.__db_model, '__table_args__'):
             for constraints in self.__db_model.__table_args__:
                 if isinstance(constraints, PrimaryKeyConstraint):
@@ -319,7 +321,7 @@ class ApiParameterSchemaBuilder:
             setattr(request_or_response_object, 'insert', insert_str_list)
         else:
             for column in columns:
-                for received_column_name, received_column_value in received_request.items():
+                for received_column_name, _ in received_request.items():
                     if column in received_column_name:
                         value_ = received_request[received_column_name]
                         if value_ is not None:
@@ -505,7 +507,7 @@ class ApiParameterSchemaBuilder:
     def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
         if not exclude_column:
             exclude_column = []
-        fields_: dict = deepcopy(self.all_field)
+        fields_: List[dict] = deepcopy(self.all_field)
         result = []
         for field_ in fields_:
             if field_['column_name'] in exclude_column:
@@ -526,7 +528,7 @@ class ApiParameterSchemaBuilder:
 
         return result
 
-    def _assign_pagination_param(self, result_: List[dict]) -> List[dict]:
+    def _assign_pagination_param(self, result_: List[tuple]) -> List[tuple]:
         all_column_ = [i['column_name'] for i in self.all_field]
 
         regex_validation = "(?=(" + '|'.join(all_column_) + r")?\s?:?\s*?(?=(" + '|'.join(
@@ -557,7 +559,7 @@ class ApiParameterSchemaBuilder:
                             Optional[List[str]],
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
-                                             f'when the unique columns got conflict'))
+                                             'when the unique columns got conflict'))
         conflict_model = make_dataclass('Upsert_one_request_update_columns_when_conflict_request_body_model',
                                         [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],

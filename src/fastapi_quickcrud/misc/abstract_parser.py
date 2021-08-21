@@ -58,6 +58,13 @@ from .exceptions import FindOneApiNotRegister
 class SQLAlchemyResultParse(object):
 
     def __init__(self, async_model, crud_models, autocommit):
+
+        """
+        :param async_model: bool
+        :param crud_models: pre ready
+        :param autocommit: bool
+        """
+
         self.async_mode = async_model
         self.crud_models = crud_models
         self.primary_name = crud_models.PRIMARY_KEY_NAME
@@ -85,9 +92,8 @@ class SQLAlchemyResultParse(object):
         result_list = []
         for result in query_result:
             result_list.append(result)
-        else:
-            if not result_list:
-                return Response(status_code=HTTPStatus.NO_CONTENT)
+        if not result_list:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         return parse_obj_as(response_model, result_list)
 

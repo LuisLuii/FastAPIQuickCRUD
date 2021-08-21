@@ -9,10 +9,10 @@ from fastapi import \
 from pydantic import \
     BaseModel
 
-from .misc.abstract_execute import SQLALchemyExecuteService, DatabasesExecuteService
-from .misc.abstract_parser import SQLAlchemyResultParse, DatabasesResultParserBase
+from .misc.abstract_execute import SQLALchemyExecuteService
+from .misc.abstract_parser import SQLAlchemyResultParse
 from .misc.abstract_query import SQLALchemyQueryService
-from .misc.abstract_route import SQLALChemyBaseRouteSource, DatabasesRouteResourceBase
+from .misc.abstract_route import SQLALChemyBaseRouteSource
 from .misc.crud_model import CRUDModel
 from .misc.type import CrudMethods, SessionObject
 
@@ -31,8 +31,8 @@ def crud_router_builder(
         async_mode=False,
         autocommit=True,
         **router_kwargs: Any) -> APIRouter:
-    """
 
+    """
     :param db_session: db_session
     :param crud_models:
     :param session_object:
@@ -43,6 +43,7 @@ def crud_router_builder(
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
+
     if dependencies is None:
         dependencies = []
     api = APIRouter(**router_kwargs)
@@ -151,7 +152,6 @@ def crud_router_builder(
 
     def delete_many_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
-        _request_url_model = request_response_model.get('requestUrlParamModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
         routes_source.delete_many(path="",
@@ -205,7 +205,6 @@ def crud_router_builder(
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
-        _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         routes_source.patch_many(api=api,
                                  path="",
@@ -241,7 +240,6 @@ def crud_router_builder(
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
-        _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
 
         routes_source.put_many(api=api,
                                path='',

@@ -41,6 +41,12 @@ from .utils import find_query_builder
 class SQLALchemyQueryService(object):
 
     def __init__(self, *, model, async_mode):
+
+        """
+        :param model: declarative_base model
+        :param async_mode: bool
+        """
+
         self.model = model
         self.async_mode = async_mode
 
@@ -57,8 +63,7 @@ class SQLALchemyQueryService(object):
         return query_result
 
     def insert_one(self, *,
-                   insert_args,
-                   **kwargs):
+                   insert_args):
         insert_args = insert_args.__dict__
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
@@ -67,7 +72,7 @@ class SQLALchemyQueryService(object):
 
     async def async_insert_one(self, *,
                                insert_args,
-                               **kwargs):
+                               ):
         insert_args = insert_args.__dict__
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
         insert_stmt = insert(self.model).values([insert_arg_dict])
@@ -76,7 +81,7 @@ class SQLALchemyQueryService(object):
 
     async def async_get_many(self, *,
                              query,
-                             **kwargs):
+                             ):
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
@@ -102,7 +107,7 @@ class SQLALchemyQueryService(object):
 
     def get_many(self, *,
                  query,
-                 **kwargs):
+                 ):
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
@@ -130,7 +135,7 @@ class SQLALchemyQueryService(object):
                             extra_args,
                             filter_args,
                             session,
-                            **kwargs):
+                            ):
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
@@ -145,7 +150,7 @@ class SQLALchemyQueryService(object):
     def get_one(self, *,
                 extra_args,
                 filter_args,
-                **kwargs):
+                ):
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
@@ -159,8 +164,8 @@ class SQLALchemyQueryService(object):
     async def async_upsert(self, *, insert_arg,
                            unique_fields: List[str],
                            upsert_one=True,
-                           **kwargs):
-        insert_arg_dict: Union[dict,list] = insert_arg.__dict__
+                           ):
+        insert_arg_dict: Union[dict, list] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
         if not upsert_one:
@@ -199,8 +204,8 @@ class SQLALchemyQueryService(object):
     def upsert(self, *, insert_arg,
                unique_fields: List[str],
                upsert_one=True,
-               **kwargs):
-        insert_arg_dict: Union[list,dict] = insert_arg.__dict__
+               ):
+        insert_arg_dict: Union[list, dict] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
         if not upsert_one:
@@ -240,7 +245,7 @@ class SQLALchemyQueryService(object):
                *,
                delete_args,
                primary_key=None,
-               **kwargs):
+               ):
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
@@ -258,7 +263,7 @@ class SQLALchemyQueryService(object):
                            *,
                            delete_args,
                            primary_key=None,
-                           **kwargs):
+                           ):
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model)
@@ -276,7 +281,7 @@ class SQLALchemyQueryService(object):
     async def async_update(self, *, update_args,
                            extra_query,
                            primary_key=None,
-                           **kwargs):
+                           ):
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
@@ -293,7 +298,7 @@ class SQLALchemyQueryService(object):
                update_args,
                extra_query,
                primary_key=None,
-               **kwargs):
+               ):
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,

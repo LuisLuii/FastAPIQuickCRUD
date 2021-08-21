@@ -1,4 +1,3 @@
-import re
 from typing import Type, List, Union, TypeVar
 
 from fastapi import FastAPI, APIRouter
@@ -67,14 +66,6 @@ def alias_to_column(param: Union[dict, list], model: Base, column_collection: bo
 
 def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]]:
     query = []
-    '''
-    columns, process_data_type, process_type
-    {
-        columns: {
-            process_data_type: 
-        }
-    }
-    '''
     for column_name, value in param.items():
         if ExtraFieldType.Comparison_operator in column_name or ExtraFieldType.Matching_pattern in column_name:
             continue
@@ -194,13 +185,13 @@ def add_routers(app: FastAPI, routers: List[APIRouter], **kwargs):
         app.include_router(router, **kwargs)
 
 
-def find_duplicate_error(error_msg) -> str:
-    regex_result = re.findall('(duplicate.*?)\nDETAIL:(.*?)\n', error_msg)
-    if regex_result:
-        regex_result, = regex_result
-    if not len(regex_result) == 2:
-        return None
-    return f'{regex_result[0]}: {regex_result[1]}'
+# def find_duplicate_error(error_msg) -> str:
+#     regex_result = re.findall('(duplicate.*?)\nDETAIL:(.*?)\n', error_msg)
+#     if regex_result:
+#         regex_result, = regex_result
+#     if not len(regex_result) == 2:
+#         return None
+#     return f'{regex_result[0]}: {regex_result[1]}'
 
 
 def get_many_string_matching_patterns_description_builder() -> str:
