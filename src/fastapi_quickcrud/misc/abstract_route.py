@@ -1,164 +1,162 @@
-from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import Union
 
 from fastapi import \
     Depends, \
     Response
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 
 
-class RouteResourceBase(ABC):
-    @abstractmethod
-    def find_one(self, api,
-                 *,
-                 path,
-                 query_service,
-                 parsing_service,
-                 async_mode,
-                 response_model,
-                 dependencies,
-                 request_url_param_model,
-                 request_query_model,
-                 db_session):
-        raise NotImplementedError
+# class RouteResourceBase(ABC):
+#     @abstractmethod
+#     def find_one(self, api,
+#                  *,
+#                  path,
+#                  query_service,
+#                  parsing_service,
+#                  async_mode,
+#                  response_model,
+#                  dependencies,
+#                  request_url_param_model,
+#                  request_query_model,
+#                  db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def find_many(self,
+#                   api, *,
+#                   query_service,
+#                   parsing_service,
+#                   async_mode,
+#                   path,
+#                   response_model,
+#                   dependencies,
+#                   request_query_model,
+#                   db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def upsert_one(api, *,
+#                    path,
+#                    query_service,
+#                    parsing_service,
+#                    async_mode,
+#                    response_model,
+#                    request_body_model,
+#                    dependencies,
+#                    db_session,
+#                    unique_list):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def upsert_many(api, *,
+#                     query_service,
+#                     parsing_service,
+#                     async_mode,
+#                     path,
+#                     response_model,
+#                     dependencies,
+#                     request_body_model,
+#                     db_session,
+#                     unique_list):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def delete_one(api, *,
+#                    query_service,
+#                    parsing_service,
+#                    async_mode,
+#                    path,
+#                    response_model,
+#                    dependencies,
+#                    request_query_model,
+#                    request_url_model,
+#                    db_session, ):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def delete_many(api, *,
+#                     query_service,
+#                     parsing_service,
+#                     async_mode,
+#                     path,
+#                     response_model,
+#                     dependencies,
+#                     request_query_model,
+#                     db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def post_redirect_get(api, *,
+#                           dependencies,
+#                           request_body_model,
+#                           db_session,
+#                           crud_service,
+#                           result_parser,
+#                           async_mode,
+#                           response_model):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def patch_one(api, *,
+#                   path,
+#                   response_model,
+#                   dependencies,
+#                   request_url_param_model,
+#                   request_body_model,
+#                   request_query_model,
+#                   db_session,
+#                   crud_service,
+#                   result_parser,
+#                   async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def patch_many(api, *,
+#                    path,
+#                    response_model,
+#                    dependencies,
+#                    request_body_model,
+#                    request_query_model,
+#                    db_session,
+#                    crud_service,
+#                    result_parser,
+#                    async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def put_one(api, *,
+#                 path,
+#                 request_url_param_model,
+#                 request_body_model,
+#                 response_model,
+#                 dependencies,
+#                 request_query_model,
+#                 db_session,
+#                 crud_service,
+#                 result_parser,
+#                 async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def put_many(api, *,
+#                  path,
+#                  response_model,
+#                  dependencies,
+#                  request_query_model,
+#                  request_body_model,
+#                  db_session,
+#                  crud_service,
+#                  result_parser,
+#                  async_mode):
+#         raise NotImplementedError
 
-    @abstractmethod
-    def find_many(self,
-                  api, *,
-                  query_service,
-                  parsing_service,
-                  async_mode,
-                  path,
-                  response_model,
-                  dependencies,
-                  request_query_model,
-                  db_session):
-        raise NotImplementedError
 
-    @abstractmethod
-    def upsert_one(api, *,
-                   path,
-                   query_service,
-                   parsing_service,
-                   async_mode,
-                   response_model,
-                   request_body_model,
-                   dependencies,
-                   db_session,
-                   unique_list):
-        raise NotImplementedError
-
-    @abstractmethod
-    def upsert_many(api, *,
-                    query_service,
-                    parsing_service,
-                    async_mode,
-                    path,
-                    response_model,
-                    dependencies,
-                    request_body_model,
-                    db_session,
-                    unique_list):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete_one(api, *,
-                   query_service,
-                   parsing_service,
-                   async_mode,
-                   path,
-                   response_model,
-                   dependencies,
-                   request_query_model,
-                   request_url_model,
-                   db_session, ):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete_many(api, *,
-                    query_service,
-                    parsing_service,
-                    async_mode,
-                    path,
-                    response_model,
-                    dependencies,
-                    request_query_model,
-                    db_session):
-        raise NotImplementedError
-
-    @abstractmethod
-    def post_redirect_get(api, *,
-                          dependencies,
-                          request_body_model,
-                          db_session,
-                          crud_service,
-                          result_parser,
-                          async_mode,
-                          response_model):
-        raise NotImplementedError
-
-    @abstractmethod
-    def patch_one(api, *,
-                  path,
-                  response_model,
-                  dependencies,
-                  request_url_param_model,
-                  request_body_model,
-                  request_query_model,
-                  db_session,
-                  crud_service,
-                  result_parser,
-                  async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def patch_many(api, *,
-                   path,
-                   response_model,
-                   dependencies,
-                   request_body_model,
-                   request_query_model,
-                   db_session,
-                   crud_service,
-                   result_parser,
-                   async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def put_one(api, *,
-                path,
-                request_url_param_model,
-                request_body_model,
-                response_model,
-                dependencies,
-                request_query_model,
-                db_session,
-                crud_service,
-                result_parser,
-                async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def put_many(api, *,
-                 path,
-                 response_model,
-                 dependencies,
-                 request_query_model,
-                 request_body_model,
-                 db_session,
-                 crud_service,
-                 result_parser,
-                 async_mode):
-        raise NotImplementedError
-
-
-class SQLALChemyBaseRouteSource(RouteResourceBase):
+class SQLALChemyBaseRouteSource(object):
 
     @classmethod
-    def find_one(self, api,
+    def find_one(cls, api,
                  *,
                  path,
                  query_service,
@@ -179,9 +177,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                        query=Depends(request_query_model),
                                        session=Depends(db_session)):
                 stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
-                                             request_obj=request,
-                                             session=session)
+                                             extra_args=url_param)
                 query_result = execute_service.execute(session, stmt)
                 response_result = parsing_service.find_one(response_model=response_model,
                                                            sql_execute_result=query_result,
@@ -196,9 +192,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                    query=Depends(request_query_model),
                                                    session=Depends(db_session)):
                 stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
-                                             request_obj=request,
-                                             session=session)
+                                             extra_args=url_param)
                 query_result = await execute_service.async_execute(session, stmt)
 
                 response_result = await parsing_service.async_find_one(response_model=response_model,
@@ -208,7 +202,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                 return response_result
 
     @classmethod
-    def find_many(self, api, *,
+    def find_many(cls, api, *,
                   query_service,
                   parsing_service,
                   execute_service,
@@ -227,9 +221,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                      session=Depends(
                                          db_session)
                                      ):
-                stmt = await query_service.async_get_many(query=query,
-                                                          session=session,
-                                                          request_obj=request)
+                stmt = await query_service.async_get_many(query=query)
 
                 query_result = await execute_service.async_execute(session, stmt)
 
@@ -246,9 +238,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                          session=Depends(
                              db_session)
                          ):
-                stmt = query_service.get_many(query=query,
-                                              session=session,
-                                              request_obj=request)
+                stmt = query_service.get_many(query=query)
                 query_result = execute_service.execute(session, stmt)
 
                 parsed_response = parsing_service.find_many(response_model=response_model,
@@ -258,7 +248,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                 return parsed_response
 
     @classmethod
-    def upsert_one(self, api, *,
+    def upsert_one(cls, api, *,
                    path,
                    query_service,
                    parsing_service,
@@ -279,9 +269,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session)
             ):
                 stmt = await query_service.async_upsert(insert_arg=query,
-                                                        unique_fields=unique_list,
-                                                        session=session,
-                                                        request_obj=request)
+                                                        unique_fields=unique_list)
 
                 try:
                     query_result = await execute_service.async_execute(session, stmt)
@@ -307,9 +295,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
 
                 stmt = query_service.upsert(insert_arg=query,
-                                            unique_fields=unique_list,
-                                            session=session,
-                                            request_obj=request)
+                                            unique_fields=unique_list)
                 try:
                     query_result = execute_service.execute(session, stmt)
                 except IntegrityError as e:
@@ -324,7 +310,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                   session=session)
 
     @classmethod
-    def upsert_many(self, api, *,
+    def upsert_many(cls, api, *,
                     query_service,
                     parsing_service,
                     async_mode,
@@ -346,9 +332,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
                 stmt = query_service.upsert(insert_arg=query,
                                             unique_fields=unique_list,
-                                            session=session,
-                                            upsert_one=False,
-                                            request_obj=request)
+                                            upsert_one=False)
                 try:
                     query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
@@ -372,9 +356,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
 
                 stmt = query_service.upsert(insert_arg=query,
                                             unique_fields=unique_list,
-                                            session=session,
-                                            upsert_one=False,
-                                            request_obj=request)
+                                            upsert_one=False)
                 try:
                     query_result = execute_service.execute(session, stmt)
                 except IntegrityError as e:
@@ -389,7 +371,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                    session=session)
 
     @classmethod
-    def delete_one(self, api, *,
+    def delete_one(cls, api, *,
                    query_service,
                    parsing_service,
                    execute_service,
@@ -409,9 +391,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
                 stmt = await query_service.async_delete(primary_key=request_url_param_model,
-                                                        delete_args=query,
-                                                        session=session,
-                                                        request_obj=request)
+                                                        delete_args=query)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
                                                               sql_execute_result=query_result,
@@ -425,9 +405,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                           request_url_param_model=Depends(request_url_model),
                                           session=Depends(db_session)):
                 stmt = query_service.delete(primary_key=request_url_param_model,
-                                            delete_args=query,
-                                            session=session,
-                                            request_obj=request)
+                                            delete_args=query)
                 query_result = execute_service.execute_and_expire(session, stmt)
 
                 return parsing_service.delete_one(response_model=response_model,
@@ -436,7 +414,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                   session=session)
 
     @classmethod
-    def delete_many(self, api, *,
+    def delete_many(cls, api, *,
                     query_service,
                     parsing_service,
                     execute_service,
@@ -452,9 +430,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                stmt = await query_service.async_delete(delete_args=query,
-                                                        session=session,
-                                                        request_obj=request)
+                stmt = await query_service.async_delete(delete_args=query)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_many(response_model=response_model,
                                                                sql_execute_result=query_result,
@@ -467,9 +443,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                      request: Request,
                                      query=Depends(request_query_model),
                                      session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query,
-                                            session=session,
-                                            request_obj=request)
+                stmt = query_service.delete(delete_args=query)
                 query_result = execute_service.execute_and_expire(session, stmt)
                 return parsing_service.delete_many(response_model=response_model,
                                                    sql_execute_result=query_result,
@@ -477,7 +451,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                    session=session)
 
     @classmethod
-    def post_redirect_get(self, api, *,
+    def post_redirect_get(cls, api, *,
                           dependencies,
                           request_body_model,
                           db_session,
@@ -493,7 +467,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     insert_args: request_body_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = await crud_service.async_insert_one(insert_args=insert_args, session=session)
+                stmt = await crud_service.async_insert_one(insert_args=insert_args)
                 try:
                     query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
@@ -514,7 +488,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session),
             ):
 
-                stmt = crud_service.insert_one(insert_args=insert_args, session=session)
+                stmt = crud_service.insert_one(insert_args=insert_args)
 
                 try:
                     query_result = execute_service.execute(session, stmt)
@@ -531,7 +505,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                        session=session)
 
     @classmethod
-    def patch_one(self, api, *,
+    def patch_one(cls, api, *,
                   path,
                   response_model,
                   dependencies,
@@ -557,8 +531,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
                 stmt = await crud_service.async_update(primary_key=primary_key,
                                                        update_args=patch_data,
-                                                       extra_query=extra_query,
-                                                       session=session)
+                                                       extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -567,10 +540,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return await result_parser.async_patch_one(response_model=response_model,
-                                                           sql_execute_result=query_result,
-                                                           fastapi_response=response,
-                                                           session=session)
+                return await result_parser.async_update_one(response_model=response_model,
+                                                            sql_execute_result=query_result,
+                                                            fastapi_response=response,
+                                                            session=session)
         else:
             @api.patch(path,
                        status_code=200,
@@ -585,8 +558,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
                 stmt = crud_service.update(primary_key=primary_key,
                                            update_args=patch_data,
-                                           extra_query=extra_query,
-                                           session=session)
+                                           extra_query=extra_query)
                 try:
                     query_result = execute_service.execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -595,13 +567,13 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.patch_one(response_model=response_model,
-                                               sql_execute_result=query_result,
-                                               fastapi_response=response,
-                                               session=session)
+                return result_parser.update_one(response_model=response_model,
+                                                sql_execute_result=query_result,
+                                                fastapi_response=response,
+                                                session=session)
 
     @classmethod
-    def patch_many(self, api, *,
+    def patch_many(cls, api, *,
                    path,
                    response_model,
                    dependencies,
@@ -624,8 +596,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session)
             ):
                 stmt = await crud_service.async_update(update_args=patch_data,
-                                                       extra_query=extra_query,
-                                                       session=session)
+                                                       extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -650,8 +621,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session)
             ):
                 stmt = crud_service.update(update_args=patch_data,
-                                           extra_query=extra_query,
-                                           session=session)
+                                           extra_query=extra_query)
 
                 try:
                     query_result = execute_service.execute_and_expire(session, stmt)
@@ -667,7 +637,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                 session=session)
 
     @classmethod
-    def put_one(self, api, *,
+    def put_one(cls, api, *,
                 path,
                 request_url_param_model,
                 request_body_model,
@@ -690,8 +660,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
                 stmt = await crud_service.async_update(primary_key=primary_key,
                                                        update_args=update_data,
-                                                       extra_query=extra_query,
-                                                       session=session)
+                                                       extra_query=extra_query)
 
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
@@ -716,8 +685,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
             ):
                 stmt = crud_service.update(primary_key=primary_key,
                                            update_args=update_data,
-                                           extra_query=extra_query,
-                                           session=session)
+                                           extra_query=extra_query)
                 try:
                     query_result = execute_service.execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -732,7 +700,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                 session=session)
 
     @classmethod
-    def put_many(self, api, *,
+    def put_many(cls, api, *,
                  path,
                  response_model,
                  dependencies,
@@ -752,8 +720,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session),
             ):
                 stmt = await crud_service.async_update(update_args=update_data,
-                                                       extra_query=extra_query,
-                                                       session=session)
+                                                       extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -775,8 +742,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                     session=Depends(db_session),
             ):
                 stmt = crud_service.update(update_args=update_data,
-                                           extra_query=extra_query,
-                                           session=session)
+                                           extra_query=extra_query)
                 try:
 
                     query_result = execute_service.execute_and_expire(session, stmt)
@@ -792,8 +758,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                  session=session)
 
 
-
-class DatabasesRouteResourceBase(RouteResourceBase):
+class DatabasesRouteResourceBase(object):
     def __init__(self):
         raise NotImplementedError
     #
