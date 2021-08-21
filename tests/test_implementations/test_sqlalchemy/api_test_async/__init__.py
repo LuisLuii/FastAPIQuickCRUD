@@ -35,11 +35,11 @@ async def get_transaction_session() -> AsyncSession:
 class UntitledTable256(Base):
     primary_key_of_table = "primary_key"
     unique_fields = ['primary_key', 'int4_value', 'float4_value']
-    __tablename__ = 'test_build_myself'
+    __tablename__ = 'test_build_myself_async'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'})
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True,server_default="nextval('test_build_myself_id_seq'::regclass)")
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)

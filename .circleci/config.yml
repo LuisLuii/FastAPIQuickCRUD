@@ -14,7 +14,7 @@ jobs:
           TEST_DATABASE_ASYNC_URL: postgresql+asyncpg://root@localhost/circle_test
 
     # Service container image
-      - image: circleci/postgres:9.6.8
+      - image:  kenton18/postgresql-uuid:latest
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference

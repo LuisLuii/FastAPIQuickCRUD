@@ -742,9 +742,9 @@ def test_upsert_one():
     # conflict
     upsert_data = deepcopy(updated_data)
     upsert_data['on_conflict'] = {'update_columns':['numeric_value']}
-    response = client.post('/test_2', headers=headers, data=json.dumps(upsert_data|json.loads(data)))
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(upsert_data, **json.loads(data))))
     assert response.status_code == 201
 
     # upsert
-    response = client.post('/test_2', headers=headers, data=json.dumps(updated_data|json.loads(data)))
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
     assert response.status_code == 409
