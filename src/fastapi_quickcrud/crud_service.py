@@ -109,7 +109,9 @@
 #                 else:
 #                     raise UnknownColumn(f'the {columns} is not exited')
 #             conflict_list = alias_to_column(model=self.model, param=unique_fields)
-#             conflict_update_dict = alias_to_column(model=self.model, param=conflict_update_dict, column_collection=True)
+#             conflict_update_dict = alias_to_column(model=self.model,
+#                                                       param=conflict_update_dict,
+#                                                       column_collection=True)
 #             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,
 #                                                             set_=conflict_update_dict
 #                                                             )

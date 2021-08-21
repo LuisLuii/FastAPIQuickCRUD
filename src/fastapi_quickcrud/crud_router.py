@@ -10,7 +10,7 @@ from pydantic import \
     BaseModel
 
 from .misc.abstract_execute import SQLALchemyExecuteService, DatabasesExecuteService
-from .misc.abstract_parser import SQLALchemyResultParse, DatabasesResultParserBase
+from .misc.abstract_parser import SQLAlchemyResultParse, DatabasesResultParserBase
 from .misc.abstract_query import SQLALchemyQueryService
 from .misc.abstract_route import SQLALChemyBaseRouteSource, DatabasesRouteResourceBase
 from .misc.crud_model import CRUDModel
@@ -34,7 +34,6 @@ def crud_router_builder(
     """
 
     :param db_session: db_session
-    :param crud_service:
     :param crud_models:
     :param session_object:
     :param db_model:
@@ -55,7 +54,7 @@ def crud_router_builder(
 
     if session_object is SessionObject.sqlalchemy:
         routes_source = SQLALChemyBaseRouteSource
-        result_parser = SQLALchemyResultParse(async_model=async_mode,
+        result_parser = SQLAlchemyResultParse(async_model=async_mode,
                                               crud_models=crud_models,
                                               autocommit=autocommit)
         execute_service = SQLALchemyExecuteService()

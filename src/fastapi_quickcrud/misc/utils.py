@@ -38,7 +38,6 @@ unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
-
 def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
 

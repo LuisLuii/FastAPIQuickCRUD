@@ -1,164 +1,162 @@
-from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import Union
 
 from fastapi import \
     Depends, \
     Response
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 
 
-class RouteResourceBase(ABC):
-    @abstractmethod
-    def find_one(self, api,
-                 *,
-                 path,
-                 query_service,
-                 parsing_service,
-                 async_mode,
-                 response_model,
-                 dependencies,
-                 request_url_param_model,
-                 request_query_model,
-                 db_session):
-        raise NotImplementedError
+# class RouteResourceBase(ABC):
+#     @abstractmethod
+#     def find_one(self, api,
+#                  *,
+#                  path,
+#                  query_service,
+#                  parsing_service,
+#                  async_mode,
+#                  response_model,
+#                  dependencies,
+#                  request_url_param_model,
+#                  request_query_model,
+#                  db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def find_many(self,
+#                   api, *,
+#                   query_service,
+#                   parsing_service,
+#                   async_mode,
+#                   path,
+#                   response_model,
+#                   dependencies,
+#                   request_query_model,
+#                   db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def upsert_one(api, *,
+#                    path,
+#                    query_service,
+#                    parsing_service,
+#                    async_mode,
+#                    response_model,
+#                    request_body_model,
+#                    dependencies,
+#                    db_session,
+#                    unique_list):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def upsert_many(api, *,
+#                     query_service,
+#                     parsing_service,
+#                     async_mode,
+#                     path,
+#                     response_model,
+#                     dependencies,
+#                     request_body_model,
+#                     db_session,
+#                     unique_list):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def delete_one(api, *,
+#                    query_service,
+#                    parsing_service,
+#                    async_mode,
+#                    path,
+#                    response_model,
+#                    dependencies,
+#                    request_query_model,
+#                    request_url_model,
+#                    db_session, ):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def delete_many(api, *,
+#                     query_service,
+#                     parsing_service,
+#                     async_mode,
+#                     path,
+#                     response_model,
+#                     dependencies,
+#                     request_query_model,
+#                     db_session):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def post_redirect_get(api, *,
+#                           dependencies,
+#                           request_body_model,
+#                           db_session,
+#                           crud_service,
+#                           result_parser,
+#                           async_mode,
+#                           response_model):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def patch_one(api, *,
+#                   path,
+#                   response_model,
+#                   dependencies,
+#                   request_url_param_model,
+#                   request_body_model,
+#                   request_query_model,
+#                   db_session,
+#                   crud_service,
+#                   result_parser,
+#                   async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def patch_many(api, *,
+#                    path,
+#                    response_model,
+#                    dependencies,
+#                    request_body_model,
+#                    request_query_model,
+#                    db_session,
+#                    crud_service,
+#                    result_parser,
+#                    async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def put_one(api, *,
+#                 path,
+#                 request_url_param_model,
+#                 request_body_model,
+#                 response_model,
+#                 dependencies,
+#                 request_query_model,
+#                 db_session,
+#                 crud_service,
+#                 result_parser,
+#                 async_mode):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def put_many(api, *,
+#                  path,
+#                  response_model,
+#                  dependencies,
+#                  request_query_model,
+#                  request_body_model,
+#                  db_session,
+#                  crud_service,
+#                  result_parser,
+#                  async_mode):
+#         raise NotImplementedError
 
-    @abstractmethod
-    def find_many(self,
-                  api, *,
-                  query_service,
-                  parsing_service,
-                  async_mode,
-                  path,
-                  response_model,
-                  dependencies,
-                  request_query_model,
-                  db_session):
-        raise NotImplementedError
 
-    @abstractmethod
-    def upsert_one(api, *,
-                   path,
-                   query_service,
-                   parsing_service,
-                   async_mode,
-                   response_model,
-                   request_body_model,
-                   dependencies,
-                   db_session,
-                   unique_list):
-        raise NotImplementedError
-
-    @abstractmethod
-    def upsert_many(api, *,
-                    query_service,
-                    parsing_service,
-                    async_mode,
-                    path,
-                    response_model,
-                    dependencies,
-                    request_body_model,
-                    db_session,
-                    unique_list):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete_one(api, *,
-                   query_service,
-                   parsing_service,
-                   async_mode,
-                   path,
-                   response_model,
-                   dependencies,
-                   request_query_model,
-                   request_url_model,
-                   db_session, ):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete_many(api, *,
-                    query_service,
-                    parsing_service,
-                    async_mode,
-                    path,
-                    response_model,
-                    dependencies,
-                    request_query_model,
-                    db_session):
-        raise NotImplementedError
-
-    @abstractmethod
-    def post_redirect_get(api, *,
-                          dependencies,
-                          request_body_model,
-                          db_session,
-                          crud_service,
-                          result_parser,
-                          async_mode,
-                          response_model):
-        raise NotImplementedError
-
-    @abstractmethod
-    def patch_one(api, *,
-                  path,
-                  response_model,
-                  dependencies,
-                  request_url_param_model,
-                  request_body_model,
-                  request_query_model,
-                  db_session,
-                  crud_service,
-                  result_parser,
-                  async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def patch_many(api, *,
-                   path,
-                   response_model,
-                   dependencies,
-                   request_body_model,
-                   request_query_model,
-                   db_session,
-                   crud_service,
-                   result_parser,
-                   async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def put_one(api, *,
-                path,
-                request_url_param_model,
-                request_body_model,
-                response_model,
-                dependencies,
-                request_query_model,
-                db_session,
-                crud_service,
-                result_parser,
-                async_mode):
-        raise NotImplementedError
-
-    @abstractmethod
-    def put_many(api, *,
-                 path,
-                 response_model,
-                 dependencies,
-                 request_query_model,
-                 request_body_model,
-                 db_session,
-                 crud_service,
-                 result_parser,
-                 async_mode):
-        raise NotImplementedError
-
-
-class SQLALChemyBaseRouteSource(RouteResourceBase):
+class SQLALChemyBaseRouteSource(object):
 
     @classmethod
-    def find_one(self, api,
+    def find_one(cls, api,
                  *,
                  path,
                  query_service,
@@ -208,7 +206,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                 return response_result
 
     @classmethod
-    def find_many(self, api, *,
+    def find_many(cls, api, *,
                   query_service,
                   parsing_service,
                   execute_service,
@@ -258,7 +256,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                 return parsed_response
 
     @classmethod
-    def upsert_one(self, api, *,
+    def upsert_one(cls, api, *,
                    path,
                    query_service,
                    parsing_service,
@@ -324,7 +322,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                   session=session)
 
     @classmethod
-    def upsert_many(self, api, *,
+    def upsert_many(cls, api, *,
                     query_service,
                     parsing_service,
                     async_mode,
@@ -389,7 +387,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                    session=session)
 
     @classmethod
-    def delete_one(self, api, *,
+    def delete_one(cls, api, *,
                    query_service,
                    parsing_service,
                    execute_service,
@@ -436,7 +434,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                   session=session)
 
     @classmethod
-    def delete_many(self, api, *,
+    def delete_many(cls, api, *,
                     query_service,
                     parsing_service,
                     execute_service,
@@ -477,7 +475,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                    session=session)
 
     @classmethod
-    def post_redirect_get(self, api, *,
+    def post_redirect_get(cls, api, *,
                           dependencies,
                           request_body_model,
                           db_session,
@@ -531,7 +529,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                        session=session)
 
     @classmethod
-    def patch_one(self, api, *,
+    def patch_one(cls, api, *,
                   path,
                   response_model,
                   dependencies,
@@ -567,10 +565,10 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return await result_parser.async_patch_one(response_model=response_model,
-                                                           sql_execute_result=query_result,
-                                                           fastapi_response=response,
-                                                           session=session)
+                return await result_parser.async_update_one(response_model=response_model,
+                                                            sql_execute_result=query_result,
+                                                            fastapi_response=response,
+                                                            session=session)
         else:
             @api.patch(path,
                        status_code=200,
@@ -595,13 +593,13 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.patch_one(response_model=response_model,
-                                               sql_execute_result=query_result,
-                                               fastapi_response=response,
-                                               session=session)
+                return result_parser.update_one(response_model=response_model,
+                                                sql_execute_result=query_result,
+                                                fastapi_response=response,
+                                                session=session)
 
     @classmethod
-    def patch_many(self, api, *,
+    def patch_many(cls, api, *,
                    path,
                    response_model,
                    dependencies,
@@ -667,7 +665,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                 session=session)
 
     @classmethod
-    def put_one(self, api, *,
+    def put_one(cls, api, *,
                 path,
                 request_url_param_model,
                 request_body_model,
@@ -732,7 +730,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                 session=session)
 
     @classmethod
-    def put_many(self, api, *,
+    def put_many(cls, api, *,
                  path,
                  response_model,
                  dependencies,
@@ -792,8 +790,7 @@ class SQLALChemyBaseRouteSource(RouteResourceBase):
                                                  session=session)
 
 
-
-class DatabasesRouteResourceBase(RouteResourceBase):
+class DatabasesRouteResourceBase(object):
     def __init__(self):
         raise NotImplementedError
     #

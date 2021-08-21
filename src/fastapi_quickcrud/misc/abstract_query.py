@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 from sqlalchemy import and_, text, select, delete, update
 from sqlalchemy.dialects.postgresql import insert
@@ -11,52 +10,54 @@ from .utils import alias_to_column
 from .utils import find_query_builder
 
 
-class DBQueryServiceBase(ABC):
+#
+# class DBQueryServiceBase(ABC):
+#
+#     @abstractmethod
+#     def insert_one(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def get_many(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def get_one(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def upsert(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def delete(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def update(self):
+#         raise NotImplementedError
 
-    @abstractmethod
-    def insert_one(self):
-        raise NotImplementedError
 
-    @abstractmethod
-    def get_many(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_one(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def upsert(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def update(self):
-        raise NotImplementedError
-
-
-class SQLALchemyQueryService(DBQueryServiceBase):
+class SQLALchemyQueryService(object):
 
     def __init__(self, *, model, async_mode):
         self.model = model
         self.async_mode = async_mode
 
-    async def async_execute(self, *, session, stmt):
+    @staticmethod
+    async def async_execute(*, session, stmt):
         query_result = session.execute(stmt)
         query_result = await query_result
         return query_result
 
-    def execute(self, *, session, stmt):
+    @staticmethod
+    def execute(*, session, stmt):
         query_result = session.execute(stmt)
         query_result = query_result
         return query_result
 
     def insert_one(self, *,
                    insert_args,
-                   session,
                    **kwargs):
         insert_args = insert_args.__dict__
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
@@ -66,7 +67,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     async def async_insert_one(self, *,
                                insert_args,
-                               session,
                                **kwargs):
         insert_args = insert_args.__dict__
         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
@@ -76,7 +76,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     async def async_get_many(self, *,
                              query,
-                             session,
                              **kwargs):
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
@@ -103,7 +102,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     def get_many(self, *,
                  query,
-                 session,
                  **kwargs):
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
@@ -147,7 +145,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
     def get_one(self, *,
                 extra_args,
                 filter_args,
-                session,
                 **kwargs):
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
@@ -161,10 +158,9 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     async def async_upsert(self, *, insert_arg,
                            unique_fields: List[str],
-                           session,
                            upsert_one=True,
                            **kwargs):
-        insert_arg_dict: dict = insert_arg.__dict__
+        insert_arg_dict: Union[dict,list] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
         if not upsert_one:
@@ -202,10 +198,9 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     def upsert(self, *, insert_arg,
                unique_fields: List[str],
-               session,
                upsert_one=True,
                **kwargs):
-        insert_arg_dict: dict = insert_arg.__dict__
+        insert_arg_dict: Union[list,dict] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
         if not upsert_one:
@@ -244,7 +239,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
     def delete(self,
                *,
                delete_args,
-               session,
                primary_key=None,
                **kwargs):
         delete_args = delete_args.__dict__
@@ -263,7 +257,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
     async def async_delete(self,
                            *,
                            delete_args,
-                           session,
                            primary_key=None,
                            **kwargs):
         delete_args = delete_args.__dict__
@@ -282,7 +275,6 @@ class SQLALchemyQueryService(DBQueryServiceBase):
 
     async def async_update(self, *, update_args,
                            extra_query,
-                           session,
                            primary_key=None,
                            **kwargs):
         update_args = update_args.__dict__
@@ -295,14 +287,11 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
-        # query_result = await self.async_execute(session=session, stmt=update_stmt)
-        # session.expire_all()
         return update_stmt
 
     def update(self, *,
                update_args,
                extra_query,
-               session,
                primary_key=None,
                **kwargs):
         update_args = update_args.__dict__
@@ -315,6 +304,4 @@ class SQLALchemyQueryService(DBQueryServiceBase):
         update_stmt = update(self.model).where(and_(*filter_list)).values(update_args)
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
-        # query_result = self.execute(session=session, stmt=update_stmt)
-        # session.expire_all()
         return update_stmt

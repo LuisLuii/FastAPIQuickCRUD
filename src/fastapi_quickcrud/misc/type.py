@@ -1,8 +1,6 @@
-from typing import Generic, TypeVar
-
-import strenum as strenum
-from strenum import StrEnum
 from enum import Enum, auto
+
+from strenum import StrEnum
 
 
 class Ordering(StrEnum):
@@ -115,7 +113,5 @@ class JSONBMatchingMode(str, Enum):
 
 
 class SessionObject(StrEnum):
-    sqlalchemy= auto()
-    databases= auto()
-
-
+    sqlalchemy = auto()
+    databases = auto()

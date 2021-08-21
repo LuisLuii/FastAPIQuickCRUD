@@ -7,8 +7,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=feature/code_coverage)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=develop)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop)
 [![PyPidownload](https://img.shields.io/pypi/dm/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
-[![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
-[![SupportedVersion](https://img.shields.io/pypi/status/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
+[![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
+[![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
 
 ---
 

@@ -1,42 +1,44 @@
-from abc import ABC, abstractmethod
+#
+# class DBExecuteServiceBase(ABC):
+#
+#     @abstractmethod
+#     async def async_execute(self):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def execute(self):
+#         raise NotImplementedError
 
 
-class DBExecuteServiceBase(ABC):
-
-    @abstractmethod
-    async def async_execute(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def execute(self):
-        raise NotImplementedError
-
-
-class SQLALchemyExecuteService(DBExecuteServiceBase):
+class SQLALchemyExecuteService(object):
 
     def __init__(self):
         pass
 
-    async def async_execute_and_expire(self, session, stmt):
+    @staticmethod
+    async def async_execute_and_expire(session, stmt):
         result = await session.execute(stmt)
         session.expire_all()
         return result
 
-    def execute_and_expire(self, session, stmt):
+    @staticmethod
+    def execute_and_expire(session, stmt):
         result = session.execute(stmt)
         session.expire_all()
         return result
 
-    async def async_execute(self, session, stmt):
+    @staticmethod
+    async def async_execute(session, stmt):
         return await session.execute(stmt)
 
-    def execute(self, session, stmt):
+    @staticmethod
+    def execute(session, stmt):
         return session.execute(stmt)
 
 
-class DatabasesExecuteService():
+class DatabasesExecuteService:
     def __init__(self):
-        raise NotImplementedError
+        pass
 
     # async def async_fetch_many(self, session, stmt):
     #     return await session.fetch_all(query=stmt)
