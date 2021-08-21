@@ -1,0 +1,11 @@
+
+[report]
+show_missing = True
+omit =
+    venv/*
+    tests/*
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    raise NotImplementedError
+    self._exclude_column = \[\]
+    if __name__ == .__main__.:

@@ -70,12 +70,6 @@ def _model_from_dataclass(kls: 'StdlibDataclass') -> Type[BaseModel]:
     return pydantic_dataclass(kls).__pydantic_model__
 
 
-def _filter_out_none(_, values):
-    values_ = deepcopy(values)
-    for k, v in values_.items():
-        if v is None:
-            values.pop(k)
-    return values
 
 
 def _original_data_to_alias(alias_name_dict):

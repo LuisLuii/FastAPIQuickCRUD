@@ -102,6 +102,7 @@ class SQLALchemyResultParse(ResultParserBase):
         return result
 
     async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+        # FIXME handle NO_CONTENT
         result_list = [i.__dict__ for i in sql_execute_result.scalars()]
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
@@ -340,62 +341,68 @@ class SQLALchemyResultParse(ResultParserBase):
 
 
 class DatabasesResultParserBase(ABC):
-
-    def __init__(self, async_model, crud_models, autocommit):
-        self.async_mode = async_model
-        self.crud_models = crud_models
-        self.primary_name = crud_models.PRIMARY_KEY_NAME
-        self.autocommit = autocommit
-
-    async def async_commit(self, session):
-        if self.autocommit:
-            await session.commit()
-
-    async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        if not sql_execute_result:
-            return Response('specific data not found',status_code=HTTPStatus.NOT_FOUND)
-        result = parse_obj_as(response_model, dict(sql_execute_result))
-        fastapi_response.headers["x-total-count"] = str(1)
-
-        await self.async_commit(kwargs.get('session'))
-        return result
-
-    def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    def __init__(self):
         raise NotImplementedError
 
-
-    def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
-
-    def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        raise NotImplementedError
-
+    # def __init__(self, async_model, crud_models, autocommit):
+    #     self.async_mode = async_model
+    #     self.crud_models = crud_models
+    #     self.primary_name = crud_models.PRIMARY_KEY_NAME
+    #     self.autocommit = autocommit
+    #
+    # async def async_commit(self, session):
+    #     if self.autocommit:
+    #         await session.commit()
+    #
+    # async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     if not sql_execute_result:
+    #         return Response('specific data not found',status_code=HTTPStatus.NOT_FOUND)
+    #     result = parse_obj_as(response_model, dict(sql_execute_result))
+    #     fastapi_response.headers["x-total-count"] = str(1)
+    #
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     # sql_execute_result = [] if no data
+    #     result_list = [dict(i) for i in sql_execute_result]
+    #     result = parse_obj_as(response_model, result_list)
+    #     fastapi_response.headers["x-total-count"] = str(len(result_list))
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def upsert_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def upsert_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #
+    #
+    # def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     raise NotImplementedError
+    #

@@ -1,7 +1,12 @@
 #  FastAPI Quick CRUD
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
+[![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=feature/code_coverage)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=develop)
+[![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop)
+[![PyPidownload](https://img.shields.io/pypi/dm/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
+[![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
+[![SupportedVersion](https://img.shields.io/pypi/status/fastapi-quickcrud)](https://pypi.org/project/fastapi-quickcrud)
 
 FastAPI Quick CRUD 可以為你節省編寫重複的CRUD代碼，用戶只需要為你的Postgresql table編寫Sqlalchemy Declarative Base Class 便可立即生成該Table的 CRUD API。
 

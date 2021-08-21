@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
   build:
 
@@ -25,4 +25,5 @@ jobs:
       - run: sudo pip install setuptools-rust
       - run: sudo python -m pip install --upgrade pip
       - run: sudo pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r requirements.txt
-      - run: python -m pytest ./tests/test_implementations
+      - run: coverage run -m pytest ./tests/test_implementations
+      - run: coveralls

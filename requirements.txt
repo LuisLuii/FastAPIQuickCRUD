@@ -8,3 +8,5 @@ pytest
 guid
 uvicorn
 requests
+coverage
+coveralls

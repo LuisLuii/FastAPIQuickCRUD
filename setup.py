@@ -26,7 +26,7 @@ if __name__ == '__main__':
         author_email='luis11235178@gmail.com',
         url='https://gitlab.com/luislui/quickcrud',
         license="MIT License",
-        keywords=["fastapi", "crud", "restful", "routing", "generator", "crudrouter","postgresql","builder"],
+        keywords=["fastapi", "crud", "restful", "routing","SQLAlchemy", "generator", "crudrouter","postgresql","builder"],
         packages=find_packages('src'),
         package_dir={'': 'src'},
         setup_requires=["setuptools>=31.6.0"],
