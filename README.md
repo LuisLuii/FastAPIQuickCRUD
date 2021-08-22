@@ -20,7 +20,9 @@
   - [Installation](#installation)
   - [Usage](#usage)
 - [Design](#design)
-  - [Query](#query)
+  - [Path Parameter](#path-parameter)
+  - [Query Parameter](#query-parameter)
+  - [Request Body](#request-body)
   - [Upsert](#upsert)
 
 
@@ -282,10 +284,11 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
 # Design
 
-## Query Parameter , Path Parameters and Request Body
-
+## Path Parameter
 
 In the design of this tool, Path Parameters should be a primary key of table, that why limited primary key can only be one.
+
+## Query Parameter
 
 In `PUT` `DELETE` `PATCH`, user can use Path Parameters and Query Parameters to limit the scope of the data affected by the operation, and the Query Parameters is same with `FIND` API
 
