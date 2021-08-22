@@ -1,3 +1,5 @@
+import asyncio
+
 import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
@@ -32,8 +34,7 @@ class ExampleTable(Base):
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},
-                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True)
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
@@ -121,16 +122,10 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
 
 # Base.metadata.create_all(engine)
 # unknown reason that will throw error when add the code following
-# async def create_table():
-#     async with engine.begin() as conn:
-#         await conn.run_sync(Base.metadata.create_all)
-#         print('created')
-#     print('done')
-#     return
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 #
-# asyncio.run(create_table())
-# loop.stop()
-# loop.close()
-# print(loop.is_closed())
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)

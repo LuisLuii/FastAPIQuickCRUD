@@ -31,8 +31,7 @@ async def get_transaction_session() -> AsyncSession:
 
 ExampleTable = Table(
     'untitled_table_256', metadata,
-    Column('id', Integer, primary_key=True, nullable=False,
-           server_default=text("nextval('untitled_table_256_id_seq'::regclass)"),info={'alias_name': 'primary_key'}),
+    Column('id', Integer, primary_key=True, nullable=False,autoincrement=True,info={'alias_name': 'primary_key'}),
     Column('bool_value', Boolean, nullable=False, server_default=text("false")),
     Column('bytea_value', LargeBinary),
     Column('char_value', CHAR(10)),
@@ -115,7 +114,11 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 prefix="/test_CRUD",
                                                 tags=["test"]
                                                 )
-
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+#
 # Base.metadata.create_all(engine)
 # unknown reason that will throw error when add the code following
 # async def create_table():
@@ -130,4 +133,4 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
 # loop.close()
 # print(loop.is_closed())
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)

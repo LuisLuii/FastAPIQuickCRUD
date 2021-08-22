@@ -96,19 +96,9 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 prefix="/test_CRUD",
                                                 tags=["test"]
                                                 )
-
-# Base.metadata.create_all(engine)
-# unknown reason that will throw error when add the code following
-# async def create_table():
-#     async with engine.begin() as conn:
-#         await conn.run_sync(Base.metadata.create_all)
-#         print('created')
-#     print('done')
-#     return
-#
-# asyncio.run(create_table())
-# loop.stop()
-# loop.close()
-# print(loop.is_closed())
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 [app.include_router(i) for i in [example_table_full_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)

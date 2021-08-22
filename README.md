@@ -1,8 +1,5 @@
 #  FastAPI Quick CRUD
 
-
-
-
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb?style=flat-square)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=feature/code_coverage)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=develop)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop)
@@ -66,7 +63,7 @@ I believe that everyone who's working with FastApi and building some RESTful of 
   - ❌ If there are multiple unique constraints, please use compound unique constraints instead
   - ❌ If there are multiple unique constraints, please use compound unique constraints instead
   - ❌ Composite primary key is not support
-  - ❌ Not Support API without specific resource `xxx/{primary key}` when table have not primary key; 
+  - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
     - `UPDATE ONE`
     - `FIND ONE`
     - `PATCH ONE` 
