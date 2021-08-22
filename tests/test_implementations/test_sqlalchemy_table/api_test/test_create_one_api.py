@@ -12,10 +12,10 @@ from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
@@ -24,10 +24,10 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       tags=["test"]
                                       )
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_MANY,
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
@@ -37,10 +37,10 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.POST_REDIRECT_GET
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.POST_REDIRECT_GET
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
                                                  db_model=UntitledTable256,
@@ -50,10 +50,10 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.FIND_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,

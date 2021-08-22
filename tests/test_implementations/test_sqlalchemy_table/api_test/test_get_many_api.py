@@ -4,18 +4,16 @@ from urllib.parse import urlencode
 
 from starlette.testclient import TestClient
 
-
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud.misc.utils import sqlalchemy_table_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_MANY,
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # Model Test
 # api_model = UntitledTable256Model.__dict__['POST']
 # assert api_model
@@ -76,10 +74,10 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.FIND_MANY,
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_find_many = crud_router_builder(db_session=get_transaction_session,
                                      db_model=UntitledTable256,
@@ -278,7 +276,6 @@ def test_create_a_more_than_one_data_which_value_is_TRUE_of_boolean_type_and_get
 
     response = client.get(f'/test_get_many?{query_string}')
     assert response.status_code == 204
-
 
     params = {"primary_key____from": min_key,
               "primary_key____to": max_key,
@@ -1675,7 +1672,6 @@ def test_create_a_more_than_one_data_and_get_many_2():
     # <= 0.4
     # result = []
 
-
     # data  = 0.4
     # <= 0.5
     # result = [0.4]
@@ -1704,7 +1700,6 @@ def test_create_a_more_than_one_data_and_get_many_2():
         for i in num_two_sample_data:
             assert i in response.json()
 
-
     # data = 10.7
     # < 10.7
     # still got 10.7 but if data is 10.6
@@ -1714,7 +1709,7 @@ def test_create_a_more_than_one_data_and_get_many_2():
                   "float4_value____from_____comparison_operator": 'Greater_than',
                   "float4_value____to_____comparison_operator": 'Less_than',
                   "float4_value____from": float_one,
-                  "float4_value____to": float_two+0.1}
+                  "float4_value____to": float_two + 0.1}
         query_string = urlencode(OrderedDict(**params))
         response = client.get(f'/test_get_many?{query_string}')
         response_data = response.json()
@@ -1727,13 +1722,10 @@ def test_create_a_more_than_one_data_and_get_many_2():
     greater_than_or_equal_to_Less_than_or_equal_to()
     less_than_or_equal_to_less_than()
 
-
-
     # float 4 < will round down to the odd floating odd
     # data  = 0.3
     # <= 0.4
     # result = []
-
 
     # data  = 0.4
     # <= 0.5
@@ -1770,7 +1762,7 @@ def test_create_a_more_than_one_data_and_get_many_2():
                   "float8_value____from_____comparison_operator": 'Greater_than',
                   "float8_value____to_____comparison_operator": 'Less_than',
                   "float8_value____from": float_one,
-                  "float8_value____to": float_two+0.1}
+                  "float8_value____to": float_two + 0.1}
         query_string = urlencode(OrderedDict(**params))
         response = client.get(f'/test_get_many?{query_string}')
         response_data = response.json()
