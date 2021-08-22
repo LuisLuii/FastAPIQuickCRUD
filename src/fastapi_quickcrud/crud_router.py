@@ -12,7 +12,7 @@ from sqlalchemy.sql.schema import Table
 
 from .misc.abstract_execute import SQLALchemyExecuteService
 from .misc.abstract_parser import SQLAlchemyResultParse, SQLAlchemyTableResultParse
-from .misc.abstract_query import SQLAlchemyQueryService, SQLAlchemyTableQueryService
+from .misc.abstract_query import SQLAlchemyQueryService
 from .misc.abstract_route import SQLALChemyBaseRouteSource
 from .misc.crud_model import CRUDModel
 from .misc.type import CrudMethods
@@ -60,12 +60,11 @@ def crud_router_builder(
         result_parser = SQLAlchemyTableResultParse(async_model=async_mode,
                                                    crud_models=crud_models,
                                                    autocommit=autocommit)
-        crud_service = SQLAlchemyTableQueryService(model=db_model, async_mode=async_mode)
     else:
         result_parser = SQLAlchemyResultParse(async_model=async_mode,
                                               crud_models=crud_models,
                                               autocommit=autocommit)
-        crud_service = SQLAlchemyQueryService(model=db_model, async_mode=async_mode)
+    crud_service = SQLAlchemyQueryService(model=db_model, async_mode=async_mode)
 
     execute_service = SQLALchemyExecuteService()
 

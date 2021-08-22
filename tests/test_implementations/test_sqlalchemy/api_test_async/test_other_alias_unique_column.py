@@ -759,3 +759,4 @@ def test_post_redirect_get_data():
             request_ = json.dumps(change[k]).strip()
             assert request_ == response_
     return response_data
+test_post_redirect_get_data()
