@@ -4,13 +4,15 @@ from datetime import date, timedelta, datetime, timezone
 
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
-from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+from src.fastapi_quickcrud import crud_router_builder
+from src.fastapi_quickcrud import CrudMethods
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
+
+
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,
                                                ],
@@ -28,8 +30,8 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
 
 client = TestClient(app)
 
-primary_key_name = UntitledTable256.primary_key_of_table
-unique_fields = UntitledTable256.unique_fields
+primary_key_name = 'primary_key'
+unique_fields = ['primary_key', 'int4_value', 'float4_value']
 
 
 def create_example_data():
@@ -353,3 +355,4 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
+

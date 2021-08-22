@@ -45,7 +45,7 @@ async def get_transaction_session() -> AsyncSession:
 class UUIDTable(Base):
     primary_key_of_table = "primary_key"
     unique_fields = ['primary_key', 'test_case_column', 'float4_value']
-    __tablename__ = 'test_no_alias'
+    __tablename__ = 'test_no_alias_async'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )

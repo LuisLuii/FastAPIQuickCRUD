@@ -42,7 +42,7 @@ def get_transaction_session():
 class UUIDTable(Base):
     primary_key_of_table = "primary_key"
     unique_fields = ['primary_key', 'int4_value', 'float4_value']
-    __tablename__ = 'test_uuid_primary'
+    __tablename__ = 'test_uuid_primary_sync'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )

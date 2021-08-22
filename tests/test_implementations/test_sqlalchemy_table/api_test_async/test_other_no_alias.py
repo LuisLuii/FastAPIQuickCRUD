@@ -9,23 +9,26 @@ from urllib.parse import urlencode
 
 from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
+    JSON, LargeBinary, Numeric, SmallInteger, Table,String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 
 TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
                                    'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
+from sqlalchemy import create_engine
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 engine = create_async_engine(TEST_DATABASE_URL,
                              future=True,
                              echo=True,
@@ -37,54 +40,49 @@ async_session = sessionmaker(autocommit=False,
                              bind=engine,
                              class_=AsyncSession)
 
-
 async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
         yield session
 
 
-class UUIDTable(Base):
-    primary_key_of_table = "primary_key"
-    unique_fields = ['primary_key', 'test_case_column', 'float4_value']
-    __tablename__ = 'test_alias_unique_column_async'
-    __table_args__ = (
-        UniqueConstraint('id', 'test_case_column', 'float4_value'),
-    )
-    id = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
-                server_default=text("uuid_generate_v4()"))
-    primary_key = synonym('id')
-    bool_value = Column(Boolean, nullable=False, server_default=text("false"))
-    bytea_value = Column(LargeBinary)
-    char_value = Column(CHAR(10))
-    date_value = Column(Date, server_default=text("now()"))
-    float4_value = Column(Float, nullable=False)
-    float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-    int2_value = Column(SmallInteger, nullable=False)
-    test_case_column = Column(Integer, nullable=False, info={'alias_name': 'int4_value'})
-    int4_value = synonym('test_case_column')
-    int8_value = Column(BigInteger, server_default=text("99"))
-    interval_value = Column(INTERVAL)
-    json_value = Column(JSON)
-    jsonb_value = Column(JSONB(astext_type=Text()))
-    numeric_value = Column(Numeric)
-    text_value = Column(Text)
-    time_value = Column(Time)
-    timestamp_value = Column(DateTime)
-    timestamptz_value = Column(DateTime(True))
-    timetz_value = Column(Time(True))
-    varchar_value = Column(String)
-    array_value = Column(ARRAY(Integer()))
-    array_str__value = Column(ARRAY(String()))
+
+UUIDTable = Table(
+    'test_no_alias', metadata,
+    Column('id', UUID, primary_key=True, server_default=text("uuid_generate_v4()")),
+    Column('bool_value', Boolean, nullable=False, server_default=text("false")),
+    Column('bytea_value', LargeBinary),
+    Column('char_value', CHAR(10)),
+    Column('date_value', Date, server_default=text("now()")),
+    Column('float4_value', Float(53), nullable=False),
+    Column('float8_value', Float(53), nullable=False, server_default=text("10.10")),
+    Column('int2_value', SmallInteger, nullable=False),
+    Column('int4_value', Integer, nullable=False),
+    Column('int8_value', BigInteger, server_default=text("99")),
+    Column('interval_value', INTERVAL),
+    Column('json_value', JSON),
+    Column('jsonb_value', JSONB(astext_type=Text())),
+    Column('numeric_value', Numeric),
+    Column('text_value', Text),
+    Column('time_value', Time),
+    Column('timestamp_value', DateTime),
+    Column('timestamptz_value', DateTime(True)),
+    Column('timetz_value', Time(True)),
+    Column('varchar_value', String),
+    Column('array_value', ARRAY(Integer())),
+    Column('array_str__value', ARRAY(String())),
+    UniqueConstraint('id', 'int4_value', 'float4_value')
+)
+
+def setup_module(module):
+    async def create_table():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
 
-async def create_table():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(create_table())
 
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(create_table())
-model_1 = sqlalchemy_to_pydantic(UUIDTable,
+model_1 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.FIND_ONE,
                                      CrudMethods.FIND_MANY,
@@ -101,12 +99,12 @@ model_1 = sqlalchemy_to_pydantic(UUIDTable,
 route_1 = crud_router_builder(db_session=get_transaction_session,
                               db_model=UUIDTable,
                               crud_models=model_1,
-                              prefix="/test",
                               async_mode=True,
+                              prefix="/test",
                               tags=["test"]
                               )
 
-model_2 = sqlalchemy_to_pydantic(UUIDTable,
+model_2 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.UPSERT_ONE,
                                      CrudMethods.POST_REDIRECT_GET,
@@ -116,12 +114,12 @@ model_2 = sqlalchemy_to_pydantic(UUIDTable,
 route_2 = crud_router_builder(db_session=get_transaction_session,
                               db_model=UUIDTable,
                               crud_models=model_2,
-                              async_mode=True,
                               prefix="/test_2",
+                              async_mode=True,
                               tags=["test"]
                               )
 
-model_3 = sqlalchemy_to_pydantic(UUIDTable,
+model_3 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.FIND_ONE,
                                      CrudMethods.POST_REDIRECT_GET,
@@ -150,11 +148,11 @@ def test_get_one_data_and_create_one_data():
     response = client.post('/test_2', headers=headers, data=data)
     assert response.status_code == 201
     create_response = response.json()
-    find_target = create_response['primary_key']
+    find_target = create_response['id']
     response = client.get(f'/test/{find_target}', headers=headers, data=data)
     assert response.status_code == 200
     assert response.json() == create_response
-    create_response.pop('primary_key')
+    create_response.pop('id')
     query_param = urlencode(create_response)
     response = client.get(f'/test/{find_target}?{query_param}', headers=headers, data=data)
     assert response.status_code == 200
@@ -176,31 +174,6 @@ def test_get_many_data_and_create_many_data():
         for k, v in value.items():
             assert res_result_by_index[k] == v
 
-def test_upsert_one():
-    headers = {
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-    }
-    data = '{"float4_value": 0, "int2_value": 0, "int4_value": 10 }'
-    response = client.post('/test_2', headers=headers, data=data)
-    assert response.status_code == 201
-    create_response = response.json()
-    updated_data = {}
-    for k,v in create_response.items():
-        if k not in data:
-            updated_data[k] = v
-    updated_data['numeric_value'] = 100
-    # conflict
-    upsert_data = deepcopy(updated_data)
-    upsert_data['on_conflict'] = {'update_columns':['numeric_value']}
-    response = client.post('/test_2', headers=headers, data=json.dumps(dict(upsert_data, **json.loads(data))))
-    assert response.status_code == 201
-
-    # upsert
-    response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
-    assert response.status_code == 409
-
-
 
 def test_update_one_data():
     headers = {
@@ -211,7 +184,7 @@ def test_update_one_data():
     response = client.post('/test_2', headers=headers, data=data)
     assert response.status_code == 201
     create_response = response.json()
-    created_primary_key = create_response['primary_key']
+    created_primary_key = create_response['id']
     update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
@@ -265,7 +238,7 @@ def test_update_many_data():
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key_list = [i['primary_key'] for i in insert_response_data]
+    primary_key_list = [i['id'] for i in insert_response_data]
     params = {"bool_value____list": True,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
@@ -310,7 +283,7 @@ def test_update_many_data():
               "varchar_value____list": 'string',
               }
     from urllib.parse import urlencode
-    query_string = urlencode(params)+f'&primary_key____list={primary_key_list[0]}&primary_key____list={primary_key_list[1]}&primary_key____list={primary_key_list[2]}'
+    query_string = urlencode(params)+f'&id____list={primary_key_list[0]}&id____list={primary_key_list[1]}&id____list={primary_key_list[2]}'
     update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
@@ -348,7 +321,7 @@ def test_patch_one_data():
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key, = [i['primary_key'] for i in insert_response_data]
+    primary_key, = [i['id'] for i in insert_response_data]
     params = {"bool_value____list": True,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
@@ -471,7 +444,7 @@ def test_patch_many_data():
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key_list = [i['primary_key'] for i in insert_response_data]
+    primary_key_list = [i['id'] for i in insert_response_data]
     params = {
               "bool_value____list": True,
               "char_value____str": 'string%',
@@ -518,7 +491,7 @@ def test_patch_many_data():
               }
     from urllib.parse import urlencode
     query_string = urlencode(
-        params) + f'&primary_key____list={primary_key_list[0]}&primary_key____list={primary_key_list[1]}&primary_key____list={primary_key_list[2]}'
+        params) + f'&id____list={primary_key_list[0]}&id____list={primary_key_list[1]}&id____list={primary_key_list[2]}'
 
     update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24",
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "interval_value": 3600,
@@ -559,7 +532,7 @@ def test_delete_one_data():
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key, = [i['primary_key'] for i in insert_response_data]
+    primary_key, = [i['id'] for i in insert_response_data]
     params = {"bool_value____list": True,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
@@ -645,7 +618,7 @@ def test_delete_many_data():
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key_list = [i['primary_key'] for i in insert_response_data]
+    primary_key_list = [i['id'] for i in insert_response_data]
     params = {
               "bool_value____list": True,
               "char_value____str": 'string%',
@@ -692,7 +665,7 @@ def test_delete_many_data():
               }
     from urllib.parse import urlencode
     query_string = urlencode(
-        params) + f'&primary_key____list={primary_key_list[0]}&primary_key____list={primary_key_list[1]}&primary_key____list={primary_key_list[2]}'
+        params) + f'&id____list={primary_key_list[0]}&id____list={primary_key_list[1]}&id____list={primary_key_list[2]}'
 
     response = client.delete(f'/test?{query_string}')
     assert response.status_code == 200
@@ -750,7 +723,7 @@ def test_post_redirect_get_data():
     response = client.post('/test_3', headers=headers, data=data_, allow_redirects=True)
     assert response.status_code == HTTPStatus.OK
     response_data = response.json()
-    assert 'primary_key' in response_data
+    assert 'id' in response_data
     for k, v in response_data.items():
         if k in change:
             if isinstance(v, str):
@@ -759,4 +732,29 @@ def test_post_redirect_get_data():
             request_ = json.dumps(change[k]).strip()
             assert request_ == response_
     return response_data
-test_post_redirect_get_data()
+
+
+
+def test_upsert_one():
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
+    data = '{"float4_value": 0, "int2_value": 0, "int4_value": 10 }'
+    response = client.post('/test_2', headers=headers, data=data)
+    assert response.status_code == 201
+    create_response = response.json()
+    updated_data = {}
+    for k,v in create_response.items():
+        if k not in data:
+            updated_data[k] = v
+    updated_data['numeric_value'] = 100
+    # conflict
+    upsert_data = deepcopy(updated_data)
+    upsert_data['on_conflict'] = {'update_columns':['numeric_value']}
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(upsert_data, **json.loads(data))))
+    assert response.status_code == 201
+
+    # upsert
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
+    assert response.status_code == 409
