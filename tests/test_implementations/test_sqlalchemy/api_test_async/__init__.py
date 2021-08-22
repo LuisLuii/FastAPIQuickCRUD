@@ -15,6 +15,9 @@ Base = declarative_base()
 metadata = Base.metadata
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
 engine = create_async_engine(TEST_DATABASE_URL,
                              future=True,
                              echo=True,

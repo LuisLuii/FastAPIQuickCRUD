@@ -45,7 +45,7 @@ async def get_transaction_session() -> AsyncSession:
 
 
 class UUIDTable(Base):
-    __tablename__ = 'test_single_unique_table'
+    __tablename__ = 'test_single_unique_table_async'
     id = Column(UUID(as_uuid=True), primary_key=True,
                 server_default=text("uuid_generate_v4()"))
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))

@@ -119,13 +119,12 @@ class SQLAlchemyResultParse(object):
     @staticmethod
     def find_one_sub_func(sql_execute_result, response_model, fastapi_response):
         one_row_data = sql_execute_result.one_or_none()
-        if one_row_data:
-            row, = one_row_data
-            data_dict = row.__dict__
-            result = parse_obj_as(response_model, data_dict)
-            fastapi_response.headers["x-total-count"] = str(1)
-        else:
-            result = Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
+        if not one_row_data:
+            return Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
+        row, = one_row_data
+        data_dict = row.__dict__
+        result = parse_obj_as(response_model, data_dict)
+        fastapi_response.headers["x-total-count"] = str(1)
         return result
 
     async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
@@ -142,6 +141,8 @@ class SQLAlchemyResultParse(object):
     def find_many_sub_func(response_model, sql_execute_result, fastapi_response):
         # FIXME handle NO_CONTENT
         result_list = [i.__dict__ for i in sql_execute_result.scalars()]
+        if not result_list:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         return result
@@ -400,6 +401,8 @@ class SQLAlchemyTableResultParse(object):
     def find_many_sub_func(response_model, sql_execute_result, fastapi_response):
         # FIXME handle NO_CONTENT
         result_list = sql_execute_result.fetchall()
+        if not result_list:
+            return Response(status_code=HTTPStatus.NO_CONTENT)
         result = parse_obj_as(response_model, result_list)
         fastapi_response.headers["x-total-count"] = str(len(result_list))
         return result
@@ -546,6 +549,8 @@ class SQLAlchemyTableResultParse(object):
         session = kwargs['session']
         result = parse_obj_as(response_model, dict(sql_execute_result))
         primary_key_field = result.__dict__.pop(self.primary_name, None)
+        if not primary_key_field:
+            raise Exception(f'unknow error , missing primary_key_field: {result.__dict__}')
         assert primary_key_field is not None
         redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
         redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"

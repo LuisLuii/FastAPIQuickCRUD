@@ -29,6 +29,7 @@ __all__ = [
     'sqlalchemy_to_pydantic',
     'find_query_builder',
     'Base',
+    'sqlalchemy_table_to_pydantic',
     'alias_to_column',
     'get_many_order_by_columns_description_builder',
     'get_many_string_matching_patterns_description_builder']
@@ -116,7 +117,7 @@ def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMetho
         request_body_model = None
         response_model = None
         request_query_model = None
-        if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD:
+        if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD and not model_builder.primary_key_str:
             raise Exception(f"The generation of this API [{crud_method.value}] requires a primary key")
         if crud_method.value == CrudMethods.UPSERT_ONE.value:
             request_query_model, \

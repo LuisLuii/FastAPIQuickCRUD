@@ -277,13 +277,8 @@ def test_create_a_more_than_one_data_which_value_is_TRUE_of_boolean_type_and_get
     query_string = urlencode(OrderedDict(**params)) + f"&bool_value____list=False"
 
     response = client.get(f'/test_get_many?{query_string}')
-    response_data = response.json()
-    assert len(response_data) == 0
+    assert response.status_code == 204
 
-    for i in bool_false_sample_data:
-        assert i not in response.json()
-    for i in bool_true_sample_data:
-        assert i not in response.json()
 
     params = {"primary_key____from": min_key,
               "primary_key____to": max_key,

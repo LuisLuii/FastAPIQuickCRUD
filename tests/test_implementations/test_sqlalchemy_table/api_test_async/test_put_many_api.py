@@ -5,11 +5,11 @@ from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test_async import get_transaction_session, app, UntitledTable256
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_ONE
                                                ],
@@ -64,10 +64,9 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
                                       crud_models=UntitledTable256Model,
                                       prefix="/test_creation_one",
-                                       async_mode=True,
                                       tags=["test"]
                                       )
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,
                                                ],
@@ -126,7 +125,6 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
-                                       async_mode=True,
                                        tags=["test"]
                                        )
 
@@ -135,7 +133,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
 # for k, v in response_many.items():
 #     assert not v.required
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.POST_REDIRECT_GET
                                                ],
@@ -194,11 +192,10 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  db_model=UntitledTable256,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
-                                       async_mode=True,
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.FIND_ONE
                                                ],
@@ -237,11 +234,10 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test",
-                                       async_mode=True,
                                     tags=["test"]
                                     )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPDATE_MANY
                                                ],
@@ -280,15 +276,14 @@ test_update_data = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_update_many",
-                                       async_mode=True,
                                        tags=["test"]
                                        )
 [app.include_router(i) for i in [test_post_and_redirect_get, test_update_data, test_create_one, test_create_many, test_get_data]]
 
 client = TestClient(app)
 
-primary_key_name = UntitledTable256.primary_key_of_table
-unique_fields = UntitledTable256.unique_fields
+primary_key_name = 'primary_key'
+unique_fields = ['primary_key', 'int4_value', 'float4_value']
 
 def test_create_many_and_update_many():
     headers = {
@@ -299,14 +294,14 @@ def test_create_many_and_update_many():
     data = { "insert": [ { "bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                            "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                            "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
-                           "timestamp_value": "2021-07-24T02:54:53.285", "timestamptz_value": "2021-07-24T02:54:53.285Z",
+                           "timestamp_value": "2021-07-24T02:54:53.285Z", "timestamptz_value": "2021-07-24T02:54:53.285Z",
                            "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ],
                            "array_str__value": [ "string" ], "time_value": "18:18:18" , "timetz_value": "18:18:18+00:00"},
 
                          {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                           "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                           "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "time_value": "18:18:18",
-                          "timestamp_value": "2021-07-24T02:54:53.285",
+                          "timestamp_value": "2021-07-24T02:54:53.285Z",
                           "timestamptz_value": "2021-07-24T02:54:53.285Z",
                           "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
                           "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
@@ -314,7 +309,7 @@ def test_create_many_and_update_many():
                          {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                           "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                           "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
-                          "timestamp_value": "2021-07-24T02:54:53.285",
+                          "timestamp_value": "2021-07-24T02:54:53.285Z",
                           "timestamptz_value": "2021-07-24T02:54:53.285Z",
                           "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
                           "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
