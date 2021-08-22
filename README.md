@@ -1,8 +1,8 @@
 #  FastAPI Quick CRUD
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb?style=flat-square)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
-[![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=feature/code_coverage)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=develop)
-[![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/develop)
+[![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=main)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=main)
+[![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main)
 [![PyPidownload](https://img.shields.io/pypi/dm/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
@@ -22,8 +22,6 @@
 - [Design](#design)
   - [Query](#query)
   - [Upsert](#upsert)
-  - [Post Redirect Get](#post-redirect-get)
-  - [Update](#update)
 
 
 # Introduction
@@ -56,19 +54,19 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
   - [x] **CRUD route automatically generated** - Support Declarative class definitions and Imperative table
     
-  - [x] **Flexible API request** - `UPDATE ONE/MANY` `FIND ONE/MANY` `PATCH ONE/MANY` `DELETE ONE/MANY` supports  identify a specific resource (primary key) or resources whereas Query Parameter as a command to the resource to filter and limit the scope of the scope of data in request.
+  - [x] **Flexible API request** - `UPDATE ONE/MANY` `FIND ONE/MANY` `PATCH ONE/MANY` `DELETE ONE/MANY` supports Path Parameters (primary key) and Query Parameters as a command to the resource to filter and limit the scope of the scope of data in request.
     
 ## Constraint
    
-  - ❌ If there are multiple unique constraints, please use compound unique constraints instead
-  - ❌ If there are multiple unique constraints, please use compound unique constraints instead
+  - ❌ If there are multiple unique constraints, please use composite unique constraints instead
   - ❌ Composite primary key is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
     - `UPDATE ONE`
     - `FIND ONE`
     - `PATCH ONE` 
     - `DELETE ONE` 
-  - ❌ Some types of columns are not supported
+  - ❌ [Alias](#alias) is not support for imperative table yet
+  - ❌ Some types of columns are not supported as query parameter
     - INTERVAL
     - JSON
     - JSONB
@@ -284,44 +282,69 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
 # Design
 
+## Query Parameter , Path Parameters and Request Body
+
+
+In the design of this tool, Path Parameters should be a primary key of table, that why limited primary key can only be one.
+
+In `PUT` `DELETE` `PATCH`, user can use Path Parameters and Query Parameters to limit the scope of the data affected by the operation, and the Query Parameters is same with `FIND` API
+
+
 - Query Operation will look like that when python type of column is 
-  - string
-    - support Approximate String Matching that require this 
+  <details>
+    <summary>string</summary>
+  
+    - **support Approximate String Matching that require this** 
         - (<column_name>____str, <column_name>____str_____matching_pattern)
-    - support In-place Operation, get the value of column in the list of input
+    - **support In-place Operation, get the value of column in the list of input**
         - (<column_name>____list, <column_name>____list____comparison_operator)
-    
-![string](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/string_query.png?raw=true)
-  - numeric 
-    - support Range Searching from and to
+    - **preview**
+    ![string](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/string_query.png?raw=true)
+  </details>
+  
+  <details>
+    <summary>numeric or datetime</summary>
+  
+    - **support Range Searching from and to**
         - (<column_name>____from, <column_name>____from_____comparison_operator)
         - (<column_name>____to, <column_name>____to_____comparison_operator)
-    - support In-place Operation, get the value of column in the list of input
+    - **support In-place Operation, get the value of column in the list of input**
         - (<column_name>____list, <column_name>____list____comparison_operator)
-    
-![numeric](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/numeric_query.png?raw=true)
-  - datetime 
-    - support Range Searching from and to
-        - (<column_name>____from, <column_name>____from_____comparison_operator)
-        - (<column_name>____to, <column_name>____to_____comparison_operator)
-    - support In-place Operation, get the value of column in the list of input
+    - **preview**
+        ![numeric](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/numeric_query.png?raw=true)
+        ![datetime](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/time_query.png?raw=true)
+  </details>
+
+  <details>
+    <summary>uuid</summary>
+  
+    uuid supports In-place Operation only
+    - **support In-place Operation, get the value of column in the list of input**
         - (<column_name>____list, <column_name>____list____comparison_operator)
+  </details>
+
+
+- EXTRA query parameter for `GET_MANY`: 
+  <details>
+    <summary>Pagination</summary>
+  
+    - **limit**
+    - **offset**
+    - **order by**
+    - **preview**
+        ![Pagination](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/Pagination_query.png?raw=true)  
+
+  </details>
+
     
-![datetime](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/time_query.png?raw=true)
-  - Pagination 
-    - limit
-    - offset
-    - order by
-    
-![Pagination](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/Pagination_query.png?raw=true)  
-      
-- Approximate String Matching  
-    ref: https://www.postgresql.org/docs/9.3/functions-matching.html
-    - example:
-      
-        query
-      
-        ```text
+### Query to SQL statement example
+
+- [**Approximate String Matching**](https://www.postgresql.org/docs/9.3/functions-matching.html)
+  <details>
+    <summary>example</summary>
+  
+    - request url
+      ```text
       /test_CRUD?
       char_value____str_____matching_pattern=match_regex_with_case_sensitive&
       char_value____str_____matching_pattern=does_not_match_regex_with_case_insensitive&
@@ -330,9 +353,8 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
       char_value____str=a&
       char_value____str=b
       ```
-      
-    - generated sql 
-        ```sql
+    - generated sql
+      ```sql
         SELECT *
         FROM untitled_table_256 
         WHERE (untitled_table_256.char_value ~ 'a') OR 
@@ -344,94 +366,73 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
         untitled_table_256.char_value NOT ILIKE 'a' 
         OR untitled_table_256.char_value NOT ILIKE 'b'
         ```
-      
-- In-place Operation
+  </details>
+
+  
+- **In-place Operation**
+  <details>
+    <summary>example</summary>
+  
     - In-place support the following operation
-    
-![in](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/in_query.png?raw=true)  
     - generated sql if user select Equal operation and input True and False
-```sql        
+    - preview
+      ![in](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/in_query.png?raw=true)  
+
+    - generated sql
+      ```sql        
         select * FROM untitled_table_256 
         WHERE untitled_table_256.bool_value = true OR 
         untitled_table_256.bool_value = false
-```     
-        
-- Range Searching
+        ```  
+    
+  </details>        
+
+
+- **Range Searching**
+  <details>
+    <summary>example</summary>
+  
     - Range Searching support the following operation
     
-![greater](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/greater_query.png?raw=true)  
+        ![greater](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/greater_query.png?raw=true)  
+            
+        ![less](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/less_query.png?raw=true)
+    - generated sql 
+      ```sql
+        select * from untitled_table_256
+        WHERE untitled_table_256.date_value > %(date_value_1)s 
+      ```
+      ```sql
+        select * from untitled_table_256
+        WHERE untitled_table_256.date_value < %(date_value_1)s 
+      ```
     
-![less](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/less_query.png?raw=true)  
-  - generated sql 
-    ```sql
-    select * from untitled_table_256
-    WHERE untitled_table_256.date_value > %(date_value_1)s 
-    ```
-    ```sql
-    select * from untitled_table_256
-    WHERE untitled_table_256.date_value < %(date_value_1)s 
-    ```
-
-Also support your custom dependency for each api
-
-
-# Constraint
-
-When you use FastAPI Quick CRUD, there are some places you need to pay attention to and restrictions
-
-## Table constraint
-- unique constraint
+  </details>
   
-    unique constraint will be used in upsert api, 
 
-  -:heavy_check_mark: use composite unique constraint
-  -:heavy_check_mark: use single unique constraint
-  -:x: Use multiple unique constraints (you should use composite unique constraints instead)
-  -:x: Use unique constraints and composite unique constraint at same time
-  -:x: Missing primary key
-  -:x: Composite primary key
-  
-> The field of api will be optional if there is default value or is nullable or server_default is set
+- Also support your custom dependency for each api(there is a example in `./example`)
 
-> The field of api will be required if there is no default value of the column or is not nullable
 
-Example 
-```python
-class Example(Base):
-    __tablename__ = 'example'
-    __table_args__ = (
-        UniqueConstraint('p_id'),
-    )
-        
-    optional_field_1 = Column(Integer, default = 1)
-    optional_field_2 = Column(Text, server_default = 'hello')
-    optional_field_3 = Column(Text, nullable = True)
-        
-    required_field_1 = Column(Integer, primary_key=True)
-    required_field_1 = Column(Integer)
-    required_field_2 = Column(Text, nullable = False)
-    
-```
-- The value of server_default did not support show on docs
-- 
-- Some type of columns are not support in query:
-    - INTERVAL
-    - JSON
-    - JSONB
-    - H-STORE
-    - ARRAY
-    - BYTE
-    - Geography
-    - box
-    - line
-    - point
-    - lseg
-    - polygon
-    - inet
-    - macaddr
-- The column in table will not be supported if SQLAlchemy have not supported type for that
+### Request Body
 
-- Automap() of Sqlalchemy is not support
+In the design of this tool, the columns of the table will be used as the fields of request body.
+
+In the basic request body in the api generated by this tool, some fields are optional if :
+
+* [x] it is primary key with autoincrement is True or the server_default or default is True
+* [x] it is not a primary key, but the server_default or default is True
+* [x] The field is nullable
+
+## Upsert
+
+POST API will perform the data insertion action with using the basic [Request Body](#request_body),
+In addition, it also supports upsert(insert on conflict do)
+
+The operation will use upsert instead if the unique column in the inserted row that is being inserted already exists in the table 
+
+The tool uses unique columns in the table as a parameter of on conflict , and you can define which column will be updated 
+
+![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
 
 ## Alias
@@ -478,8 +479,5 @@ If there are no users in the system, then, in this case, you should return 204.
 
 ### TODO
 
-- support [databases](https://pypi.org/project/databases/) as db connector -> the next task
-- support pony 
+- handle relationship
 - support MYSQL and Sqllite
-- Manually create the model for each CRUD API 
-- Apply the comment of each column into docs

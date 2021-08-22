@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
  
 ### Added
 
-SQLAlchemy Table supporting, but not support alias yet
+SQLAlchemy Table is supported, but not support alias yet
 
 Support create CRUD route without primary key for SQLAlchemy Table 
 
@@ -45,11 +45,13 @@ UntitledTable256 = Table(
 ### Changed
 - primary key can be optional if autoincrement is True
 
-- get many response 204 if not found
+- get many responses 204 if not found
 
 ### Fixed
 
-## [Unreleased] - 2021-08-20
+---
+
+##  - 2021-08-20
  
 ### Added
  
@@ -59,8 +61,9 @@ UntitledTable256 = Table(
 
 ### Fixed
 
+---
 
-## [Unreleased] - 2021-08-19
+##  - 2021-08-19
  
 ### Added
 - User don't need to declare crud_service
@@ -88,7 +91,9 @@ In the other case, you have  an api that returns all users in the system using t
 If there are no users in the system, then, in this case, you should return 204.
 
 
-## [Unreleased] - 2021-08-18
+---
+
+##  - 2021-08-18
  
 ### Added
  - FastAPIQuickCRUD support commit by user
