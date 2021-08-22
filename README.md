@@ -12,34 +12,73 @@
 
 ---
 
-# What is this?
-
-I believe that everyone who's working with FastApi and building some RESTful of CRUD services,
-The `FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema
-
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
-## Feature
 
-- Convert Sqlalchemy Declarative Base class of PostgreSQL Database to CRUD API 
-    - Get one
-    - Get many
-    - Update one
-    - Update many
-    - Patch one
-    - Patch many
-    - Create/Upsert one
-    - Create/Upsert many
-    - Delete One
-    - Delete Many
-    - Post Redirect Get
+- [Introduction](#introduction)
+- [Getting started](#getting-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    
+- [Constraint](#constraint)
+- [Design](#design)
+  - [Query](#query)
+  - [Upsert](#upsert)
+  - [Post Redirect Get](#post-redirect-get)
+  - [Update](#update)
+  - [Creating databases](#creating-databases)
+  - [Granting user access to a database](#granting-user-access-to-a-database)
+  - [Enabling extensions](#enabling-extensions)
+  - [Creating replication user](#creating-replication-user)
+  - [Setting up a replication cluster](#setting-up-a-replication-cluster)
+  - [Creating a snapshot](#creating-a-snapshot)
+  - [Creating a backup](#creating-a-backup)
+  - [Command-line arguments](#command-line-arguments)
+  - [Logs](#logs)
+  - [UID/GID mapping](#uidgid-mapping)
+- [Maintenance](#maintenance)
+  - [Upgrading](#upgrading)
+  - [Shell Access](#shell-access)
 
+
+
+# Introduction
+
+I believe that everyone who's working with FastApi and building some RESTful of CRUD services, wastes the time to writing similar code for simple CRUD every time
+
+`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema. 
+
+- Get one
+- Get many
+- Update one
+- Update many
+- Patch one
+- Patch many
+- Create/Upsert one
+- Create/Upsert many
+- Delete One
+- Delete Many
+- Post Redirect Get
+
+`FastAPI Quick CRUD`is developed based on SQLAlchemy `1.4` version and supports sync and async.
+
+# Getting started
 
 ## Installation
-```commandline
+
+```bash
 pip install fastapi-quickcrud
 ```
-## Quick Use
+
+## Usage
+
+Start PostgreSQL using:
+```bash
+docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=1234 postgres
+```
+
+#### Simple Code (get more example from `./example`)
+
 
 1. Build a sample table with Sqlalchemy
 
@@ -53,7 +92,7 @@ pip install fastapi-quickcrud
    
     Base = declarative_base()
     metadata = Base.metadata
-    engine = create_engine('postgresql://<user name>:<password>@<host>:<port>/<database name>', 
+    engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', 
                             future=True, 
                             echo=True,
                             pool_use_lifo=True,
@@ -137,26 +176,26 @@ pip install fastapi-quickcrud
     - argument:
         - db_model: ```SQLALchemy Declarative Base Class```
         - async_mode: ```bool```
-          - set True if using async SQLALchemy
+          > set True if using async SQLALchemy
         - crud_methods: ```CrudMethods```
-            - examples
-              - CrudMethods.FIND_ONE
-              - CrudMethods.FIND_MANY
-              - CrudMethods.UPDATE_ONE
-              - CrudMethods.UPDATE_MANY
-              - CrudMethods.PATCH_ONE
-              - CrudMethods.PATCH_MANY
-              - CrudMethods.UPSERT_ONE
-              - CrudMethods.UPSERT_MANY
-              - CrudMethods.DELETE_ONE
-              - CrudMethods.DELETE_MANY
-              - CrudMethods.POST_REDIRECT_GET
+            > - CrudMethods.FIND_ONE
+            > - CrudMethods.FIND_MANY
+            > - CrudMethods.UPDATE_ONE
+            > - CrudMethods.UPDATE_MANY
+            > - CrudMethods.PATCH_ONE
+            > - CrudMethods.PATCH_MANY
+            > - CrudMethods.UPSERT_ONE
+            > - CrudMethods.UPSERT_MANY
+            > - CrudMethods.DELETE_ONE
+            > - CrudMethods.DELETE_MANY
+            > - CrudMethods.POST_REDIRECT_GET
 
-        - exclude_columns: set the columns that not to be operated but the columns should nullable or set the default value)
+        - exclude_columns: `list` 
+            > set the columns that not to be operated but the columns should nullable or set the default value)
 
 5. user CrudRouter to register API
                                             
-    - db_session: `session generator` 
+    - db_session: `execute session generator` 
         - example:
             - sync SQLALchemy:
                 ```python
@@ -179,18 +218,28 @@ pip install fastapi-quickcrud
                             yield session
                 ```
 
-    - db_model: `SQLALchemy Declarative Base Class`
-
-    - async_mode: `bool` if your db session is async
+    - db_model `SQLALchemy Declarative Base Class`
     
-    - autocommit: `bool` if you don't need to commit by your self    
+        >  **Note**: There are some constraint in the SQLALchemy Schema
+    
+    - async_mode`bool`: if your db session is async
+    
+        >  **Note**: require async session generator if True
+    
+    - autocommit`bool`: if you don't need to commit by your self    
+    
+        >  **Note**: require handle the commit in your async session generator if False
+    
+    - dependencies: API dependency injection of fastapi
+        
+        >  **Note**: Get the example usage in `./example`        
 
-    - crud_models: `sqlalchemy_to_pydantic` 
+    - crud_models `sqlalchemy_to_pydantic` 
 
-    - prefix, tags: extra argument for include_router() of APIRouter() of fastapi
+    - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
 
     ```python
-    	new_route_3 = crud_router_builder(db_session=get_transaction_session,
+    	crud_route = crud_router_builder(db_session=get_transaction_session,
                                           crud_service=UntitledTable256_service,
                                           crud_models=test_crud_model,
                                           prefix="/crud_test",
@@ -198,9 +247,20 @@ pip install fastapi-quickcrud
                                           tags=["Example"]
                                           )
     ```
+   
+6. Add to route and run
+   
+   ```
+    import uvicorn
+    from fastapi import FastAPI
+   
+    app = FastAPI()
+    app.include_router(crud_route)
+    uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
+   ```
 
 
-## Design
+# Design
 
 - Query Operation will look like that when python type of column is 
   - string
@@ -293,28 +353,45 @@ pip install fastapi-quickcrud
 Also support your custom dependency for each api
 
 
-# constraint
+# Constraint
 
-- Please use composite unique constraint if there are more than one unique fields
-- Please don't use composite unique constraint and the single unique constraint at the same time
-    - except the single one unique constraint is primary key which be contained into composite unique constraint
-        ```python
-        class Example(Base):
-            __tablename__ = 'example'
-            __table_args__ = (
-                UniqueConstraint('p_id', 'test'),
-            )
+When you use FastAPI Quick CRUD, there are some places you need to pay attention to and restrictions
+
+## Table constraint
+- unique constraint
+  
+    unique constraint will be used in upsert api, 
+
+  -:heavy_check_mark: use composite unique constraint
+  -:heavy_check_mark: use single unique constraint
+  -:x: Use multiple unique constraints (you should use composite unique constraints instead)
+  -:x: Use unique constraints and composite unique constraint at same time
+  -:x: Missing primary key
+  -:x: Composite primary key
+  
+> The field of api will be optional if there is default value or is nullable or server_default is set
+
+> The field of api will be required if there is no default value of the column or is not nullable
+
+Example 
+```python
+class Example(Base):
+    __tablename__ = 'example'
+    __table_args__ = (
+        UniqueConstraint('p_id'),
+    )
         
-            p_id = Column(Integer, primary_key=True, unique=True)
-            test = Column(Integer)
-            test_1 = Column(Text)
-
-        ```
-
-- Primary key is required but not support composite primary key
-- The field of api will be optional if there is default value or is nullable or server_default is set
-- The value of server_default did not support show on OpenAPI
-- The field of api will be required if there is no default value of the column or is not nullable
+    optional_field_1 = Column(Integer, default = 1)
+    optional_field_2 = Column(Text, server_default = 'hello')
+    optional_field_3 = Column(Text, nullable = True)
+        
+    required_field_1 = Column(Integer, primary_key=True)
+    required_field_1 = Column(Integer)
+    required_field_2 = Column(Text, nullable = False)
+    
+```
+- The value of server_default did not support show on docs
+- 
 - Some type of columns are not support in query:
     - INTERVAL
     - JSON
@@ -330,6 +407,7 @@ Also support your custom dependency for each api
     - polygon
     - inet
     - macaddr
+- The column in table will not be supported if SQLAlchemy have not supported type for that
 
 - Automap() of Sqlalchemy is not support
 
