@@ -30,8 +30,7 @@ def get_transaction_session():
 
 UntitledTable256 = Table(
     'test_table', metadata,
-    Column('primary_key', Integer, primary_key=True, nullable=False,
-           server_default=text("nextval('untitled_table_256_id_seq'::regclass)"),info={'alias_name': 'primary_key'}),
+    Column('primary_key', Integer, primary_key=True, nullable=False,autoincrement=True,info={'alias_name': 'primary_key'}),
     Column('bool_value', Boolean, nullable=False, server_default=text("false")),
     Column('bytea_value', LargeBinary),
     Column('char_value', CHAR(10)),
