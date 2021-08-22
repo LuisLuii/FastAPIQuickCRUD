@@ -46,13 +46,12 @@ async def get_transaction_session() -> AsyncSession:
 class UUIDTable(Base):
     primary_key_of_table = "primary_key"
     unique_fields = ['primary_key', 'int4_value', 'float4_value']
-    __tablename__ = 'test_uuid_primary'
+    __tablename__ = 'test_uuid_primary_async'
     __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
+        UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
+    primary_key = Column(UUID(as_uuid=True), primary_key=True,
                 server_default=text("uuid_generate_v4()"))
-    primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))

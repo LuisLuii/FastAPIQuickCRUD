@@ -4,15 +4,16 @@ from datetime import date, timedelta, datetime, timezone
 
 from starlette.testclient import TestClient
 
+from fastapi_quickcrud.misc.utils import sqlalchemy_table_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test_async import get_transaction_session, app, UntitledTable256
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,
                                                ],
@@ -24,15 +25,14 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
-                                       async_mode=True,
                                        tags=["test"]
                                        )
 [app.include_router(i) for i in [test_create_many]]
 
 client = TestClient(app)
 
-primary_key_name = UntitledTable256.primary_key_of_table
-unique_fields = UntitledTable256.unique_fields
+primary_key_name = 'primary_key'
+unique_fields = ['primary_key', 'int4_value', 'float4_value']
 
 
 def create_example_data():
@@ -41,7 +41,7 @@ def create_example_data():
         'Content-Type': 'application/json',
     }
 
-    data = '{ "insert": [ { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] } ] }'
+    data = '{ "insert": [ { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963Z", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963Z", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, { "bool_value": true, "char_value": "string", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963Z", "timestamptz_value": "2021-07-23T02:38:24.963Z", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] } ] }'
 
     response = client.post('/test_creation_many', headers=headers, data=data)
     assert response.status_code == 201
@@ -356,3 +356,4 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
+

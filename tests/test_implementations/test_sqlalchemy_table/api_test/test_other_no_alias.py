@@ -8,12 +8,12 @@ from urllib.parse import urlencode
 
 from fastapi import FastAPI
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
+    JSON, LargeBinary, Numeric, SmallInteger, Table,String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 
@@ -38,42 +38,37 @@ def get_transaction_session():
     finally:
         db.close()
 
-
-class UUIDTable(Base):
-    primary_key_of_table = "primary_key"
-    unique_fields = ['primary_key', 'test_case_column', 'float4_value']
-    __tablename__ = 'test_no_alias'
-    __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
-    )
-    id = Column(UUID(as_uuid=True), primary_key=True,
-                server_default=text("uuid_generate_v4()"))
-    bool_value = Column(Boolean, nullable=False, server_default=text("false"))
-    bytea_value = Column(LargeBinary)
-    char_value = Column(CHAR(10))
-    date_value = Column(Date, server_default=text("now()"))
-    float4_value = Column(Float, nullable=False)
-    float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-    int2_value = Column(SmallInteger, nullable=False)
-    int4_value = Column(Integer, nullable=False)
-    int8_value = Column(BigInteger, server_default=text("99"))
-    interval_value = Column(INTERVAL)
-    json_value = Column(JSON)
-    jsonb_value = Column(JSONB(astext_type=Text()))
-    numeric_value = Column(Numeric)
-    text_value = Column(Text)
-    time_value = Column(Time)
-    timestamp_value = Column(DateTime)
-    timestamptz_value = Column(DateTime(True))
-    timetz_value = Column(Time(True))
-    varchar_value = Column(String)
-    array_value = Column(ARRAY(Integer()))
-    array_str__value = Column(ARRAY(String()))
+UUIDTable = Table(
+    'test_no_alias', metadata,
+    Column('id', UUID, primary_key=True, server_default=text("uuid_generate_v4()")),
+    Column('bool_value', Boolean, nullable=False, server_default=text("false")),
+    Column('bytea_value', LargeBinary),
+    Column('char_value', CHAR(10)),
+    Column('date_value', Date, server_default=text("now()")),
+    Column('float4_value', Float(53), nullable=False),
+    Column('float8_value', Float(53), nullable=False, server_default=text("10.10")),
+    Column('int2_value', SmallInteger, nullable=False),
+    Column('int4_value', Integer, nullable=False),
+    Column('int8_value', BigInteger, server_default=text("99")),
+    Column('interval_value', INTERVAL),
+    Column('json_value', JSON),
+    Column('jsonb_value', JSONB(astext_type=Text())),
+    Column('numeric_value', Numeric),
+    Column('text_value', Text),
+    Column('time_value', Time),
+    Column('timestamp_value', DateTime),
+    Column('timestamptz_value', DateTime(True)),
+    Column('timetz_value', Time(True)),
+    Column('varchar_value', String),
+    Column('array_value', ARRAY(Integer())),
+    Column('array_str__value', ARRAY(String())),
+    UniqueConstraint('id', 'int4_value', 'float4_value')
+)
 
 
-UUIDTable.__table__.create(engine, checkfirst=True)
+UUIDTable.create(engine, checkfirst=True)
 
-model_1 = sqlalchemy_to_pydantic(UUIDTable,
+model_1 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.FIND_ONE,
                                      CrudMethods.FIND_MANY,
@@ -94,7 +89,7 @@ route_1 = crud_router_builder(db_session=get_transaction_session,
                               tags=["test"]
                               )
 
-model_2 = sqlalchemy_to_pydantic(UUIDTable,
+model_2 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.UPSERT_ONE,
                                      CrudMethods.POST_REDIRECT_GET,
@@ -108,7 +103,7 @@ route_2 = crud_router_builder(db_session=get_transaction_session,
                               tags=["test"]
                               )
 
-model_3 = sqlalchemy_to_pydantic(UUIDTable,
+model_3 = sqlalchemy_table_to_pydantic(UUIDTable,
                                  crud_methods=[
                                      CrudMethods.FIND_ONE,
                                      CrudMethods.POST_REDIRECT_GET,

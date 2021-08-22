@@ -2,19 +2,22 @@ import asyncio
 import os
 
 from fastapi import FastAPI
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
+from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR,Table, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
-TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
-                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
+from sqlalchemy import create_engine
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 engine = create_async_engine(TEST_DATABASE_URL,
                              future=True,
                              echo=True,
@@ -27,44 +30,40 @@ async_session = sessionmaker(autocommit=False,
                              class_=AsyncSession)
 
 
+
 async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
         yield session
 
 
-class UntitledTable256(Base):
-    primary_key_of_table = "primary_key"
-    unique_fields = ['primary_key', 'int4_value', 'float4_value']
-    __tablename__ = 'test_build_myself_async'
-    __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
-    )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True,server_default="nextval('test_build_myself_id_seq'::regclass)")
-    primary_key = synonym('id')
-    bool_value = Column(Boolean, nullable=False, server_default=text("false"))
-    bytea_value = Column(LargeBinary)
-    char_value = Column(CHAR(10))
-    date_value = Column(Date, server_default=text("now()"))
-    float4_value = Column(Float, nullable=False)
-    float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-    int2_value = Column(SmallInteger, nullable=False)
-    int4_value = Column(Integer, nullable=False)
-    int8_value = Column(BigInteger, server_default=text("99"))
-    interval_value = Column(INTERVAL)
-    json_value = Column(JSON)
-    jsonb_value = Column(JSONB(astext_type=Text()))
-    numeric_value = Column(Numeric)
-    text_value = Column(Text)
-    time_value = Column(Time)
-    timestamp_value = Column(DateTime)
-    timestamptz_value = Column(DateTime(True))
-    timetz_value = Column(Time(True))
-    uuid_value = Column(UUID(as_uuid=True))
-    varchar_value = Column(String)
-    # xml_value = Column(NullType)
-    array_value = Column(ARRAY(Integer()))
-    array_str__value = Column(ARRAY(String()))
-    # box_valaue = Column(NullType)
+UntitledTable256 = Table(
+    'test_table', metadata,
+    Column('primary_key', Integer, primary_key=True, nullable=False,
+           server_default=text("nextval('untitled_table_256_id_seq'::regclass)"),info={'alias_name': 'primary_key'}),
+    Column('bool_value', Boolean, nullable=False, server_default=text("false")),
+    Column('bytea_value', LargeBinary),
+    Column('char_value', CHAR(10)),
+    Column('date_value', Date, server_default=text("now()")),
+    Column('float4_value', Float, nullable=False),
+    Column('float8_value', Float(53), nullable=False, server_default=text("10.10")),
+    Column('int2_value', SmallInteger, nullable=False),
+    Column('int4_value', Integer, nullable=False),
+    Column('int8_value', BigInteger, server_default=text("99")),
+    Column('interval_value', INTERVAL),
+    Column('json_value', JSON),
+    Column('jsonb_value', JSONB(astext_type=Text())),
+    Column('numeric_value', Numeric),
+    Column('text_value', Text),
+    Column('time_value', Time),
+    Column('timestamp_value', DateTime),
+    Column('timestamptz_value', DateTime(True)),
+    Column('timetz_value', Time(True)),
+    Column('uuid_value', UUID),
+    Column('varchar_value', String),
+    Column('array_value', ARRAY(Integer())),
+    Column('array_str__value', ARRAY(String())),
+    UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
+)
 
 
 async def create_table():
@@ -74,4 +73,3 @@ async def create_table():
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(create_table())
-# loop.close()

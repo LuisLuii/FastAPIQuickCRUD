@@ -7,11 +7,11 @@ from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
-from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
+from src.fastapi_quickcrud.misc.utils import sqlalchemy_table_to_pydantic
+from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,
                                                ],
@@ -75,7 +75,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        tags=["test"]
                                        )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.FIND_MANY,
                                                ],
@@ -92,8 +92,8 @@ test_find_many = crud_router_builder(db_session=get_transaction_session,
 
 client = TestClient(app)
 
-primary_key_name = UntitledTable256.primary_key_of_table
-unique_fields = UntitledTable256.unique_fields
+primary_key_name = 'primary_key'
+unique_fields = ['primary_key', 'int4_value', 'float4_value']
 
 
 # test create many
@@ -277,13 +277,8 @@ def test_create_a_more_than_one_data_which_value_is_TRUE_of_boolean_type_and_get
     query_string = urlencode(OrderedDict(**params)) + f"&bool_value____list=False"
 
     response = client.get(f'/test_get_many?{query_string}')
-    response_data = response.json()
-    assert len(response_data) == 0
+    assert response.status_code == 204
 
-    for i in bool_false_sample_data:
-        assert i not in response.json()
-    for i in bool_true_sample_data:
-        assert i not in response.json()
 
     params = {"primary_key____from": min_key,
               "primary_key____to": max_key,

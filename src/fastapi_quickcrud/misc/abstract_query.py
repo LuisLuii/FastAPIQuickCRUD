@@ -38,7 +38,7 @@ from .utils import find_query_builder
 #         raise NotImplementedError
 
 
-class SQLALchemyQueryService(object):
+class SQLAlchemyQueryService(object):
 
     def __init__(self, *, model, async_mode):
 
@@ -193,7 +193,7 @@ class SQLALchemyQueryService(object):
 
 
 
-class SQLALchemyTableQueryService(object):
+class SQLAlchemyTableQueryService(object):
 
     def __init__(self, *, model, async_mode):
 
@@ -251,22 +251,6 @@ class SQLALchemyTableQueryService(object):
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
         return stmt
-
-    # async def async_get_one(self, *,
-    #                         extra_args,
-    #                         filter_args,
-    #                         session,
-    #                         ):
-    #     filter_args = filter_args.__dict__
-    #     extra_args = extra_args.__dict__
-    #     filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
-    #                                                              model=self.model_columns)
-    #
-    #     extra_query_expression: List[BinaryExpression] = find_query_builder(param=extra_args,
-    #                                                                         model=self.model_columns)
-    #     stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
-    #     query_result = await self.async_execute(session=session, stmt=stmt)
-    #     return query_result
 
     def get_one(self, *,
                 extra_args,

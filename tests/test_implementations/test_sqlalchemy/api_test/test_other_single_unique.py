@@ -40,7 +40,7 @@ def get_transaction_session():
 
 
 class UUIDTable(Base):
-    __tablename__ = 'test_single_unique_table'
+    __tablename__ = 'test_single_unique_table_model'
     id = Column(UUID(as_uuid=True), primary_key=True,
                 server_default=text("uuid_generate_v4()"))
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
@@ -66,7 +66,8 @@ class UUIDTable(Base):
     array_str__value = Column(ARRAY(String()))
 
 
-UUIDTable.__table__.create(engine)
+def setup_module(module):
+    UUIDTable.__table__.create(engine)
 
 
 

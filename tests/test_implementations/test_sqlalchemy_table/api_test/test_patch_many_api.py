@@ -5,11 +5,11 @@ from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
+from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_ONE
                                                ],
@@ -66,7 +66,7 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       prefix="/test_creation_one",
                                       tags=["test"]
                                       )
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,
                                                ],
@@ -133,7 +133,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
 # for k, v in response_many.items():
 #     assert not v.required
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.POST_REDIRECT_GET
                                                ],
@@ -195,7 +195,7 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.FIND_ONE
                                                ],
@@ -237,7 +237,7 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     tags=["test"]
                                     )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.PATCH_MANY
                                                ],
@@ -282,8 +282,8 @@ test_patch_data = crud_router_builder(db_session=get_transaction_session,
 
 client = TestClient(app)
 
-primary_key_name = UntitledTable256.primary_key_of_table
-unique_fields = UntitledTable256.unique_fields
+primary_key_name = 'primary_key'
+unique_fields = ['primary_key', 'int4_value', 'float4_value']
 
 def test_create_many_and_patch_many():
     headers = {
