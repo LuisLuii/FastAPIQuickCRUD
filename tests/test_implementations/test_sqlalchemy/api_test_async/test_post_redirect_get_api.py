@@ -211,3 +211,4 @@ def test_create_but_conflict():
 
     response = client.post('/test_post_direct_get', headers=headers, data=json.dumps(data), allow_redirects=True)
     assert response.status_code == HTTPStatus.CONFLICT
+test_create_but_conflict()

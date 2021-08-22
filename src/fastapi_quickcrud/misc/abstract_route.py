@@ -269,7 +269,7 @@ class SQLALChemyBaseRouteSource(object):
                     session=Depends(db_session)
             ):
                 stmt = query_service.upsert(insert_arg=query,
-                                                        unique_fields=unique_list)
+                                            unique_fields=unique_list)
 
                 try:
                     query_result = await execute_service.async_execute(session, stmt)
@@ -391,7 +391,7 @@ class SQLALChemyBaseRouteSource(object):
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
                 stmt = query_service.delete(primary_key=request_url_param_model,
-                                                        delete_args=query)
+                                            delete_args=query)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
                                                               sql_execute_result=query_result,
@@ -530,8 +530,8 @@ class SQLALChemyBaseRouteSource(object):
                     session=Depends(db_session),
             ):
                 stmt = crud_service.update(primary_key=primary_key,
-                                                       update_args=patch_data,
-                                                       extra_query=extra_query)
+                                           update_args=patch_data,
+                                           extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -596,7 +596,7 @@ class SQLALChemyBaseRouteSource(object):
                     session=Depends(db_session)
             ):
                 stmt = crud_service.update(update_args=patch_data,
-                                                       extra_query=extra_query)
+                                           extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -659,8 +659,8 @@ class SQLALChemyBaseRouteSource(object):
                     session=Depends(db_session),
             ):
                 stmt = crud_service.update(primary_key=primary_key,
-                                                       update_args=update_data,
-                                                       extra_query=extra_query)
+                                           update_args=update_data,
+                                           extra_query=extra_query)
 
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
@@ -720,7 +720,7 @@ class SQLALChemyBaseRouteSource(object):
                     session=Depends(db_session),
             ):
                 stmt = crud_service.update(update_args=update_data,
-                                                       extra_query=extra_query)
+                                           extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -756,4 +756,3 @@ class SQLALChemyBaseRouteSource(object):
                                                  sql_execute_result=query_result,
                                                  fastapi_response=response,
                                                  session=session)
-

@@ -748,3 +748,4 @@ def test_upsert_one():
     # upsert
     response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
     assert response.status_code == 409
+test_post_redirect_get_data()
