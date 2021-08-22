@@ -12,7 +12,6 @@ class CRUDBuilderException(BaseException):
 class RequestMissing(CRUDBuilderException):
     pass
 
-
 class PrimaryMissing(CRUDBuilderException):
     pass
 
