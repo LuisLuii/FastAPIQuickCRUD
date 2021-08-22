@@ -432,7 +432,7 @@ The operation will use upsert instead if the unique column in the inserted row t
 
 The tool uses unique columns in the table as a parameter of on conflict , and you can define which column will be updated 
 
-![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/develop/pic/upsert_preview.png?raw=true)
+![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
 
 ## Alias
