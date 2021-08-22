@@ -5,7 +5,7 @@ from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime,
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import  sessionmaker, synonym
+from sqlalchemy.orm import sessionmaker, synonym
 
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
 from src.fastapi_quickcrud import crud_router_builder
@@ -16,7 +16,7 @@ app = FastAPI()
 Base = declarative_base()
 metadata = Base.metadata
 
-engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
+engine = create_engine('postgresql://root@127.0.0.1:5432/postgres', future=True, echo=True,
                        pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
 sync_session = sessionmaker(autoflush=False, bind=engine)
 
@@ -38,8 +38,7 @@ class ExampleTable(Base):
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},
-                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True)
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
@@ -89,7 +88,7 @@ upsert_many_router = crud_router_builder(db_session=get_transaction_session,
                                          )
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
                                                crud_methods=[  # CrudRouter.FIND_ONE,
-                                                    # CrudRouter.FIND_ONE,
+                                                   # CrudRouter.FIND_ONE,
                                                    CrudRouter.POST_REDIRECT_GET
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
@@ -129,4 +128,4 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
 
 ExampleTable.__table__.create(engine, checkfirst=True)
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
