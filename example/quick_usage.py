@@ -4,7 +4,8 @@ from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime,
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, sessionmaker, synonym
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import  sessionmaker, synonym
 
 from src.fastapi_quickcrud import CrudMethods as CrudRouter
 from src.fastapi_quickcrud import crud_router_builder
@@ -128,4 +129,4 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
 
 ExampleTable.__table__.create(engine, checkfirst=True)
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
-uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)

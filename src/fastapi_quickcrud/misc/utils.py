@@ -9,7 +9,7 @@ from sqlalchemy.sql.elements import \
 
 from .crud_model import RequestResponseModel, CRUDModel
 from .exceptions import QueryOperatorNotFound
-from .schema_builder import ApiParameterSchemaBuilder
+from .schema_builder import ApiParameterSchemaBuilder, ApiParameterSchemaBuilderNew
 from .type import \
     CrudMethods, \
     CRUDRequestMapping, \
@@ -97,6 +97,92 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
 
 class OrmConfig(BaseConfig):
     orm_mode = True
+
+
+def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMethods],
+                                 exclude_columns: List[str] = None) -> CRUDModel:
+    if exclude_columns is None:
+        exclude_columns = []
+    request_response_mode_set = {}
+    model_builder = ApiParameterSchemaBuilderNew(db_model,
+                                                 exclude_column=exclude_columns)
+    REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
+                                       CrudMethods.FIND_ONE.value,
+                                       CrudMethods.PATCH_ONE.value,
+                                       CrudMethods.POST_REDIRECT_GET.value,
+                                       CrudMethods.UPDATE_ONE.value]
+    for crud_method in crud_methods:
+        request_url_param_model = None
+        request_body_model = None
+        response_model = None
+        request_query_model = None
+        if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD:
+            raise Exception(f"The generation of this API [{crud_method.value}] requires a primary key")
+        if crud_method.value == CrudMethods.UPSERT_ONE.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.upsert_one()
+        elif crud_method.value == CrudMethods.UPSERT_MANY.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.upsert_many()
+        elif crud_method.value == CrudMethods.DELETE_ONE.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.delete_one()
+        elif crud_method.value == CrudMethods.DELETE_MANY.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.delete_many()
+        elif crud_method.value == CrudMethods.FIND_ONE.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.find_one()
+        elif crud_method.value == CrudMethods.FIND_MANY.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.find_many()
+        elif crud_method.value == CrudMethods.POST_REDIRECT_GET.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.post_redirect_get()
+        elif crud_method.value == CrudMethods.PATCH_ONE.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.patch()
+        elif crud_method.value == CrudMethods.UPDATE_ONE.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.update_one()
+        elif crud_method.value == CrudMethods.UPDATE_MANY.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.update_many()
+        elif crud_method.value == CrudMethods.PATCH_MANY.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.patch_many()
+
+        request_response_models = {'requestBodyModel': request_body_model,
+                                   'responseModel': response_model,
+                                   'requestQueryModel': request_query_model,
+                                   'requestUrlParamModel': request_url_param_model}
+        request_response_model = RequestResponseModel(**request_response_models)
+        request_method = CRUDRequestMapping.get_request_method_by_crud_method(crud_method.value).value
+        if request_method not in request_response_mode_set:
+            request_response_mode_set[request_method] = {}
+        request_response_mode_set[request_method][crud_method.value] = request_response_model
+    return CRUDModel(
+        **{**request_response_mode_set,
+           **{"PRIMARY_KEY_NAME": model_builder.primary_key_str,
+              "UNIQUE_LIST": model_builder.unique_fields}})
 
 
 def sqlalchemy_to_pydantic(

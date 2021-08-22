@@ -8,13 +8,14 @@ from fastapi import \
     Depends
 from pydantic import \
     BaseModel
+from sqlalchemy.sql.schema import Table
 
 from .misc.abstract_execute import SQLALchemyExecuteService
-from .misc.abstract_parser import SQLAlchemyResultParse
-from .misc.abstract_query import SQLALchemyQueryService
+from .misc.abstract_parser import SQLAlchemyResultParse, SQLAlchemyTableResultParse
+from .misc.abstract_query import SQLALchemyQueryService, SQLALchemyTableQueryService
 from .misc.abstract_route import SQLALChemyBaseRouteSource
 from .misc.crud_model import CRUDModel
-from .misc.type import CrudMethods, SessionObject
+from .misc.type import CrudMethods
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -26,16 +27,13 @@ def crud_router_builder(
         db_session,
         crud_models: CRUDModel,
         db_model,
-        session_object=SessionObject.sqlalchemy,
         dependencies: List[callable] = None,
         async_mode=False,
         autocommit=True,
         **router_kwargs: Any) -> APIRouter:
-
     """
     :param db_session: db_session
     :param crud_models:
-    :param session_object:
     :param db_model:
     :param dependencies:
     :param async_mode:
@@ -49,27 +47,27 @@ def crud_router_builder(
     api = APIRouter(**router_kwargs)
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
-    path = '/{' + primary_name + '}'
+    if primary_name:
+        path = '/{' + primary_name + '}'
+    else:
+        path = ""
     unique_list: List[str] = crud_models.UNIQUE_LIST
     dependencies = [Depends(dep) for dep in dependencies]
 
-    if session_object is SessionObject.sqlalchemy:
-        routes_source = SQLALChemyBaseRouteSource
+    routes_source = SQLALChemyBaseRouteSource
+
+    if isinstance(db_model, Table):
+        result_parser = SQLAlchemyTableResultParse(async_model=async_mode,
+                                                   crud_models=crud_models,
+                                                   autocommit=autocommit)
+        crud_service = SQLALchemyTableQueryService(model=db_model, async_mode=async_mode)
+    else:
         result_parser = SQLAlchemyResultParse(async_model=async_mode,
                                               crud_models=crud_models,
                                               autocommit=autocommit)
-        execute_service = SQLALchemyExecuteService()
         crud_service = SQLALchemyQueryService(model=db_model, async_mode=async_mode)
-    else:
-        raise NotImplementedError
-        # routes_source = DatabasesRouteResourceBase
-        # if not async_mode:
-        #     raise Exception('databases session object only support async')
-        # result_parser = DatabasesResultParserBase(async_model=async_mode,
-        #                                           crud_models=crud_models,
-        #                                           autocommit=autocommit)
-        # execute_service = DatabasesExecuteService()
-        # crud_service = SQLALchemyQueryService(model=db_model, async_mode=async_mode)
+
+    execute_service = SQLALchemyExecuteService()
 
     def find_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)

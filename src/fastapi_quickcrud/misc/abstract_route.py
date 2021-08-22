@@ -221,7 +221,7 @@ class SQLALChemyBaseRouteSource(object):
                                      session=Depends(
                                          db_session)
                                      ):
-                stmt = await query_service.async_get_many(query=query)
+                stmt = query_service.get_many(query=query)
 
                 query_result = await execute_service.async_execute(session, stmt)
 
@@ -268,7 +268,7 @@ class SQLALChemyBaseRouteSource(object):
                     query: request_body_model = Depends(request_body_model),
                     session=Depends(db_session)
             ):
-                stmt = await query_service.async_upsert(insert_arg=query,
+                stmt = query_service.upsert(insert_arg=query,
                                                         unique_fields=unique_list)
 
                 try:
@@ -390,7 +390,7 @@ class SQLALChemyBaseRouteSource(object):
                                                       query=Depends(request_query_model),
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
-                stmt = await query_service.async_delete(primary_key=request_url_param_model,
+                stmt = query_service.delete(primary_key=request_url_param_model,
                                                         delete_args=query)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
@@ -430,7 +430,7 @@ class SQLALChemyBaseRouteSource(object):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                stmt = await query_service.async_delete(delete_args=query)
+                stmt = query_service.delete(delete_args=query)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_many(response_model=response_model,
                                                                sql_execute_result=query_result,
@@ -467,7 +467,7 @@ class SQLALChemyBaseRouteSource(object):
                     insert_args: request_body_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = await crud_service.async_insert_one(insert_args=insert_args)
+                stmt = crud_service.insert_one(insert_args=insert_args)
                 try:
                     query_result = await execute_service.async_execute(session, stmt)
                 except IntegrityError as e:
@@ -529,7 +529,7 @@ class SQLALChemyBaseRouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = await crud_service.async_update(primary_key=primary_key,
+                stmt = crud_service.update(primary_key=primary_key,
                                                        update_args=patch_data,
                                                        extra_query=extra_query)
                 try:
@@ -595,7 +595,7 @@ class SQLALChemyBaseRouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session)
             ):
-                stmt = await crud_service.async_update(update_args=patch_data,
+                stmt = crud_service.update(update_args=patch_data,
                                                        extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
@@ -658,7 +658,7 @@ class SQLALChemyBaseRouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = await crud_service.async_update(primary_key=primary_key,
+                stmt = crud_service.update(primary_key=primary_key,
                                                        update_args=update_data,
                                                        extra_query=extra_query)
 
@@ -719,7 +719,7 @@ class SQLALChemyBaseRouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = await crud_service.async_update(update_args=update_data,
+                stmt = crud_service.update(update_args=update_data,
                                                        extra_query=extra_query)
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
