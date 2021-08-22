@@ -4,7 +4,6 @@ from datetime import date, timedelta, datetime, timezone
 
 from starlette.testclient import TestClient
 
-from fastapi_quickcrud.misc.utils import sqlalchemy_table_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 
 from src.fastapi_quickcrud import crud_router_builder
