@@ -260,54 +260,52 @@ class SQLAlchemyResultParse(object):
         await self.async_commit(kwargs.get('session'))
         return result
 
-    async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
-        sql_execute_result, = sql_execute_result
-        session = kwargs['session']
-        result = parse_obj_as(response_model, sql_execute_result)
-        primary_key_field = result.__dict__.pop(self.primary_name, None)
-        assert primary_key_field is not None
-        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+    def has_end_point(self, fastapi_request) -> bool:
         redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
         redirect_url_exist = False
-        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
         for route in fastapi_request.app.routes:
             if route.path == redirect_end_point:
                 route_request_method, = route.methods
                 if route_request_method.upper() == 'GET':
                     redirect_url_exist = True
-        if not redirect_url_exist:
+        return redirect_url_exist
+
+    def post_redirect_get_sub_func(self, response_model, sql_execute_result, fastapi_request):
+        sql_execute_result, = sql_execute_result
+        result = parse_obj_as(response_model, sql_execute_result)
+        primary_key_field = result.__dict__.pop(self.primary_name, None)
+        assert primary_key_field is not None
+        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+        return redirect_url
+
+    def get_post_redirect_get_url(self, response_model, sql_execute_result, fastapi_request):
+        redirect_url = self.post_redirect_get_sub_func(response_model, sql_execute_result, fastapi_request)
+        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
+        redirect_url += f'?{urlencode(header_dict)}'
+        return redirect_url
+
+    async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        session = kwargs['session']
+        if not self.has_end_point(fastapi_request):
             await self.async_rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
-        redirect_url += f'?{urlencode(header_dict)}'
+        redirect_url = self.get_post_redirect_get_url(response_model, sql_execute_result, fastapi_request)
         await self.async_commit(session)
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )
 
     def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
-        sql_execute_result, = sql_execute_result
         session = kwargs['session']
-        result = parse_obj_as(response_model, sql_execute_result)
-        primary_key_field = result.__dict__.pop(self.primary_name, None)
-        assert primary_key_field is not None
-        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
-        redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
-        redirect_url_exist = False
-        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
-        for route in fastapi_request.app.routes:
-            if route.path == redirect_end_point:
-                route_request_method, = route.methods
-                if route_request_method.upper() == 'GET':
-                    redirect_url_exist = True
-        if not redirect_url_exist:
-            self.rollback(session)
+        if not self.has_end_point(fastapi_request):
+            self.async_rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
+        redirect_url = self.get_post_redirect_get_url(response_model, sql_execute_result, fastapi_request)
         self.commit(session)
-        redirect_url += f'?{urlencode(header_dict)}'
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )
@@ -518,56 +516,54 @@ class SQLAlchemyTableResultParse(object):
         await self.async_commit(kwargs.get('session'))
         return result
 
-    async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
-        sql_execute_result = sql_execute_result.fetchone()
-        session = kwargs['session']
-        result = parse_obj_as(response_model, dict(sql_execute_result))
-        primary_key_field = result.__dict__.pop(self.primary_name, None)
-        assert primary_key_field is not None
-        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+    def has_end_point(self, fastapi_request) -> bool:
         redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
         redirect_url_exist = False
-        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
         for route in fastapi_request.app.routes:
             if route.path == redirect_end_point:
                 route_request_method, = route.methods
                 if route_request_method.upper() == 'GET':
                     redirect_url_exist = True
-        if not redirect_url_exist:
+        return redirect_url_exist
+
+    def post_redirect_get_sub_func(self, response_model, sql_execute_result, fastapi_request):
+        sql_execute_result = sql_execute_result.fetchone()
+        result = parse_obj_as(response_model, dict(sql_execute_result))
+        primary_key_field = result.__dict__.pop(self.primary_name, None)
+        assert primary_key_field is not None
+        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
+        return redirect_url
+
+
+    def get_post_redirect_get_url(self, response_model, sql_execute_result, fastapi_request):
+        redirect_url = self.post_redirect_get_sub_func(response_model, sql_execute_result, fastapi_request)
+        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
+        redirect_url += f'?{urlencode(header_dict)}'
+        return redirect_url
+
+
+    async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
+        session = kwargs['session']
+        if not self.has_end_point(fastapi_request):
             await self.async_rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
-        redirect_url += f'?{urlencode(header_dict)}'
+        redirect_url = self.get_post_redirect_get_url(response_model, sql_execute_result, fastapi_request)
         await self.async_commit(session)
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )
 
     def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
-        sql_execute_result = sql_execute_result.fetchone()
         session = kwargs['session']
-        result = parse_obj_as(response_model, dict(sql_execute_result))
-        primary_key_field = result.__dict__.pop(self.primary_name, None)
-        if not primary_key_field:
-            raise Exception(f'unknow error , missing primary_key_field: {result.__dict__}')
-        assert primary_key_field is not None
-        redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
-        redirect_end_point = fastapi_request.url.path + "/{" + self.primary_name + "}"
-        redirect_url_exist = False
-        header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
-        for route in fastapi_request.app.routes:
-            if route.path == redirect_end_point:
-                route_request_method, = route.methods
-                if route_request_method.upper() == 'GET':
-                    redirect_url_exist = True
-        if not redirect_url_exist:
-            self.rollback(session)
+        if not self.has_end_point(fastapi_request):
+            self.async_rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
+        redirect_url = self.get_post_redirect_get_url(response_model, sql_execute_result, fastapi_request)
         self.commit(session)
-        redirect_url += f'?{urlencode(header_dict)}'
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )

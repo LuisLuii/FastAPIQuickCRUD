@@ -518,6 +518,7 @@ class SQLALChemyBaseRouteSource(object):
                   result_parser,
                   async_mode):
         if async_mode:
+
             @api.patch(path,
                        status_code=200,
                        response_model=Union[response_model],
