@@ -2,16 +2,17 @@ import json
 from collections import OrderedDict
 
 from starlette.testclient import TestClient
+
 from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
@@ -20,11 +21,10 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       tags=["test"]
                                       )
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_MANY,
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
@@ -39,10 +39,10 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
 #     assert not v.required
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.POST_REDIRECT_GET
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.POST_REDIRECT_GET
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # Model Test
 # api_model = UntitledTable256Model.__dict__['POST']
 # assert api_model
@@ -101,10 +101,10 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.FIND_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # # Model Test
 # api_model = UntitledTable256Model.__dict__['GET']
 # assert api_model
@@ -143,10 +143,10 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.DELETE_MANY
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.DELETE_MANY
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # # Model Test
 # api_model = UntitledTable256Model.__dict__['GET']
 # assert api_model
@@ -183,12 +183,14 @@ test_delete_data = crud_router_builder(db_session=get_transaction_session,
                                        prefix="/test_delete_many",
                                        tags=["test"]
                                        )
-[app.include_router(i) for i in [test_post_and_redirect_get, test_delete_data, test_create_one, test_create_many, test_get_data]]
+[app.include_router(i) for i in
+ [test_post_and_redirect_get, test_delete_data, test_create_one, test_create_many, test_get_data]]
 
 client = TestClient(app)
 
 primary_key_name = 'primary_key'
 unique_fields = ['primary_key', 'int4_value', 'float4_value']
+
 
 def test_create_many_and_delete_many():
     headers = {
@@ -196,30 +198,32 @@ def test_create_many_and_delete_many():
         'Content-Type': 'application/json',
     }
 
-    data = { "insert": [ { "bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
-                           "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
-                           "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
-                           "timestamp_value": "2021-07-24T02:54:53.285Z", "timestamptz_value": "2021-07-24T02:54:53.285Z",
-                           "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ],
-                           "array_str__value": [ "string" ], "time_value": "18:18:18" , "timetz_value": "18:18:18+00:00"},
+    data = {"insert": [{"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                        "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
+                        "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
+                        "timestamp_value": "2021-07-24T02:54:53.285Z", "timestamptz_value": "2021-07-24T02:54:53.285Z",
+                        "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
+                        "array_value": [0],
+                        "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
 
-                         {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
-                          "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
-                          "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "time_value": "18:18:18",
-                          "timestamp_value": "2021-07-24T02:54:53.285Z",
-                          "timestamptz_value": "2021-07-24T02:54:53.285Z",
-                          "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
-                          "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
+                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                        "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
+                        "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
+                        "time_value": "18:18:18",
+                        "timestamp_value": "2021-07-24T02:54:53.285Z",
+                        "timestamptz_value": "2021-07-24T02:54:53.285Z",
+                        "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
+                        "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
 
-                         {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
-                          "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
-                          "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
-                          "timestamp_value": "2021-07-24T02:54:53.285Z",
-                          "timestamptz_value": "2021-07-24T02:54:53.285Z",
-                          "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
-                          "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
-                         ] }
-
+                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                        "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
+                        "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
+                        "timestamp_value": "2021-07-24T02:54:53.285Z",
+                        "timestamptz_value": "2021-07-24T02:54:53.285Z",
+                        "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
+                        "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18",
+                        "timetz_value": "18:18:18+00:00"},
+                       ]}
 
     response = client.post('/test_creation_many', headers=headers, data=json.dumps(data))
     assert response.status_code == 201
@@ -230,7 +234,7 @@ def test_create_many_and_delete_many():
     max_key = max(primary_key_list)
     params = {"primary_key____from": min_key,
               "primary_key____to": max_key,
-              "bool_value____list":True,
+              "bool_value____list": True,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
               "date_value____from": "2021-07-22",
@@ -279,4 +283,3 @@ def test_create_many_and_delete_many():
     response = client.delete(f'/test_delete_many?{query_string}')
     assert response.status_code == 200
     assert response.headers['x-total-count'] == '3'
-

@@ -4,13 +4,11 @@ from datetime import date, timedelta, datetime, timezone
 
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
-
-from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
+from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
-
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
@@ -355,4 +353,3 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
-
