@@ -12,34 +12,21 @@
 
 ---
 
+
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
 
 - [Introduction](#introduction)
+  - [Advantage](#advantage)
+  - [Constraint](#constraint)
 - [Getting started](#getting-started)
   - [Installation](#installation)
   - [Usage](#usage)
-    
-- [Constraint](#constraint)
 - [Design](#design)
   - [Query](#query)
   - [Upsert](#upsert)
   - [Post Redirect Get](#post-redirect-get)
   - [Update](#update)
-  - [Creating databases](#creating-databases)
-  - [Granting user access to a database](#granting-user-access-to-a-database)
-  - [Enabling extensions](#enabling-extensions)
-  - [Creating replication user](#creating-replication-user)
-  - [Setting up a replication cluster](#setting-up-a-replication-cluster)
-  - [Creating a snapshot](#creating-a-snapshot)
-  - [Creating a backup](#creating-a-backup)
-  - [Command-line arguments](#command-line-arguments)
-  - [Logs](#logs)
-  - [UID/GID mapping](#uidgid-mapping)
-- [Maintenance](#maintenance)
-  - [Upgrading](#upgrading)
-  - [Shell Access](#shell-access)
-
 
 
 # Introduction
@@ -60,7 +47,45 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 - Delete Many
 - Post Redirect Get
 
-`FastAPI Quick CRUD`is developed based on SQLAlchemy `1.4` version and supports sync and async.
+`FastAPI Quick CRUD`is developed based on SQLAlchemy `1.4.23` version and supports sync and async.
+
+## Advantage
+
+  - [x] **Support SQLAlchemy 1.4** - Allow you build a fully asynchronous python service, also supports synchronization.
+  
+  - [x] **Support Pagination** - Get many API support `order by` `offset` `limit` field in API
+
+  - [x] **Rich FastAPI CRUD router generation** - Many operations of CRUD are implemented to complete the development and coverage of all aspects of basic CRUD.
+
+  - [x] **CRUD route automatically generated** - Support Declarative class definitions and Imperative table
+    
+  - [x] **Flexible API request** - `UPDATE ONE/MANY` `FIND ONE/MANY` `PATCH ONE/MANY` `DELETE ONE/MANY` supports  identify a specific resource (primary key) or resources whereas Query Parameter as a command to the resource to filter and limit the scope of the scope of data in request.
+    
+## Constraint
+   
+  - ❌ If there are multiple unique constraints, please use compound unique constraints instead
+  - ❌ If there are multiple unique constraints, please use compound unique constraints instead
+  - ❌ Composite primary key is not support
+  - ❌ Not Support API without specific resource `xxx/{primary key}` when table have not primary key; 
+    - `UPDATE ONE`
+    - `FIND ONE`
+    - `PATCH ONE` 
+    - `DELETE ONE` 
+  - ❌ Some types of columns are not supported
+    - INTERVAL
+    - JSON
+    - JSONB
+    - H-STORE
+    - ARRAY
+    - BYTE
+    - Geography
+    - box
+    - line
+    - point
+    - lseg
+    - polygon
+    - inet
+    - macaddr
 
 # Getting started
 
