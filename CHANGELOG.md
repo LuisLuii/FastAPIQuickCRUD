@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
  
 
-## [Unreleased] - 2021-08-23
+## [0.0.1a11] - 2021-08-23
  
 ### Added
 support create more than one pydantic model with same
