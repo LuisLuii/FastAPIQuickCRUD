@@ -1,17 +1,32 @@
 
 # Change Log
 All notable changes to this project will be documented in this file.
- 
 
-## [0.0.1a11] - 2021-08-23
+
+## [0.0.1a13] - 2021-08-23
  
 ### Added
+
+### Changed
+
+### Fixed
+
+post redirect get can not rollback when find one api not found with async session
+
+---
+
+## [0.0.1a12] - 2021-08-23
+ 
+### Added
+
 support create more than one pydantic model with same
 
 ### Changed
 
 ### Fixed
+
 duplicated pydantic model name 
+
 
 ---
 
