@@ -285,7 +285,7 @@ class ApiParameterSchemaBuilder:
             primary_column_name = primary_key_column.key
         primary_field_definitions = (primary_column_name, column_type, default)
 
-        primary_columns_model: DataClass = make_dataclass(f'{self.db_name}_PrimaryKeyModel',
+        primary_columns_model: DataClass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PrimaryKeyModel',
                                                           [(primary_field_definitions[0],
                                                             primary_field_definitions[1],
                                                             Query(primary_field_definitions[2]))],
@@ -559,7 +559,7 @@ class ApiParameterSchemaBuilder:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name}_Upsert_one_request_update_columns_when_conflict_request_body_model',
+        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
                                         [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
@@ -579,14 +579,14 @@ class ApiParameterSchemaBuilder:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
         #
-        request_body_model = make_dataclass(f'{self.db_name}_Upsert_one_request_model',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_model',
                                             request_fields + on_conflict_handle,
                                             namespace={
                                                 '__post_init__': lambda self_object: [i(self_object)
                                                                                       for i in request_validation]
                                             })
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_Upsert_one_response_model',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_response_model',
                                                   response_fields)
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
@@ -609,7 +609,7 @@ class ApiParameterSchemaBuilder:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              f'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name}_Upsert_many_request_update_columns_when_conflict_request_body_model',
+        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
                                         [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
@@ -646,13 +646,13 @@ class ApiParameterSchemaBuilder:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
 
-        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name}_UpsertManyInsertItemRequestModel',
+        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
                                                           insert_fields
                                                           )
 
         # Create List Model with contains item
         insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
-        request_body_model = make_dataclass(f'{self.db_name}_UpsertManyRequestBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyRequestBody',
                                             insert_list_field + on_conflict_handle
                                             ,
                                             namespace={
@@ -661,7 +661,7 @@ class ApiParameterSchemaBuilder:
                                                                                       request_validation]}
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpsertManyResponseItemModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseItemModel',
                                                   response_fields)
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
@@ -671,7 +671,7 @@ class ApiParameterSchemaBuilder:
             response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_UpsertManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
             **{'__root__': (List[response_item_model], None)}
         )
 
@@ -703,14 +703,14 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_FindManyRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
                                                                                        for validator_ in
                                                                                        request_validation]}
                                              )
-        response_model_dataclass = make_dataclass(f'{self.db_name}_FindManyResponseItemModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
@@ -724,7 +724,7 @@ class ApiParameterSchemaBuilder:
                                                                                  config=OrmConfig)
 
         response_model = create_model(
-            f'{self.db_name}_FindManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
             **{'__root__': (List[response_list_item_model], None), '__config__': OrmConfig}
         )
 
@@ -754,7 +754,7 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_FindOneRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -762,7 +762,7 @@ class ApiParameterSchemaBuilder:
                                                                                        request_validation]
                                              }
                                              )
-        response_model_dataclass = make_dataclass(f'{self.db_name}_FindOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -802,7 +802,7 @@ class ApiParameterSchemaBuilder:
                                                                                      self.uuid_type_columns))
             response_validation = [lambda self_object: self._value_of_list_to_str(self_object,
                                                                                   self.uuid_type_columns)]
-        request_query_model = make_dataclass(f'{self.db_name}_DeleteOneRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteOneRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -810,7 +810,7 @@ class ApiParameterSchemaBuilder:
                                                                                        request_validation]
                                              }
                                              )
-        response_model = make_dataclass(f'{self.db_name}_DeleteOneResponseModel',
+        response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteOneResponseModel',
                                         [(self._primary_key_field_definition[0],
                                           self._primary_key_field_definition[1],
                                           ...)],
@@ -848,7 +848,7 @@ class ApiParameterSchemaBuilder:
                                                                                      self.uuid_type_columns))
             response_validation = [lambda self_object: self._value_of_list_to_str(self_object,
                                                                                   self.uuid_type_columns)]
-        request_query_model = make_dataclass(f'{self.db_name}_DeleteManyRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -856,7 +856,7 @@ class ApiParameterSchemaBuilder:
                                                                                        request_validation]
                                              }
                                              )
-        response_model = make_dataclass(f'{self.db_name}_DeleteManyResponseModel',
+        response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseModel',
                                         [(self._primary_key_field_definition[0],
                                           self._primary_key_field_definition[1],
                                           ...)],
@@ -868,7 +868,7 @@ class ApiParameterSchemaBuilder:
         response_model = _model_from_dataclass(response_model)
 
         response_model = create_model(
-            f'{self.db_name}_DeleteManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseListModel',
             **{'__root__': (List[response_model], None)}
         )
 
@@ -903,7 +903,7 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_PatchOneRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -912,7 +912,7 @@ class ApiParameterSchemaBuilder:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_PatchOneRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -921,7 +921,7 @@ class ApiParameterSchemaBuilder:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PatchOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -967,7 +967,7 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_UpdateOneRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -976,7 +976,7 @@ class ApiParameterSchemaBuilder:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_UpdateOneRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -985,7 +985,7 @@ class ApiParameterSchemaBuilder:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpdateOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -1040,7 +1040,7 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_UpdateManyRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1049,7 +1049,7 @@ class ApiParameterSchemaBuilder:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_UpdateManyRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -1058,7 +1058,7 @@ class ApiParameterSchemaBuilder:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpdateManyResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseModel',
                                                   response_fields,
                                                   )
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
@@ -1067,7 +1067,7 @@ class ApiParameterSchemaBuilder:
             response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_UpdateManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
 
@@ -1111,7 +1111,7 @@ class ApiParameterSchemaBuilder:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_PatchManyRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1120,7 +1120,7 @@ class ApiParameterSchemaBuilder:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_PatchManyRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -1129,7 +1129,7 @@ class ApiParameterSchemaBuilder:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PatchManyResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -1142,7 +1142,7 @@ class ApiParameterSchemaBuilder:
             response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_PatchManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
 
@@ -1168,7 +1168,7 @@ class ApiParameterSchemaBuilder:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
         #
-        request_body_model = make_dataclass(f'{self.db_name}_PostAndRedirectRequestModel',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PostAndRedirectRequestModel',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator(self_object)
@@ -1176,7 +1176,7 @@ class ApiParameterSchemaBuilder:
                                                                                       request_validation]
                                             })
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PostAndRedirectResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PostAndRedirectResponseModel',
                                                   response_body_fields)
         response_model = _model_from_dataclass(response_model_dataclass)
         if self.alias_mapper and response_model:
@@ -1313,7 +1313,7 @@ class ApiParameterSchemaBuilderForTable:
         primary_column_name = str(primary_key_column.key)
         primary_field_definitions = (primary_column_name, column_type, default)
 
-        primary_columns_model: DataClass = make_dataclass(f'{self.db_name}_PrimaryKeyModel',
+        primary_columns_model: DataClass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PrimaryKeyModel',
                                                           [(primary_field_definitions[0],
                                                             primary_field_definitions[1],
                                                             Query(primary_field_definitions[2]))],
@@ -1581,7 +1581,7 @@ class ApiParameterSchemaBuilderForTable:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name}_Upsert_one_request_update_columns_when_conflict_request_body_model',
+        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
                                         [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
@@ -1601,14 +1601,14 @@ class ApiParameterSchemaBuilderForTable:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
         #
-        request_body_model = make_dataclass(f'{self.db_name}_Upsert_one_request_model',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_model',
                                             request_fields + on_conflict_handle,
                                             namespace={
                                                 '__post_init__': lambda self_object: [i(self_object)
                                                                                       for i in request_validation]
                                             })
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_Upsert_one_response_model',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_response_model',
                                                   response_fields)
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
@@ -1631,7 +1631,7 @@ class ApiParameterSchemaBuilderForTable:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              f'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name}_Upsert_many_request_update_columns_when_conflict_request_body_model',
+        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
                                         [conflict_columns])
         on_conflict_handle = [(f'on_conflict', Optional[conflict_model],
                                Body(None))]
@@ -1652,13 +1652,13 @@ class ApiParameterSchemaBuilderForTable:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
 
-        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name}_UpsertManyInsertItemRequestModel',
+        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
                                                           insert_fields
                                                           )
 
         # Create List Model with contains item
         insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
-        request_body_model = make_dataclass(f'{self.db_name}_UpsertManyRequestBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyRequestBody',
                                             insert_list_field + on_conflict_handle
                                             ,
                                             namespace={
@@ -1667,7 +1667,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                       request_validation]}
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpsertManyResponseItemModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseItemModel',
                                                   response_fields)
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
@@ -1677,7 +1677,7 @@ class ApiParameterSchemaBuilderForTable:
             response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_UpsertManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
             **{'__root__': (List[response_item_model], None)}
         )
 
@@ -1709,14 +1709,14 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_FindManyRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
                                                                                        for validator_ in
                                                                                        request_validation]}
                                              )
-        response_model_dataclass = make_dataclass(f'{self.db_name}_FindManyResponseItemModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
@@ -1730,7 +1730,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                  config=OrmConfig)
 
         response_model = create_model(
-            f'{self.db_name}_FindManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
             **{'__root__': (List[response_list_item_model], None), '__config__': OrmConfig}
         )
 
@@ -1760,7 +1760,7 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_FindOneRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1768,7 +1768,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                        request_validation]
                                              }
                                              )
-        response_model_dataclass = make_dataclass(f'{self.db_name}_FindOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -1808,7 +1808,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                      self.uuid_type_columns))
             response_validation = [lambda self_object: self._value_of_list_to_str(self_object,
                                                                                   self.uuid_type_columns)]
-        request_query_model = make_dataclass(f'{self.db_name}_DeleteOneRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteOneRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1816,7 +1816,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                        request_validation]
                                              }
                                              )
-        response_model = make_dataclass(f'{self.db_name}_DeleteOneResponseModel',
+        response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteOneResponseModel',
                                         response_fields,
                                         namespace={
                                             '__post_init__': lambda self_object: [validator_(self_object)
@@ -1852,7 +1852,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                      self.uuid_type_columns))
             response_validation = [lambda self_object: self._value_of_list_to_str(self_object,
                                                                                   self.uuid_type_columns)]
-        request_query_model = make_dataclass(f'{self.db_name}_DeleteManyRequestBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyRequestBody',
                                              request_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1860,7 +1860,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                        request_validation]
                                              }
                                              )
-        response_model = make_dataclass(f'{self.db_name}_DeleteManyResponseModel',
+        response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseModel',
                                         response_fields,
                                         namespace={
                                             '__post_init__': lambda self_object: [validator_(self_object)
@@ -1870,7 +1870,7 @@ class ApiParameterSchemaBuilderForTable:
         response_model = _model_from_dataclass(response_model)
 
         response_model = create_model(
-            f'{self.db_name}_DeleteManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseListModel',
             **{'__root__': (List[response_model], None)}
         )
 
@@ -1905,7 +1905,7 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_PatchOneRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1914,7 +1914,7 @@ class ApiParameterSchemaBuilderForTable:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_PatchOneRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -1923,7 +1923,7 @@ class ApiParameterSchemaBuilderForTable:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PatchOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -1968,7 +1968,7 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_UpdateOneRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -1977,7 +1977,7 @@ class ApiParameterSchemaBuilderForTable:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_UpdateOneRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -1986,7 +1986,7 @@ class ApiParameterSchemaBuilderForTable:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpdateOneResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateOneResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -2041,7 +2041,7 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_UpdateManyRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -2050,7 +2050,7 @@ class ApiParameterSchemaBuilderForTable:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_UpdateManyRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -2059,7 +2059,7 @@ class ApiParameterSchemaBuilderForTable:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_UpdateManyResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseModel',
                                                   response_fields,
                                                   )
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
@@ -2068,7 +2068,7 @@ class ApiParameterSchemaBuilderForTable:
             response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_UpdateManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
 
@@ -2112,7 +2112,7 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        request_query_model = make_dataclass(f'{self.db_name}_PatchManyRequestQueryBody',
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyRequestQueryBody',
                                              request_query_fields,
                                              namespace={
                                                  '__post_init__': lambda self_object: [validator_(self_object)
@@ -2121,7 +2121,7 @@ class ApiParameterSchemaBuilderForTable:
                                              }
                                              )
 
-        request_body_model = make_dataclass(f'{self.db_name}_PatchManyRequestBodyBody',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyRequestBodyBody',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator_(self_object)
@@ -2130,7 +2130,7 @@ class ApiParameterSchemaBuilderForTable:
                                             }
                                             )
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PatchManyResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseModel',
                                                   response_fields,
                                                   namespace={
                                                       '__post_init__': lambda self_object: [validator_(self_object)
@@ -2143,7 +2143,7 @@ class ApiParameterSchemaBuilderForTable:
             response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
         response_model = create_model(
-            f'{self.db_name}_PatchManyResponseListModel',
+            f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
 
@@ -2169,7 +2169,7 @@ class ApiParameterSchemaBuilderForTable:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
         #
-        request_body_model = make_dataclass(f'{self.db_name}_PostAndRedirectRequestModel',
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PostAndRedirectRequestModel',
                                             request_body_fields,
                                             namespace={
                                                 '__post_init__': lambda self_object: [validator(self_object)
@@ -2177,7 +2177,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                       request_validation]
                                             })
 
-        response_model_dataclass = make_dataclass(f'{self.db_name}_PostAndRedirectResponseModel',
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PostAndRedirectResponseModel',
                                                   response_body_fields)
         response_model = _model_from_dataclass(response_model_dataclass)
         if self.alias_mapper and response_model:
