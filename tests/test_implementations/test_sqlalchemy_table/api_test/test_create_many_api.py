@@ -353,3 +353,6 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
+
+
+test_try_input_with_conflict()
