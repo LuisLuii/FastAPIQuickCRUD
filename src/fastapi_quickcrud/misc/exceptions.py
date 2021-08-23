@@ -64,24 +64,6 @@ class InvalidRequestMethod(CRUDBuilderException):
     pass
 
 
-class RequestResponseModelMissingException(Exception):
-    def __init__(self, msg=""):
-        self.msg = msg
-        super().__init__(msg)
-
-    def __str__(self) -> str:
-        return self.msg
-
-
-class ConflictException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-        super().__init__(msg)
-
-    def __str__(self) -> str:
-        return self.msg
-
-
 #
 # class NotFoundError(MongoQueryError):
 #     def __init__(self, Collection: Type[ModelType], model: BaseModel):

@@ -300,7 +300,7 @@ class SQLAlchemyResultParse(object):
     def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
         session = kwargs['session']
         if not self.has_end_point(fastapi_request):
-            self.async_rollback(session)
+            self.rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')
@@ -434,15 +434,15 @@ class SQLAlchemyTableResultParse(object):
         self.commit(kwargs.get('session'))
         return result
 
-    async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        await self.async_commit(kwargs.get('session'))
-        return result
-
-    def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        self.commit(kwargs.get('session'))
-        return result
+    # async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
+    #     self.commit(kwargs.get('session'))
+    #     return result
 
     @staticmethod
     def upsert_one_sub_func(response_model, sql_execute_result, fastapi_response):
@@ -558,7 +558,7 @@ class SQLAlchemyTableResultParse(object):
     def post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
         session = kwargs['session']
         if not self.has_end_point(fastapi_request):
-            self.async_rollback(session)
+            self.rollback(session)
             raise FindOneApiNotRegister(404,
                                         f'End Point {fastapi_request.url.path}/{ {self.primary_name} }'
                                         f' with GET method not found')

@@ -6,7 +6,7 @@ from starlette.testclient import TestClient
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
-from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, UntitledTable256
 
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
@@ -18,6 +18,7 @@ UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
                                       crud_models=UntitledTable256Model,
+                                      async_mode=True,
                                       prefix="/test",
                                       tags=["test"]
                                       )
@@ -44,7 +45,7 @@ headers = {
         'Content-Type': 'application/json',
     }
 
-data = '{ "bool_value": true, "char_value": "string", "date_value": "2021-07-26", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "time_value": "18:18:18", "timestamp_value": "2021-07-26T02:17:46.846Z", "timestamptz_value": "2021-07-26T02:17:46.846Z", "timetz_value": "18:18:18+00", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }'
+data = '{ "bool_value": true, "char_value": "string", "date_value": "2021-07-26", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "time_value": "18:18:18", "timestamp_value": "2021-07-26T02:17:46.846", "timestamptz_value": "2021-07-26T02:17:46.846Z", "timetz_value": "18:18:18+00", "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }'
 
 response = client.post('/test', headers=headers, data=data)
 assert response.status_code == 201
@@ -727,17 +728,17 @@ def test_get_by_primary_key_with_false_timestamp_range_query_param():
 
 
     # success from - to with special operator
-    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.846&timestamp_value____to=2021-07-26T02:17:46.846Z&timestampt_value____from_____comparison_operator=Greater_than_or_equal_to&timestampt_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
+    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.846&timestamp_value____to=2021-07-26T02:17:46.846&timestampt_value____from_____comparison_operator=Greater_than_or_equal_to&timestampt_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
     assert response.status_code == 200
     # success from - to with special operator
-    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.746Z&timestamp_value____to=2021-07-26T02:17:46.946Z&timestampt_value____from_____comparison_operator=Greater_than&timestampt_value____to_____comparison_operator=Less_than', headers=headers)
+    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.746&timestamp_value____to=2021-07-26T02:17:46.946&timestampt_value____from_____comparison_operator=Greater_than&timestampt_value____to_____comparison_operator=Less_than', headers=headers)
     assert response.status_code == 200
 
     # failed from - to with special operator
-    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.846Z&timestamp_value____to=2021-07-26T02:17:46.946Z&timestamp_value____from_____comparison_operator=Greater_than&timestamp_value____to_____comparison_operator=Less_than', headers=headers)
+    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.846&timestamp_value____to=2021-07-26T02:17:46.946&timestamp_value____from_____comparison_operator=Greater_than&timestamp_value____to_____comparison_operator=Less_than', headers=headers)
     assert response.status_code == 404
     # failed from - to with special operator
-    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.856Z&timestamp_value____to=2021-07-26T02:17:46.986Z&timestamp_value____from_____comparison_operator=Greater_than_or_equal_to&timestamp_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
+    response = client.get(f'/test/{sample_primary_key}?timestamp_value____from=2021-07-26T02:17:46.856&timestamp_value____to=2021-07-26T02:17:46.986&timestamp_value____from_____comparison_operator=Greater_than_or_equal_to&timestamp_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
     assert response.status_code == 404
 def test_get_by_primary_key_with_false_timetz_range_query_param():
     # from
@@ -821,6 +822,5 @@ def test_get_by_primary_key_with_false_timestamptz_range_query_param():
     # failed from - to with special operator
     response = client.get(f'/test/{sample_primary_key}?timestamptz_value____from=2021-07-26T02%3A17%3A46.847Z&timestamptz_value____to=2021-07-26T02%3A17%3A46.946Z&timestamptz_value____from_____comparison_operator=Greater_than_or_equal_to&timestamptz_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
     assert response.status_code == 404
-
 
 test_get_by_primary_key_with_false_timestamp_range_query_param()

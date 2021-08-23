@@ -3,17 +3,17 @@ from collections import OrderedDict
 
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import CrudMethods
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
-from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
-
+from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, \
+    UntitledTable256
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # Model Test
 # api_model = UntitledTable256Model.__dict__['POST']
 # assert api_model
@@ -64,13 +64,14 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
                                       crud_models=UntitledTable256Model,
                                       prefix="/test_creation_one",
+                                      async_mode=True,
                                       tags=["test"]
                                       )
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPSERT_MANY,
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # Model Test
 # api_model = UntitledTable256Model.__dict__['POST']
 # assert api_model
@@ -125,6 +126,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
+                                       async_mode=True,
                                        tags=["test"]
                                        )
 
@@ -134,10 +136,10 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
 #     assert not v.required
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.POST_REDIRECT_GET
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.POST_REDIRECT_GET
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # Model Test
 # api_model = UntitledTable256Model.__dict__['POST']
 # assert api_model
@@ -192,14 +194,15 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  db_model=UntitledTable256,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
+                                                 async_mode=True,
                                                  tags=["test"]
                                                  )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.FIND_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # # Model Test
 # api_model = UntitledTable256Model.__dict__['GET']
 # assert api_model
@@ -232,16 +235,17 @@ UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
 #         print(f"{v.default=}")
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
+                                    async_mode=True,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test",
                                     tags=["test"]
                                     )
 
 UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPDATE_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
+                                                     crud_methods=[
+                                                         CrudMethods.UPDATE_ONE
+                                                     ],
+                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # # # Model Test
 # api_model = UntitledTable256Model.__dict__['GET']
 # assert api_model
@@ -276,6 +280,7 @@ test_update_data = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
                                        crud_models=UntitledTable256Model,
                                        prefix="/test_update_one",
+                                       async_mode=True,
                                        tags=["test"]
                                        )
 [app.include_router(i) for i in
@@ -294,21 +299,21 @@ def test_create_one_and_update_one():
     }
 
     data = {"insert": [
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
-                        "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
-                        "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
-                        "timestamp_value": "2021-07-24T02:54:53.285Z",
-                        "timestamptz_value": "2021-07-24T02:54:53.285Z",
-                        "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
-                        "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18",
-                        "timetz_value": "18:18:18+00:00"},
-                       ]}
+        {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
+         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
+         "timestamp_value": "2021-07-24T02:54:53.285",
+         "timestamptz_value": "2021-07-24T02:54:53.285Z",
+         "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
+         "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18",
+         "timetz_value": "18:18:18+00:00"},
+    ]}
 
     response = client.post('/test_creation_many', headers=headers, data=json.dumps(data))
     assert response.status_code == 201
     insert_response_data = response.json()
 
-    primary_key ,= [i[primary_key_name] for i in insert_response_data]
+    primary_key, = [i[primary_key_name] for i in insert_response_data]
     params = {"bool_value____list": True,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
@@ -359,6 +364,7 @@ def test_create_one_and_update_one():
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
                    "text_value": "string_update",
+                   ""
                    "timestamp_value": "2022-07-24T02:54:53.285000",
                    "timestamptz_value": "2022-07-24T02:54:53.285000+00:00",
                    "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afb6", "varchar_value": "string",
