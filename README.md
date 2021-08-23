@@ -170,9 +170,9 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
     ```python
     from fastapi_quickcrud import crud_router_builder
-    from fastapi_quickcrud import CrudService
     from fastapi_quickcrud import CrudMethods
     from fastapi_quickcrud import sqlalchemy_to_pydantic
+    from fastapi_quickcrud import sqlalchemy_table_to_pydantic
     ```
 
 4. convert the sqlalchemy model to Pydantic model
@@ -197,8 +197,6 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
     - argument:
         - db_model: ```SQLALchemy Declarative Base Class```
-        - async_mode: ```bool```
-          > set True if using async SQLALchemy
         - crud_methods: ```CrudMethods```
             > - CrudMethods.FIND_ONE
             > - CrudMethods.FIND_MANY
@@ -215,8 +213,19 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
         - exclude_columns: `list` 
             > set the columns that not to be operated but the columns should nullable or set the default value)
 
-5. user CrudRouter to register API
-                                            
+
+5. use CrudRouter to register API
+   ```python
+    	crud_route = crud_router_builder(db_session=get_transaction_session,
+                                          db_model=CRUDTest,
+                                          crud_models=test_crud_model,
+                                          async_mode = False,
+                                          autocommit = False,
+                                          prefix="/crud_test",
+                                          dependencies = [],
+                                          tags=["Example"]
+                                          )
+    ```
     - db_session: `execute session generator` 
         - example:
             - sync SQLALchemy:
@@ -260,15 +269,7 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
     - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
 
-    ```python
-    	crud_route = crud_router_builder(db_session=get_transaction_session,
-                                          crud_service=UntitledTable256_service,
-                                          crud_models=test_crud_model,
-                                          prefix="/crud_test",
-                                          dependencies = [],
-                                          tags=["Example"]
-                                          )
-    ```
+    
    
 6. Add to route and run
    
