@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1-Alpha-07'
+VERSION = '0.0.1-Alpha-10'
 
 print("""
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
         version=VERSION,
         install_requires=["fastapi","pydantic","SQLAlchemy==1.4.22","StrEnum","psycopg2","asyncpg"],
         python_requires=">=3.7",
-        description="FastAPI-quickcrud can help you to build a FastAPI CRUD routes automatically for the PostgreSQL's Sqlalchemy Schema",
+        description="A comprehensive FastaAPI's CRUD router generator for SQLALchemy.",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
         author='Luis Lui',

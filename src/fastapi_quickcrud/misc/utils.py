@@ -9,7 +9,7 @@ from sqlalchemy.sql.elements import \
 
 from .crud_model import RequestResponseModel, CRUDModel
 from .exceptions import QueryOperatorNotFound, PrimaryMissing
-from .schema_builder import ApiParameterSchemaBuilder, ApiParameterSchemaBuilderNew
+from .schema_builder import ApiParameterSchemaBuilder, ApiParameterSchemaBuilderForTable
 from .type import \
     CrudMethods, \
     CRUDRequestMapping, \
@@ -105,8 +105,8 @@ def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMetho
     if exclude_columns is None:
         exclude_columns = []
     request_response_mode_set = {}
-    model_builder = ApiParameterSchemaBuilderNew(db_model,
-                                                 exclude_column=exclude_columns)
+    model_builder = ApiParameterSchemaBuilderForTable(db_model,
+                                                      exclude_column=exclude_columns)
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
                                        CrudMethods.FIND_ONE.value,
                                        CrudMethods.PATCH_ONE.value,

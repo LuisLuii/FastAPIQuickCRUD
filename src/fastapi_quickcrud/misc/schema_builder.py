@@ -1185,7 +1185,7 @@ class ApiParameterSchemaBuilder:
         return None, request_body_model, response_model
 
 
-class ApiParameterSchemaBuilderNew:
+class ApiParameterSchemaBuilderForTable:
     unsupported_data_types = ["BLOB"]
     partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
