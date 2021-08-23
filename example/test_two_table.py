@@ -44,7 +44,7 @@ RelationshipTestA_pydantic_set = sqlalchemy_to_pydantic(db_model=RelationshipTes
                                                         crud_methods=[
                                                             CrudMethods.FIND_MANY,
                                                             CrudMethods.FIND_ONE,
-                                                            CrudMethods.UPSERT_MANY,
+                                                            CrudMethods.UPSERT_ONE,
                                                             CrudMethods.UPDATE_MANY,
                                                             CrudMethods.UPDATE_ONE,
                                                             CrudMethods.DELETE_ONE,
@@ -66,14 +66,16 @@ RelationshipTestB_pydantic_set = sqlalchemy_table_to_pydantic(db_model=t_relatio
                                                               exclude_columns=[])
 crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=RelationshipTestA_pydantic_set,
-                                   db_model=t_relationship_test_b,
+                                   db_model=RelationshipTestA,
                                    prefix="/crud_test_a",
                                    dependencies=[],
+                                   async_mode=True,
                                    tags=["A"]
                                    )
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=RelationshipTestB_pydantic_set,
                                    db_model=t_relationship_test_b,
+                                   async_mode=True,
                                    prefix="/crud_test",
                                    dependencies=[],
                                    tags=["B"]
