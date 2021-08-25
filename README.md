@@ -30,7 +30,7 @@
 
 I believe that everyone who's working with FastApi and building some RESTful of CRUD services, wastes the time to writing similar code for simple CRUD every time
 
-`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema. 
+`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema of PostgreSQL Database. 
 
 - Get one
 - Get many
@@ -60,6 +60,7 @@ I believe that everyone who's working with FastApi and building some RESTful of 
     
 ## Constraint
    
+  - ❌ Only Support PostgreSQL yet (support MongoDB,MSSQL in schedule)
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
   - ❌ **Composite primary key** is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
