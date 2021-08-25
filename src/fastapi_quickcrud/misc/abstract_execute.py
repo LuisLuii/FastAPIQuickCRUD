@@ -17,15 +17,15 @@ class SQLALchemyExecuteService(object):
 
     @staticmethod
     async def async_execute_and_expire(session, stmt):
-        result = await session.execute(stmt)
+        async_execute_and_expire_result = await session.execute(stmt)
         session.expire_all()
-        return result
+        return async_execute_and_expire_result
 
     @staticmethod
     def execute_and_expire(session, stmt):
-        result = session.execute(stmt)
+        execute_and_expire_result = session.execute(stmt)
         session.expire_all()
-        return result
+        return execute_and_expire_result
 
     @staticmethod
     async def async_execute(session, stmt):
