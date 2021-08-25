@@ -8,7 +8,7 @@ from sqlalchemy.sql.elements import \
     BinaryExpression
 
 from .crud_model import RequestResponseModel, CRUDModel
-from .exceptions import QueryOperatorNotFound, PrimaryMissing
+from .exceptions import QueryOperatorNotFound, PrimaryMissing, UnknownColumn
 from .schema_builder import ApiParameterSchemaBuilder, ApiParameterSchemaBuilderForTable
 from .type import \
     CrudMethods, \
@@ -38,14 +38,19 @@ unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
+
+
+
 def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
 
     if isinstance(param, dict):
         stmt = {}
         for column_name, value in param.items():
-            if not hasattr(model, column_name):
+            if column_name == '__initialised__':
                 continue
+            # if not hasattr(model, column_name):
+            #     raise UnknownColumn(f'the {column_name} is not exited')
             alias_name = getattr(model, column_name)
             if column_collection:
                 actual_column_name = getattr(model, alias_name.expression.key)
@@ -56,6 +61,8 @@ def alias_to_column(param: Union[dict, list], model: Base, column_collection: bo
     if isinstance(param, list) or isinstance(param, set):
         stmt = []
         for column_name in param:
+            if not hasattr(model, column_name):
+                raise UnknownColumn(f'column {column_name} is not exited')
             alias_name = getattr(model, column_name)
             if column_collection:
                 actual_column_name = getattr(model, alias_name.expression.key)
