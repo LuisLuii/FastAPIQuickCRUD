@@ -1,4 +1,4 @@
-import asyncio
+from datetime import datetime, timezone
 
 import uvicorn
 from fastapi import FastAPI
@@ -34,7 +34,7 @@ class ExampleTable(Base):
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True)
+    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'}, autoincrement=True)
     primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
@@ -52,15 +52,14 @@ class ExampleTable(Base):
     numeric_value = Column(Numeric)
     text_value = Column(Text, info={'alias_name': 'text_alias'})
     text_alias = synonym('text_value')
-    time_value = Column(Time)
-    timestamp_value = Column(DateTime)
-    timestamptz_value = Column(DateTime(True))
-    timetz_value = Column(Time(True))
+    time_value = Column(Time(False), default = datetime.now(timezone.utc).strftime('%H:%M:%S'))
+    timestamp_value = Column(DateTime(False), default=datetime.now())
+    timestamptz_value = Column(DateTime(True), default=datetime.now(timezone.utc))
+    timetz_value = Column(Time(True), default = datetime.now(timezone.utc).strftime('%H:%M:%S%z'))
     uuid_value = Column(UUID(as_uuid=True))
     varchar_value = Column(String)
     array_value = Column(ARRAY(Integer()))
     array_str__value = Column(ARRAY(String()))
-
 
 
 UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
@@ -120,12 +119,15 @@ example_table_full_router = crud_router_builder(db_session=get_transaction_sessi
                                                 tags=["test"]
                                                 )
 
+
 # Base.metadata.create_all(engine)
 # unknown reason that will throw error when add the code following
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
 #
 [app.include_router(i) for i in [example_table_full_router, post_redirect_get_router, upsert_many_router]]
 uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)

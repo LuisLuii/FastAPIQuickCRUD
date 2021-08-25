@@ -57,17 +57,6 @@ class SQLAlchemyQueryService(object):
             self.model_columns = model
         self.async_mode = async_mode
 
-    @staticmethod
-    async def async_execute(*, session, stmt):
-        query_result = session.execute(stmt)
-        query_result = await query_result
-        return query_result
-
-    @staticmethod
-    def execute(*, session, stmt):
-        query_result = session.execute(stmt)
-        query_result = query_result
-        return query_result
 
     def insert_one(self, *,
                    insert_args):

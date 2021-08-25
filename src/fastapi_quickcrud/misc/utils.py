@@ -266,39 +266,24 @@ def sqlalchemy_to_pydantic(
            **{"PRIMARY_KEY_NAME": model_builder.primary_key_str,
               "UNIQUE_LIST": model_builder.unique_fields}})
 
-
-def add_routers(app: FastAPI, routers: List[APIRouter], **kwargs):
-    for router in routers:
-        app.include_router(router, **kwargs)
-
-
-# def find_duplicate_error(error_msg) -> str:
-#     regex_result = re.findall('(duplicate.*?)\nDETAIL:(.*?)\n', error_msg)
-#     if regex_result:
-#         regex_result, = regex_result
-#     if not len(regex_result) == 2:
-#         return None
-#     return f'{regex_result[0]}: {regex_result[1]}'
+# def get_many_string_matching_patterns_description_builder() -> str:
+#     return '''<br >Composite string field matching pattern<h5/>
+#            <br /> Allow to select more than one pattern for string query'''
 
 
-def get_many_string_matching_patterns_description_builder() -> str:
-    return '''<br >Composite string field matching pattern<h5/> 
-           <br /> Allow to select more than one pattern for string query'''
-
-
-def get_many_order_by_columns_description_builder(*, all_columns, regex_validation, primary_name) -> str:
-    return f'''<br> support column: 
-    <br> {all_columns} <hr><br> support ordering:  
-    <br> {list(map(str, Ordering))} 
-    <hr> 
-    <br> field input validation regex
-    <br> {regex_validation}
-    <hr> 
-    <br />example: 
-    <br />&emsp;&emsp;{primary_name}:ASC
-    <br />&emsp;&emsp;{primary_name}: DESC 
-    <br />&emsp;&emsp;{primary_name}    :    DESC
-    <br />&emsp;&emsp;{primary_name} (default sort by ASC)'''
+# def get_many_order_by_columns_description_builder(*, all_columns, regex_validation, primary_name) -> str:
+#     return f'''<br> support column:
+#     <br> {all_columns} <hr><br> support ordering:
+#     <br> {list(map(str, Ordering))}
+#     <hr>
+#     <br> field input validation regex
+#     <br> {regex_validation}
+#     <hr>
+#     <br />example:
+#     <br />&emsp;&emsp;{primary_name}:ASC
+#     <br />&emsp;&emsp;{primary_name}: DESC
+#     <br />&emsp;&emsp;{primary_name}    :    DESC
+#     <br />&emsp;&emsp;{primary_name} (default sort by ASC)'''
 
 
 process_type_map = {
