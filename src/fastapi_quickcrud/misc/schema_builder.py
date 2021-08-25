@@ -14,10 +14,7 @@ from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import declarative_base
 
-from .exceptions import MultipleSingleUniqueNotSupportedException, \
-    SchemaException, \
-    CompositePrimaryKeyConstraintNotSupportedException, \
-    MultiplePrimaryKeyNotSupportedException, \
+from .exceptions import SchemaException, \
     ColumnTypeNotSupportedException, \
     UnknownError
 from .type import MatchingPatternInString, \
@@ -203,18 +200,14 @@ class ApiParameterSchemaBuilder:
         if unique_column_list and composite_unique_constraint:
             invalid = set(unique_column_list) - set(composite_unique_constraint)
             if invalid:
-                raise SchemaException("Use single unique constraint and composite unique constraint "
-                                      "at same time is not supported ")
+                raise SchemaException(
+                    "Only support one unique constraint/ Use unique constraint and composite unique constraint "
+                    "at same time is not supported / Use  composite unique constraint if there are more than one unique constraint")
         if len(unique_column_list) > 1 and not composite_unique_constraint:
-            raise MultipleSingleUniqueNotSupportedException(
-                " In case you need composite unique constraint, "
-                "FastAPi CRUD builder is not support to define multiple unique=True "
-                "but specifying UniqueConstraint(…) in __table_args__."
-                f'''
-                __table_args__ = (
-                    UniqueConstraint({''.join(unique_column_list)}),
-                )
-                ''')
+            raise SchemaException(
+                SchemaException(
+                    "Only support one unique constraint/ Use unique constraint and composite unique constraint "
+                    "at same time is not supported / Use  composite unique constraint if there are more than one unique constraint"))
 
         return unique_column_list or composite_unique_constraint
 
@@ -232,13 +225,13 @@ class ApiParameterSchemaBuilder:
         if hasattr(self.__db_model, '__table_args__'):
             for constraints in self.__db_model.__table_args__:
                 if isinstance(constraints, PrimaryKeyConstraint):
-                    raise CompositePrimaryKeyConstraintNotSupportedException(
-                        'Primary Key Constraint not supported')
+                    SchemaException(
+                        f'multiple primary key / or composite not supported; {str(self.db_name)} ')
         mapper = inspect(self.__db_model)
         primary_list = self.__db_model.__table__.primary_key.columns.values()
         if len(primary_list) > 1:
-            raise MultiplePrimaryKeyNotSupportedException(
-                f'multiple primary key not supported; {str(mapper.mapped_table)} ')
+            raise SchemaException(
+                f'multiple primary key / or composite not supported; {str(self.db_name)} ')
         primary_key_column, = primary_list
         column_type = str(primary_key_column.type)
         try:
@@ -559,8 +552,9 @@ class ApiParameterSchemaBuilder:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
-                                        [conflict_columns])
+        conflict_model = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
+            [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
 
@@ -609,8 +603,9 @@ class ApiParameterSchemaBuilder:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              f'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
-                                        [conflict_columns])
+        conflict_model = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
+            [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
 
@@ -646,9 +641,10 @@ class ApiParameterSchemaBuilder:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
 
-        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
-                                                          insert_fields
-                                                          )
+        insert_item_field_model_pydantic = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
+            insert_fields
+            )
 
         # Create List Model with contains item
         insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
@@ -1269,8 +1265,8 @@ class ApiParameterSchemaBuilderForTable:
         if not primary_list:
             return (None, None, None)
         if len(primary_list) > 1:
-            raise MultiplePrimaryKeyNotSupportedException(
-                f'multiple primary key not supported; {str(self.__db_model.name)} ')
+            raise SchemaException(
+                f'multiple primary key / or composite not supported; {self.db_name} ')
         primary_key_column, = primary_list
         column_type = str(primary_key_column.type)
         try:
@@ -1581,8 +1577,9 @@ class ApiParameterSchemaBuilderForTable:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
-                                        [conflict_columns])
+        conflict_model = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_Upsert_one_request_update_columns_when_conflict_request_body_model',
+            [conflict_columns])
         on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
 
@@ -1631,8 +1628,9 @@ class ApiParameterSchemaBuilderForTable:
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
                                              f'when the unique columns got conflict'))
-        conflict_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
-                                        [conflict_columns])
+        conflict_model = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
+            [conflict_columns])
         on_conflict_handle = [(f'on_conflict', Optional[conflict_model],
                                Body(None))]
 
@@ -1652,9 +1650,10 @@ class ApiParameterSchemaBuilderForTable:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
 
-        insert_item_field_model_pydantic = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
-                                                          insert_fields
-                                                          )
+        insert_item_field_model_pydantic = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_UpsertManyInsertItemRequestModel',
+            insert_fields
+            )
 
         # Create List Model with contains item
         insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
