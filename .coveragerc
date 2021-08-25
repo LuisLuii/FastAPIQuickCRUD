@@ -9,3 +9,6 @@ exclude_lines =
     raise NotImplementedError
     self._exclude_column = \[\]
     if __name__ == .__main__.:
+    pass
+    session.expire_all()
+    return async_execute_and_expire_result
