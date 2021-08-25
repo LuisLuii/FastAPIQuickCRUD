@@ -12,3 +12,4 @@ exclude_lines =
     pass
     session.expire_all()
     return async_execute_and_expire_result
+    if 'duplicate key value violates unique constraint' not in err_msg:
