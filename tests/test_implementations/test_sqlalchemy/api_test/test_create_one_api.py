@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
-from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
+from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit, UnknownColumn, UpdateColumnEmptyException
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
@@ -333,4 +333,43 @@ def test_update_specific_columns_when_conflict():
     update_partial_fields()
 
 
-test_try_input_without_conflict()
+def test_try_input_with_conflict_but_missing_update_columns():
+    sample_data = create_example_data()
+
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
+    data = {}
+    for k, v in sample_data.items():
+        data[k] = v
+    for k, v in {"float4_value": 0.0, "int2_value": 99, "int4_value": 0}.items():
+        data[k] = v
+    data['on_conflict'] = {'update_columns': []}
+    try:
+        response = client.post('/test_creation_one', headers=headers, data=json.dumps(data))
+    except UpdateColumnEmptyException as e:
+        assert True
+        return
+    assert False
+
+
+def test_try_input_with_conflict_but_unknown_update_columns():
+    sample_data = create_example_data()
+
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
+    data = {}
+    for k, v in sample_data.items():
+        data[k] = v
+    for k, v in {"float4_value": 0.0, "int2_value": 99, "int4_value": 0}.items():
+        data[k] = v
+    data['on_conflict'] = {'update_columns': ['testsetsetset']}
+    try:
+        response = client.post('/test_creation_one', headers=headers, data=json.dumps(data))
+    except UnknownColumn as e:
+        assert True
+        return
+    assert False

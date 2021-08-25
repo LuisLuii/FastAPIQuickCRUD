@@ -279,7 +279,6 @@ class SQLALChemyBaseRouteSource(object):
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-
                 return await parsing_service.async_upsert_one(response_model=response_model,
                                                               sql_execute_result=query_result,
                                                               fastapi_response=response,

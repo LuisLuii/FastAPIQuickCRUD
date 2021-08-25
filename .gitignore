@@ -1,2 +1,3 @@
 /htmlcov/
 .coverage
+tests/htmlcov
