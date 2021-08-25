@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 from starlette.testclient import TestClient
 
-
+from src.fastapi_quickcrud.misc.exceptions import UnknownColumn, UnknownOrderType
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
@@ -1784,6 +1784,53 @@ def test_create_a_more_than_one_data_and_get_many_2():
     less_than_or_equal_to_less_than()
 
 
-# test order_by_columns regex validation
+def test_get_many_with_ordering_unknown_column():
+    try:
+        response = client.get(f'/test_get_many?order_by_columns=testestset')
+    except UnknownColumn as e:
+        assert str(e) == "column testestset is not exited"
+        return
+    assert False
 
-test_create_a_more_than_one_data_and_get_many_2()
+def test_get_many_with_ordering_with_default_order():
+    response = client.get(f'/test_get_many?order_by_columns=primary_key&limit=10&offset=0')
+    a = response.json()
+    init = 1
+    for i in a:
+        assert i['primary_key'] == init
+        init += 1
+
+def test_get_many_with_ordering_with_ASC():
+    response = client.get(f'/test_get_many?order_by_columns=primary_key:ASC&limit=10&offset=0')
+    a = response.json()
+    init = 1
+    for i in a:
+        assert i['primary_key'] == init
+        init += 1
+
+def test_get_many_with_ordering_with_DESC():
+    response = client.get(f'/test_get_many?order_by_columns=primary_key:DESC&limit=10&offset=10')
+    a = response.json()
+    init = a[0]['primary_key']
+    for i in a:
+        assert i['primary_key']  == init
+        init -= 1
+
+
+def test_get_many_with_unknown_order_tyoe():
+    try:
+        response = client.get(f'/test_get_many?order_by_columns=primary_key:DESCSS&limit=10&offset=0')
+    except UnknownOrderType as e:
+        assert str(e) == 'Unknown order type DESCSS, only accept DESC or ASC'
+        return
+    assert False
+
+
+def test_get_many_with_ordering_with_empty_input_list():
+    try:
+        response = client.get(f'/test_get_many?order_by_columns=')
+    except Exception as e:
+        assert False
+    assert True
+
+

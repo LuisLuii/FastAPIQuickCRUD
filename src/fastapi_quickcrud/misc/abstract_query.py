@@ -79,8 +79,13 @@ class SQLAlchemyQueryService(object):
         stmt = select(self.model).where(and_(*filter_list))
         if order_by_columns:
             order_by_query_list = []
+
             for order_by_column in order_by_columns:
+                if not order_by_column:
+                    continue
                 sort_column, order_by = (order_by_column.replace(' ', '').split(':') + [None])[:2]
+                if not hasattr(self.model_columns, sort_column):
+                    raise UnknownColumn(f'column {sort_column} is not exited')
                 if not order_by:
                     order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
                 elif order_by.upper() == Ordering.DESC.upper():
@@ -88,7 +93,7 @@ class SQLAlchemyQueryService(object):
                 elif order_by.upper() == Ordering.ASC.upper():
                     order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
                 else:
-                    raise UnknownOrderType(f"Unknown order type {order_by}, oly accept DESC or ASC")
+                    raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
         return stmt
@@ -133,10 +138,8 @@ class SQLAlchemyQueryService(object):
                 raise UpdateColumnEmptyException('update_columns parameter must be a non-empty list ')
             conflict_update_dict = {}
             for columns in update_columns:
-                if hasattr(insert_stmt.excluded, columns):
-                    conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
-                else:
-                    raise UnknownColumn(f'the {columns} is not exited')
+                conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
+
             conflict_list = alias_to_column(model=self.model_columns, param=unique_fields)
             conflict_update_dict = alias_to_column(model=self.model_columns, param=conflict_update_dict, column_collection=True)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,

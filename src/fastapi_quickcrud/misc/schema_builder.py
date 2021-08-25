@@ -335,9 +335,6 @@ class ApiParameterSchemaBuilder:
             <br> {all_columns} <hr><br> support ordering:  
             <br> {list(map(str, Ordering))} 
             <hr> 
-            <br> field input validation regex
-            <br> {regex_validation}
-            <hr> 
             <br />example: 
             <br />&emsp;&emsp;{primary_name}:ASC
             <br />&emsp;&emsp;{primary_name}: DESC 
@@ -1365,9 +1362,6 @@ class ApiParameterSchemaBuilderForTable:
         return f'''<br> support column: 
             <br> {all_columns} <hr><br> support ordering:  
             <br> {list(map(str, Ordering))} 
-            <hr> 
-            <br> field input validation regex
-            <br> {regex_validation}
             <hr> 
             <br />example: 
             <br />&emsp;&emsp;{primary_name}:ASC
