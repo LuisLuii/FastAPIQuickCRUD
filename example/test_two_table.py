@@ -39,7 +39,7 @@ class User(Base):
 
 friend = Table(
     'friend', metadata,
-    Column('id', ForeignKey('relationship_test_a.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
+    Column('id', ForeignKey('user.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
     Column('friend_name', String, nullable=False)
 )
 
