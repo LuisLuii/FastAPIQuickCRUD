@@ -102,134 +102,137 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 
 #### Simple Code (get more example from `./example`)
 
+```python
+from datetime import datetime, timezone
 
-1. Build a sample table with Sqlalchemy
+import uvicorn
+from fastapi import FastAPI
+from sqlalchemy import Column, Integer, \
+    String, Table, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-    Strongly recommend you use [sqlacodegen](https://pypi.org/project/sqlacodegen/) to  generate the sql schema
+from fastapi_quickcrud import CrudMethods
+from fastapi_quickcrud import crud_router_builder
+from fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from fastapi_quickcrud import sqlalchemy_to_pydantic
 
-    ```python
-    from sqlalchemy import create_engine
-    from sqlalchemy import *
-    from sqlalchemy.dialects.postgresql import *
-    from sqlalchemy.orm import *
-   
-    Base = declarative_base()
-    metadata = Base.metadata
-    engine = create_engine('postgresql://postgres:1234@127.0.0.1:5432/postgres', 
-                            future=True, 
-                            echo=True,
-                            pool_use_lifo=True,
-                            pool_pre_ping=True, 
-                            pool_recycle=7200)
+app = FastAPI()
 
-    class CRUDTest(Base):
-        __tablename__ = 'crud_test'
-        __table_args__ = (
-            UniqueConstraint('id','float4_value', 'int4_value'),
-        )
+Base = declarative_base()
+metadata = Base.metadata
 
-        id = Column(Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-        bool_value = Column(Boolean, nullable=False, server_default=text("false"))
-        bytea_value = Column(LargeBinary)
-        char_value = Column(CHAR(10))
-        date_value = Column(Date, server_default=text("now()"))
-        float4_value = Column(Float, nullable=False)
-        float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-        int2_value = Column(SmallInteger, nullable=False)
-        int4_value = Column(Integer, nullable=False)
-        int8_value = Column(BigInteger, default=99)
-        interval_value = Column(INTERVAL)
-        json_value = Column(JSON)
-        jsonb_value = Column(JSONB(astext_type=Text()))
-        numeric_value = Column(Numeric)
-        text_value = Column(Text)
-        time_value = Column(Time)
-        timestamp_value = Column(DateTime)
-        timestamptz_value = Column(DateTime(True))
-        timetz_value = Column(Time(True))
-        uuid_value = Column(UUID(as_uuid=True))
-        varchar_value = Column(String)
-        array_value = Column(ARRAY(Integer()))
-        array_str__value = Column(ARRAY(String()))
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-    CRUDTest.__table__.create(engine)
-    ```
-
-2. prepare a database connection 
-
-    ```python
-    session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    def get_transaction_session():
-        try:
-            db = session()
-            yield db
-        finally:
-            db.close()
-    ```
-
-3. import the required module
-
-    ```python
-    from fastapi_quickcrud import crud_router_builder
-    from fastapi_quickcrud import CrudMethods
-    from fastapi_quickcrud import sqlalchemy_to_pydantic
-    from fastapi_quickcrud import sqlalchemy_table_to_pydantic
-    ```
-
-4. convert the sqlalchemy model to Pydantic model
-
-    ```python
-    test_crud_model = sqlalchemy_to_pydantic(db_model = CRUDTest,
-                                             crud_methods=[
-                                                       CrudMethods.FIND_MANY,
-                                                       CrudMethods.FIND_ONE,
-                                                       CrudMethods.UPSERT_ONE,
-                                                       CrudMethods.UPDATE_MANY,
-                                                       CrudMethods.UPDATE_ONE,
-                                                       CrudMethods.DELETE_ONE,
-                                                       CrudMethods.DELETE_MANY,
-                                                       CrudMethods.PATCH_MANY,
-                                                       CrudMethods.PATCH_ONE,
-
-                                               ],
-                                             exclude_columns=[])
-
-    ```
-
-    - argument:
-        - db_model: ```SQLALchemy Declarative Base Class```
-        - crud_methods: ```CrudMethods```
-            > - CrudMethods.FIND_ONE
-            > - CrudMethods.FIND_MANY
-            > - CrudMethods.UPDATE_ONE
-            > - CrudMethods.UPDATE_MANY
-            > - CrudMethods.PATCH_ONE
-            > - CrudMethods.PATCH_MANY
-            > - CrudMethods.UPSERT_ONE
-            > - CrudMethods.UPSERT_MANY
-            > - CrudMethods.DELETE_ONE
-            > - CrudMethods.DELETE_MANY
-            > - CrudMethods.POST_REDIRECT_GET
-
-        - exclude_columns: `list` 
-            > set the columns that not to be operated but the columns should nullable or set the default value)
+engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
+                             pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+async_session = sessionmaker(bind=engine, class_=AsyncSession)
 
 
-5. use CrudRouter to register API
-   ```python
-    	crud_route = crud_router_builder(db_session=get_transaction_session,
-                                          db_model=CRUDTest,
-                                          crud_models=test_crud_model,
-                                          async_mode = False,
-                                          autocommit = False,
-                                          prefix="/crud_test",
-                                          dependencies = [],
-                                          tags=["Example"]
-                                          )
-    ```
-    - db_session: `execute session generator` 
-        - example:
-            - sync SQLALchemy:
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+        async with session.begin():
+            yield session
+
+
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False, default=datetime.now(timezone.utc).strftime('%H:%M:%S%z'))
+
+
+friend = Table(
+    'friend', metadata,
+    Column('id', ForeignKey('relationship_test_a.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
+    Column('friend_name', String, nullable=False)
+)
+
+user_model_set = sqlalchemy_to_pydantic(db_model=User,
+                                        crud_methods=[
+                                            CrudMethods.FIND_MANY,
+                                            CrudMethods.FIND_ONE,
+                                            CrudMethods.UPSERT_ONE,
+                                            CrudMethods.UPDATE_MANY,
+                                            CrudMethods.UPDATE_ONE,
+                                            CrudMethods.DELETE_ONE,
+                                            CrudMethods.DELETE_MANY,
+                                            CrudMethods.PATCH_MANY,
+
+                                        ],
+                                        exclude_columns=[])
+
+friend_model_set = sqlalchemy_table_to_pydantic(db_model=friend,
+                                                crud_methods=[
+                                                    CrudMethods.FIND_MANY,
+                                                    CrudMethods.UPSERT_MANY,
+                                                    CrudMethods.UPDATE_MANY,
+                                                    CrudMethods.DELETE_MANY,
+                                                    CrudMethods.PATCH_MANY,
+
+                                                ],
+                                                exclude_columns=[])
+
+
+crud_route_1 = crud_router_builder(db_session=get_transaction_session,
+                                   crud_models=user_model_set,
+                                   db_model=User,
+                                   prefix="/user",
+                                   dependencies=[],
+                                   async_mode=True,
+                                   tags=["User"]
+                                   )
+crud_route_2 = crud_router_builder(db_session=get_transaction_session,
+                                   crud_models=friend_model_set,
+                                   db_model=friend,
+                                   async_mode=True,
+                                   prefix="/friend",
+                                   dependencies=[],
+                                   tags=["Friend"]
+                                   )
+
+
+app.include_router(crud_route_1)
+app.include_router(crud_route_2)
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
+```
+
+### Main module
+
+#### covert SQLAlchemy to model set
+
+
+use **sqlalchemy_to_pydantic** if SQLAlchemy model is Declarative Base Class
+
+use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Declarative Base Class
+
+
+- argument:
+  - db_model: ```SQLALchemy Declarative Base Class```
+  - crud_methods: ```CrudMethods```
+    > - CrudMethods.FIND_ONE
+    > - CrudMethods.FIND_MANY
+    > - CrudMethods.UPDATE_ONE
+    > - CrudMethods.UPDATE_MANY
+    > - CrudMethods.PATCH_ONE
+    > - CrudMethods.PATCH_MANY
+    > - CrudMethods.UPSERT_ONE
+    > - CrudMethods.UPSERT_MANY
+    > - CrudMethods.DELETE_ONE
+    > - CrudMethods.DELETE_MANY
+    > - CrudMethods.POST_REDIRECT_GET
+
+  - exclude_columns: `list` 
+    > set the columns that not to be operated but the columns should nullable or set the default value)
+
+----
+
+#### Generate CRUD router
+
+**crud_router_builder**
+- db_session: `execute session generator` 
+    - example:
+        - sync SQLALchemy:
                 ```python
                     def get_transaction_session():
                         try:
@@ -242,46 +245,33 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
                         finally:
                             db.close()
               ```
-            - Async SQLALchemy
+        - Async SQLALchemy
                 ```python
                 async def get_transaction_session() -> AsyncSession:
                     async with async_session() as session:
                         async with session.begin():
                             yield session
                 ```
-
-    - db_model `SQLALchemy Declarative Base Class`
+- db_model `SQLALchemy Declarative Base Class`
     
-        >  **Note**: There are some constraint in the SQLALchemy Schema
+    >  **Note**: There are some constraint in the SQLALchemy Schema
     
-    - async_mode`bool`: if your db session is async
+- async_mode`bool`: if your db session is async
     
-        >  **Note**: require async session generator if True
+    >  **Note**: require async session generator if True
     
-    - autocommit`bool`: if you don't need to commit by your self    
+- autocommit`bool`: if you don't need to commit by your self    
     
-        >  **Note**: require handle the commit in your async session generator if False
+    >  **Note**: require handle the commit in your async session generator if False
     
-    - dependencies: API dependency injection of fastapi
+- dependencies: API dependency injection of fastapi
         
-        >  **Note**: Get the example usage in `./example`        
+    >  **Note**: Get the example usage in `./example`        
 
-    - crud_models `sqlalchemy_to_pydantic` 
+- crud_models `sqlalchemy_to_pydantic` 
 
-    - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
+- dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
 
-    
-   
-6. Add to route and run
-   
-   ```
-    import uvicorn
-    from fastapi import FastAPI
-   
-    app = FastAPI()
-    app.include_router(crud_route)
-    uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
-   ```
 
 
 # Design
