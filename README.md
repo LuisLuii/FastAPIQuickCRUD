@@ -135,7 +135,7 @@ async def get_transaction_session() -> AsyncSession:
 
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     name = Column(String, nullable=False)
@@ -144,7 +144,7 @@ class User(Base):
 
 friend = Table(
     'friend', metadata,
-    Column('id', ForeignKey('relationship_test_a.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
+    Column('id', ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
     Column('friend_name', String, nullable=False)
 )
 
