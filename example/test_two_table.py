@@ -1,12 +1,15 @@
+from datetime import datetime, timezone
+
 import uvicorn
 from fastapi import FastAPI
-from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from sqlalchemy import Column, Integer, \
-    String, text, Table, ForeignKey
+    String, Table, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+from fastapi_quickcrud import CrudMethods
+from fastapi_quickcrud import crud_router_builder
+from fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from fastapi_quickcrud import sqlalchemy_to_pydantic
 
 app = FastAPI()
 
@@ -26,105 +29,64 @@ async def get_transaction_session() -> AsyncSession:
             yield session
 
 
-class RelationshipTestA(Base):
-    __tablename__ = 'relationship_test_a'
+class User(Base):
+    __tablename__ = 'user'
 
-    id = Column(Integer, primary_key=True, server_default=text("nextval('untitled_table_271_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, nullable=False, default=datetime.now(timezone.utc).strftime('%H:%M:%S%z'))
 
 
-t_relationship_test_b = Table(
-    'relationship_test_b', metadata,
+friend = Table(
+    'friend', metadata,
     Column('id', ForeignKey('relationship_test_a.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
-    Column('friend', String, nullable=False)
+    Column('friend_name', String, nullable=False)
 )
 
-RelationshipTestA_pydantic_set = sqlalchemy_to_pydantic(db_model=RelationshipTestA,
-                                                        crud_methods=[
-                                                            CrudMethods.FIND_MANY,
-                                                            CrudMethods.FIND_ONE,
-                                                            CrudMethods.UPSERT_ONE,
-                                                            CrudMethods.UPDATE_MANY,
-                                                            CrudMethods.UPDATE_ONE,
-                                                            CrudMethods.DELETE_ONE,
-                                                            CrudMethods.DELETE_MANY,
-                                                            CrudMethods.PATCH_MANY,
+user_model_set = sqlalchemy_to_pydantic(db_model=User,
+                                        crud_methods=[
+                                            CrudMethods.FIND_MANY,
+                                            CrudMethods.FIND_ONE,
+                                            CrudMethods.UPSERT_ONE,
+                                            CrudMethods.UPDATE_MANY,
+                                            CrudMethods.UPDATE_ONE,
+                                            CrudMethods.DELETE_ONE,
+                                            CrudMethods.DELETE_MANY,
+                                            CrudMethods.PATCH_MANY,
 
-                                                        ],
-                                                        exclude_columns=[])
+                                        ],
+                                        exclude_columns=[])
 
-RelationshipTestB_pydantic_set = sqlalchemy_table_to_pydantic(db_model=t_relationship_test_b,
-                                                              crud_methods=[
-                                                                  CrudMethods.FIND_MANY,
-                                                                  CrudMethods.UPSERT_MANY,
-                                                                  CrudMethods.UPDATE_MANY,
-                                                                  CrudMethods.DELETE_MANY,
-                                                                  CrudMethods.PATCH_MANY,
+friend_model_set = sqlalchemy_table_to_pydantic(db_model=friend,
+                                                crud_methods=[
+                                                    CrudMethods.FIND_MANY,
+                                                    CrudMethods.UPSERT_MANY,
+                                                    CrudMethods.UPDATE_MANY,
+                                                    CrudMethods.DELETE_MANY,
+                                                    CrudMethods.PATCH_MANY,
 
-                                                              ],
-                                                              exclude_columns=[])
+                                                ],
+                                                exclude_columns=[])
 
-RelationshipTestC_pydantic_set = sqlalchemy_to_pydantic(db_model=RelationshipTestA,
-                                                        crud_methods=[
-                                                            CrudMethods.FIND_MANY,
-                                                            CrudMethods.FIND_ONE,
-                                                            CrudMethods.UPSERT_ONE,
-                                                            CrudMethods.UPDATE_MANY,
-                                                            CrudMethods.UPDATE_ONE,
-                                                            CrudMethods.DELETE_ONE,
-                                                            CrudMethods.DELETE_MANY,
-                                                            CrudMethods.PATCH_MANY,
 
-                                                        ],
-                                                        exclude_columns=[])
-
-RelationshipTestD_pydantic_set = sqlalchemy_table_to_pydantic(db_model=t_relationship_test_b,
-                                                              crud_methods=[
-                                                                  CrudMethods.FIND_MANY,
-                                                                  CrudMethods.UPSERT_MANY,
-                                                                  CrudMethods.UPDATE_MANY,
-                                                                  CrudMethods.DELETE_MANY,
-                                                                  CrudMethods.PATCH_MANY,
-
-                                                              ],
-                                                              exclude_columns=[])
 crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=RelationshipTestA_pydantic_set,
-                                   db_model=RelationshipTestA,
-                                   prefix="/crud_test_a",
+                                   crud_models=user_model_set,
+                                   db_model=User,
+                                   prefix="/user",
                                    dependencies=[],
                                    async_mode=True,
-                                   tags=["A"]
+                                   tags=["User"]
                                    )
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=RelationshipTestB_pydantic_set,
-                                   db_model=t_relationship_test_b,
+                                   crud_models=friend_model_set,
+                                   db_model=friend,
                                    async_mode=True,
-                                   prefix="/crud_test_b",
+                                   prefix="/friend",
                                    dependencies=[],
-                                   tags=["B"]
+                                   tags=["Friend"]
                                    )
 
-crud_route_3 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=RelationshipTestC_pydantic_set,
-                                   db_model=RelationshipTestA,
-                                   prefix="/crud_test_a_2",
-                                   dependencies=[],
-                                   async_mode=True,
-                                   tags=["C"]
-                                   )
-crud_route_4 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=RelationshipTestD_pydantic_set,
-                                   db_model=t_relationship_test_b,
-                                   async_mode=True,
-                                   prefix="/crud_test_b_2",
-                                   dependencies=[],
-                                   tags=["D"]
-                                   )
 
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
-app.include_router(crud_route_3)
-app.include_router(crud_route_4)
 uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
