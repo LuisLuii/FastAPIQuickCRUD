@@ -204,7 +204,7 @@ uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 
 use **sqlalchemy_to_pydantic** if SQLAlchemy model is Declarative Base Class
 
-use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Declarative Base Class
+use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Table
 
 
 - argument:
