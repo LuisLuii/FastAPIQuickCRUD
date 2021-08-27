@@ -233,25 +233,26 @@ use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Table
 - db_session: `execute session generator` 
     - example:
         - sync SQLALchemy:
-                ```python
-                    def get_transaction_session():
-                        try:
-                            db = sessionmaker(...)
-                            yield db
-                            db.commit()
-                        except Exception as e:
-                            db.rollback()
-                            raise e
-                        finally:
-                            db.close()
-              ```
-        - Async SQLALchemy
-                ```python
-                async def get_transaction_session() -> AsyncSession:
-                    async with async_session() as session:
-                        async with session.begin():
-                            yield session
-                ```
+```python
+def get_transaction_session():
+    try:
+        db = sessionmaker(...)
+        yield db
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+    finally:
+        db.close()
+```
+
+- Async SQLALchemy
+```python
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+        async with session.begin():
+            yield session
+```
 - db_model `SQLALchemy Declarative Base Class`
     
     >  **Note**: There are some constraint in the SQLALchemy Schema
