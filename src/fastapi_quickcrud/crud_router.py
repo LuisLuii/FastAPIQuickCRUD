@@ -1,7 +1,7 @@
 from typing import \
     Any, \
     List, \
-    TypeVar
+    TypeVar, Dict
 
 from fastapi import \
     APIRouter, \
@@ -52,6 +52,7 @@ def crud_router_builder(
     else:
         path = ""
     unique_list: List[str] = crud_models.UNIQUE_LIST
+    # foreign_table: Dict[str, Table] = crud_models.FOREIGN_TABLE
     dependencies = [Depends(dep) for dep in dependencies]
 
     routes_source = SQLALChemyBaseRouteSource

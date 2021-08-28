@@ -139,13 +139,29 @@ class SQLAlchemyResultParse(object):
 
     @staticmethod
     def find_many_sub_func(response_model, sql_execute_result, fastapi_response):
-        # FIXME handle NO_CONTENT
-        result_list = [i.__dict__ for i in sql_execute_result.scalars()]
-        if not result_list:
+        # result_list = [i for i in sql_execute_result.scalars()]
+        # for table in sql_execute_result:
+        #     print(dir(table))
+        #     print(table._asdict())
+        result_list = sql_execute_result
+        a = []
+        for i in result_list:
+            row_data = {}
+            return_set = dict(i)
+            for table_name, row in return_set.items():
+                prefix_row = {}
+                row_ = row.__dict__
+                for column_name, data in row_.items():
+                    if column_name == '_sa_instance_state':
+                        continue
+                    prefix_row[column_name] = data
+                row_data[table_name] = prefix_row
+            a.append(row_data)
+        if not a:
             return Response(status_code=HTTPStatus.NO_CONTENT)
-        result = parse_obj_as(response_model, result_list)
-        fastapi_response.headers["x-total-count"] = str(len(result_list))
-        return result
+        # result = parse_obj_as(response_model, result_list)
+        fastapi_response.headers["x-total-count"] = str(len(a))
+        return a
 
     async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         result = self.find_many_sub_func(response_model, sql_execute_result, fastapi_response)

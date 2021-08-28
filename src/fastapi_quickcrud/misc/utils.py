@@ -355,3 +355,4 @@ process_map = {
     MatchingPatternInString.not_similar_to:
         lambda field, values: or_(field.op("NOT SIMILAR TO")(value) for value in values),
 }
+
