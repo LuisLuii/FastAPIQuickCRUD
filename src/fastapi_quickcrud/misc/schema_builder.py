@@ -2,6 +2,7 @@ import uuid
 import warnings
 from copy import deepcopy
 from dataclasses import make_dataclass, field
+from enum import auto
 from typing import Optional, Any
 from typing import Type, Dict, List, Tuple, TypeVar, NewType, Union
 
@@ -13,6 +14,7 @@ from sqlalchemy import UniqueConstraint, Table
 from sqlalchemy import inspect, PrimaryKeyConstraint
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import declarative_base
+from strenum import StrEnum
 
 from .exceptions import SchemaException, \
     ColumnTypeNotSupportedException, \
@@ -142,7 +144,96 @@ class ApiParameterSchemaBuilder:
         self.bool_type_columns = []
         self.json_type_columns = []
         self.array_type_columns = []
+        self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
+        self.foreign_all_field = self._extra_foreign_table_field()
+
+    def _extra_foreign_table_field(self):
+        foreign_field = {}
+        for table_name , instance in self.table_of_foreign.items():
+            fields = []
+            columns = instance.c
+            for column in columns:
+                column_name = str(column.key)
+                default = self._extra_default_value(column)
+                if column_name in self._exclude_column:
+                    continue
+                column_type = str(column.type)
+                try:
+                    python_type = column.type.python_type
+                    if column_type in self.unsupported_data_types:
+                        raise ColumnTypeNotSupportedException(
+                            f'The type of column {column_name} ({column_type}) not supported yet')
+                    if column_type in self.partial_supported_data_types:
+                        warnings.warn(
+                            f'The type of column {column_name} ({column_type}) '
+                            f'is not support data query (as a query parameters )')
+
+                except NotImplementedError:
+                    if column_type == "UUID":
+                        python_type = uuid.UUID
+                    else:
+                        raise ColumnTypeNotSupportedException(
+                            f'The type of column {column_name} ({column_type}) not supported yet')
+                        # string filter
+                if python_type.__name__ in ['str']:
+                    self.str_type_columns.append(column_name)
+                # uuid filter
+                elif python_type.__name__ in ['UUID']:
+                    self.uuid_type_columns.append(column_name)
+                # number filter
+                elif python_type.__name__ in ['int', 'float', 'Decimal']:
+                    self.number_type_columns.append(column_name)
+                # date filter
+                elif python_type.__name__ in ['date', 'time', 'datetime']:
+                    self.datetime_type_columns.append(column_name)
+                # timedelta filter
+                elif python_type.__name__ in ['timedelta']:
+                    self.timedelta_type_columns.append(column_name)
+                # bool filter
+                elif python_type.__name__ in ['bool']:
+                    self.bool_type_columns.append(column_name)
+                # json filter
+                elif python_type.__name__ in ['dict']:
+                    self.json_type_columns.append(column_name)
+                # array filter
+                elif python_type.__name__ in ['list']:
+                    self.array_type_columns.append(column_name)
+                    base_column_detail, = column.base_columns
+                    if hasattr(base_column_detail.type, 'item_type'):
+                        item_type = base_column_detail.type.item_type.python_type
+                        fields.append({'column_name': column_name,
+                                       'column_type': List[item_type],
+                                       'column_default': default})
+                        continue
+                else:
+                    raise ColumnTypeNotSupportedException(
+                        f'The type of column {column_name} ({column_type}) not supported yet')
+
+                if column_type == "JSONB":
+                    fields.append({'column_name': column_name,
+                                   'column_type': Union[python_type, list],
+                                   'column_default': default})
+                else:
+                    fields.append({'column_name': column_name,
+                                   'column_type': python_type,
+                                   'column_default': default})
+
+            foreign_field[table_name] = fields
+        return foreign_field
+
+    def _extra_foreign_table(self) -> Dict[str, Table]:
+        foreign_key_table = {}
+        mapper = inspect(self.__db_model)
+        for attr in mapper.attrs:
+            if isinstance(attr, ColumnProperty):
+                if attr.columns:
+                    column, = attr.columns
+                    if column.foreign_keys:
+                        foreign_column, = column.foreign_keys
+                        foreign_table = foreign_column.column.table
+                        foreign_key_table[str(foreign_table)] = foreign_table
+        return foreign_key_table
 
     def _alias_mapping_builder(self) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
@@ -291,6 +382,7 @@ class ApiParameterSchemaBuilder:
         assert primary_column_name and primary_columns_model and primary_field_definitions
         return primary_column_name, primary_columns_model, primary_field_definitions
 
+
     @staticmethod
     def _value_of_list_to_str(request_or_response_object, columns):
         received_request = deepcopy(request_or_response_object.__dict__)
@@ -359,9 +451,11 @@ class ApiParameterSchemaBuilder:
                 default = None
         return default
 
-    def _extract_all_field(self) -> List[dict]:
+    def _extract_all_field(self, db_model= None) -> List[dict]:
+        if not db_model:
+            db_model = self.__db_model
         fields: List[dict] = []
-        mapper = inspect(self.__db_model)
+        mapper = inspect(db_model)
         for attr in mapper.attrs:
             if isinstance(attr, ColumnProperty):
                 if attr.columns:
@@ -447,6 +541,26 @@ class ApiParameterSchemaBuilder:
              'column_default': None}
         ]:
             result_.append(i)
+        return result_
+
+
+    @staticmethod
+    def _assign_join_table_instance(request_or_response_object, join_table_mapping):
+        received_request = deepcopy(request_or_response_object.__dict__)
+        join_table_replace = {}
+        if 'join_foreign_table' in received_request:
+            for join_table in received_request['join_foreign_table']:
+                if join_table in join_table_mapping:
+                    join_table_replace[str(join_table)] = join_table_mapping[join_table]
+            setattr(request_or_response_object,'join_foreign_table',join_table_replace )
+
+    def _assign_foreign_join(self,result_) -> List[dict]:
+        table_name = [table_name for table_name in self.table_of_foreign]
+        if not table_name:
+            return result_
+        table_name_enum = StrEnum('TableName'+str(uuid.uuid4()), {table_name: auto() for table_name in self.table_of_foreign})
+
+        result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
         return result_
 
     @staticmethod
@@ -673,6 +787,7 @@ class ApiParameterSchemaBuilder:
     def find_many(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param()
         query_param: List[dict] = self._assign_pagination_param(query_param)
+        query_param: List[dict] = self._assign_foreign_join(query_param)
 
         response_fields = []
         all_field = deepcopy(self.all_field)
@@ -681,7 +796,6 @@ class ApiParameterSchemaBuilder:
                                     i['column_type'],
                                     None))
             # i['column_type']))
-
         request_fields = []
         for i in query_param:
             if isinstance(i, Tuple):
@@ -692,10 +806,15 @@ class ApiParameterSchemaBuilder:
                                        Query(i['column_default'])))
             else:
                 raise UnknownError(f'Unknown error, {i}')
+
         request_validation = [lambda self_object: _filter_none(self_object)]
+        if self.table_of_foreign:
+            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
+                                                                                           self.table_of_foreign))
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
+
         request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
                                              namespace={
@@ -1204,6 +1323,7 @@ class ApiParameterSchemaBuilderForTable:
         self.bool_type_columns = []
         self.json_type_columns = []
         self.array_type_columns = []
+        self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
 
     # def _alias_mapping_builder(self) -> Dict[str, str]:
@@ -1218,6 +1338,15 @@ class ApiParameterSchemaBuilderForTable:
     #             name = column.info['alias_name']
     #             alias_mapping[column.key] = name
     #     return alias_mapping
+
+    def _extra_foreign_table(self) -> Dict[str, Table]:
+        foreign_key_table = {}
+        for column in self.__columns:
+            if column.foreign_keys:
+                foreign_column, = column.foreign_keys
+                foreign_table = foreign_column.column.table
+                foreign_key_table[str(foreign_table)] = foreign_table
+        return foreign_key_table
 
     def _extract_unique(self) -> List[str]:
         # get the unique columns with alias name
@@ -1350,6 +1479,13 @@ class ApiParameterSchemaBuilderForTable:
                             else:
                                 str_value_ = str(value_)
                             setattr(request_or_response_object, received_column_name, str_value_)
+
+    @staticmethod
+    def _assign_join_table_instance(request_or_response_object, join_table_mapping):
+
+        received_request = deepcopy(request_or_response_object.__dict__)
+        print()
+
 
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
@@ -1515,6 +1651,13 @@ class ApiParameterSchemaBuilderForTable:
             result_.append(i)
         return result_
 
+    def _assign_foreign_join(self,result_) -> List[dict]:
+        if not self.table_of_foreign:
+            return result_
+        table_name_enum = StrEnum('TableName'+str(uuid.uuid4()), {table_name:auto() for table_name in self.table_of_foreign})
+
+        result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
+        return result_
     def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
         if not exclude_column:
             exclude_column = []
@@ -1679,6 +1822,8 @@ class ApiParameterSchemaBuilderForTable:
     def find_many(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param()
         query_param: List[dict] = self._assign_pagination_param(query_param)
+        query_param: List[dict] = self._assign_foreign_join(query_param)
+
 
         response_fields = []
         all_field = deepcopy(self.all_field)
@@ -1702,6 +1847,10 @@ class ApiParameterSchemaBuilderForTable:
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
+        if self.table_of_foreign:
+            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object
+                                                                                           ,self.table_of_foreign))
+
         request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
                                              namespace={
