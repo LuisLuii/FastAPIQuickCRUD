@@ -221,29 +221,33 @@ class SQLALChemyBaseRouteSource(object):
                                      session=Depends(
                                          db_session)
                                      ):
-                stmt = query_service.get_many(session=session,query=query)
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(session=session,query=query, join_mode=join)
 
                 query_result = await execute_service.async_execute(session, stmt)
 
                 parsed_response = await parsing_service.async_find_many(response_model=response_model,
                                                                         sql_execute_result=query_result,
                                                                         fastapi_response=response,
+                                                                        join_mode=join,
                                                                         session=session)
                 return parsed_response
         else:
-            @api.get(path, response_model=response_model, dependencies=dependencies)
+            @api.get(path, dependencies=dependencies)
             def get_many(response: Response,
                          request: Request,
                          query=Depends(request_query_model),
                          session=Depends(
                              db_session)
                          ):
+                join = query.__dict__.pop('join_foreign_table', None)
                 stmt = query_service.get_many(query=query)
-                query_result = execute_service.execute(session, stmt)
+                query_result = execute_service.execute(session, stmt, join_mode=join)
 
                 parsed_response = parsing_service.find_many(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,
+                                                            join_mode=join,
                                                             session=session)
                 return parsed_response
 
@@ -827,12 +831,14 @@ class SQLALChemyMySQLRouteSource(object):
                                      session=Depends(
                                          db_session)
                                      ):
-                stmt = query_service.get_many(query=query)
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(query=query, join_mode = join)
 
                 query_result = await execute_service.async_execute(session, stmt)
 
                 parsed_response = await parsing_service.async_find_many(response_model=response_model,
                                                                         sql_execute_result=query_result,
+                                                                        join_mode = join,
                                                                         fastapi_response=response,
                                                                         session=session)
                 return parsed_response
@@ -844,12 +850,15 @@ class SQLALChemyMySQLRouteSource(object):
                          session=Depends(
                              db_session)
                          ):
-                stmt = query_service.get_many(query=query)
+
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(query=query, join_mode=join)
                 query_result = execute_service.execute(session, stmt)
 
                 parsed_response = parsing_service.find_many(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,
+                                                            join_mode=join,
                                                             session=session)
                 return parsed_response
 

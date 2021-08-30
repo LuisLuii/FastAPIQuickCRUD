@@ -70,31 +70,21 @@ class SQLAlchemyQueryService(object):
 
     def get_many(self, *,
                  session,
+                 join_mode,
                  query,
                  ):
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
-        join = filter_args.pop('join_foreign_table', None)
-
         offset = filter_args.pop('offset', None)
         order_by_columns = filter_args.pop('order_by_columns', None)
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model_columns)
-        columns_list = []
-        table_instance_list = []
-        table_name_list = []
+        join_table_instance_list = []
         # for table_name, table_instance in self.model.metadata.tables.items():
-        for table_name, table_instance in join.items():
-            columns_list += table_instance.columns
-
-            class BaseClass(object):
-                def __init__(self):
-                    pass
-            TableClass = type(f'{table_name}', (BaseClass,), {})
-            table_class = mapper(TableClass,table_instance)
-            table_instance_list.append(table_class)
-            table_name_list.append(table_name)
-        stmt = select(*[self.model]+table_instance_list).where(and_(*filter_list))
+        if join_mode:
+            for table_name, table_instance in join_mode.items():
+                join_table_instance_list.append(table_instance['instance'])
+        stmt = select(*[self.model]+join_table_instance_list).where(and_(*filter_list))
         if order_by_columns:
             order_by_query_list = []
 
@@ -114,7 +104,6 @@ class SQLAlchemyQueryService(object):
                     raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        # stmt = stmt.join(text('tenants'))
         return stmt
 
     def get_one(self, *,

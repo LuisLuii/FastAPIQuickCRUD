@@ -146,11 +146,11 @@ class ApiParameterSchemaBuilder:
         self.array_type_columns = []
         self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
-        self.foreign_all_field = self._extra_foreign_table_field()
+        # self.foreign_all_field = self._extra_foreign_table_field()
 
     def _extra_foreign_table_field(self):
         foreign_field = {}
-        for table_name , instance in self.table_of_foreign.items():
+        for table_name, instance in self.table_of_foreign.items():
             fields = []
             columns = instance.c
             for column in columns:
@@ -223,16 +223,28 @@ class ApiParameterSchemaBuilder:
         return foreign_field
 
     def _extra_foreign_table(self) -> Dict[str, Table]:
-        foreign_key_table = {}
         mapper = inspect(self.__db_model)
-        for attr in mapper.attrs:
-            if isinstance(attr, ColumnProperty):
-                if attr.columns:
-                    column, = attr.columns
-                    if column.foreign_keys:
-                        foreign_column, = column.foreign_keys
-                        foreign_table = foreign_column.column.table
-                        foreign_key_table[str(foreign_table)] = foreign_table
+        foreign_key_table = {}
+        for r in mapper.relationships:
+            foreign_table = r.mapper.class_
+            foreign_table_name = foreign_table.__tablename__
+            assert r.synchronize_pairs
+            local_reference_pairs = []
+            for i in r.local_remote_pairs:
+                local = str(i[0]).split('.')
+                local_table = local[0]
+                local_column = local[1]
+                reference = str(i[1]).split('.')
+                reference_table = reference[0]
+                reference_column = reference[1]
+                local_reference_pairs.append({'local':{"local_table":local_table,
+                                                       "local_column":local_column},
+                                              "reference":{"reference_table":reference_table,
+                                                           "reference_column":reference_column}})
+            all_fields_ = self._extract_all_field(foreign_table)
+            foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
+                                                     'fields': all_fields_,
+                                                     'instance': foreign_table }
         return foreign_key_table
 
     def _alias_mapping_builder(self) -> Dict[str, str]:
@@ -382,7 +394,6 @@ class ApiParameterSchemaBuilder:
         assert primary_column_name and primary_columns_model and primary_field_definitions
         return primary_column_name, primary_columns_model, primary_field_definitions
 
-
     @staticmethod
     def _value_of_list_to_str(request_or_response_object, columns):
         received_request = deepcopy(request_or_response_object.__dict__)
@@ -451,7 +462,7 @@ class ApiParameterSchemaBuilder:
                 default = None
         return default
 
-    def _extract_all_field(self, db_model= None) -> List[dict]:
+    def _extract_all_field(self, db_model=None) -> List[dict]:
         if not db_model:
             db_model = self.__db_model
         fields: List[dict] = []
@@ -543,7 +554,6 @@ class ApiParameterSchemaBuilder:
             result_.append(i)
         return result_
 
-
     @staticmethod
     def _assign_join_table_instance(request_or_response_object, join_table_mapping):
         received_request = deepcopy(request_or_response_object.__dict__)
@@ -552,13 +562,14 @@ class ApiParameterSchemaBuilder:
             for join_table in received_request['join_foreign_table']:
                 if join_table in join_table_mapping:
                     join_table_replace[str(join_table)] = join_table_mapping[join_table]
-            setattr(request_or_response_object,'join_foreign_table',join_table_replace )
+            setattr(request_or_response_object, 'join_foreign_table', join_table_replace)
 
-    def _assign_foreign_join(self,result_) -> List[dict]:
+    def _assign_foreign_join(self, result_) -> List[dict]:
         table_name = [table_name for table_name in self.table_of_foreign]
         if not table_name:
             return result_
-        table_name_enum = StrEnum('TableName'+str(uuid.uuid4()), {table_name: auto() for table_name in self.table_of_foreign})
+        table_name_enum = StrEnum('TableName' + str(uuid.uuid4()),
+                                  {table_name: auto() for table_name in self.table_of_foreign})
 
         result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
         return result_
@@ -825,6 +836,9 @@ class ApiParameterSchemaBuilder:
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
+                                                  response_fields,
+                                                  )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
         if self.alias_mapper and response_list_item_model:
             validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
@@ -837,7 +851,7 @@ class ApiParameterSchemaBuilder:
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
-            **{'__root__': (List[response_list_item_model], None), '__config__': OrmConfig}
+            **{'__root__': (Union[List[response_list_item_model], Any], None), '__config__': OrmConfig}
         )
 
         return request_query_model, None, response_model
@@ -1486,7 +1500,6 @@ class ApiParameterSchemaBuilderForTable:
         received_request = deepcopy(request_or_response_object.__dict__)
         print()
 
-
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
         return '''<br >Composite string field matching pattern<h5/> 
@@ -1651,13 +1664,15 @@ class ApiParameterSchemaBuilderForTable:
             result_.append(i)
         return result_
 
-    def _assign_foreign_join(self,result_) -> List[dict]:
+    def _assign_foreign_join(self, result_) -> List[dict]:
         if not self.table_of_foreign:
             return result_
-        table_name_enum = StrEnum('TableName'+str(uuid.uuid4()), {table_name:auto() for table_name in self.table_of_foreign})
+        table_name_enum = StrEnum('TableName' + str(uuid.uuid4()),
+                                  {table_name: auto() for table_name in self.table_of_foreign})
 
         result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
         return result_
+
     def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
         if not exclude_column:
             exclude_column = []
@@ -1824,7 +1839,6 @@ class ApiParameterSchemaBuilderForTable:
         query_param: List[dict] = self._assign_pagination_param(query_param)
         query_param: List[dict] = self._assign_foreign_join(query_param)
 
-
         response_fields = []
         all_field = deepcopy(self.all_field)
         for i in all_field:
@@ -1849,7 +1863,7 @@ class ApiParameterSchemaBuilderForTable:
                                                                                      self.uuid_type_columns))
         if self.table_of_foreign:
             request_validation.append(lambda self_object: self._assign_join_table_instance(self_object
-                                                                                           ,self.table_of_foreign))
+                                                                                           , self.table_of_foreign))
 
         request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
