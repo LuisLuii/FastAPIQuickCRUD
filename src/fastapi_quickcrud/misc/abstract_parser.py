@@ -1,3 +1,4 @@
+import copy
 from http import HTTPStatus
 from urllib.parse import urlencode
 
@@ -138,38 +139,49 @@ class SQLAlchemyResultParse(object):
         return result
 
     @staticmethod
-    def find_many_sub_func(response_model, sql_execute_result, fastapi_response):
+    def find_many_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs):
         # result_list = [i for i in sql_execute_result.scalars()]
         # for table in sql_execute_result:
         #     print(dir(table))
         #     print(table._asdict())
+        join_set = kwargs.pop('join_mode')
         result_list = sql_execute_result
-        a = []
-        for i in result_list:
-            row_data = {}
-            return_set = dict(i)
-            for table_name, row in return_set.items():
-                prefix_row = {}
-                row_ = row.__dict__
-                for column_name, data in row_.items():
-                    if column_name == '_sa_instance_state':
-                        continue
-                    prefix_row[column_name] = data
-                row_data[table_name] = prefix_row
-            a.append(row_data)
-        if not a:
+        response_data = []
+        if join_set:
+            for rows in result_list:
+                response_row_data = {}
+                for row in rows:
+                    foregin_list = {}
+                    row_dict = row.__dict__
+                    row_dict.pop('_sa_instance_state', None)
+                    table_name = row.__tablename__
+                    if table_name in join_set:
+                        table_refrence_set = join_set[table_name]
+                        for reference_pair in table_refrence_set['local_reference_pairs_set']:
+                            local_column = reference_pair['local']['local_column']
+                            foreign_key = local_column+"_foreign"
+                            if foreign_key not in response_row_data:
+                                response_row_data[foreign_key] = []
+                            response_row_data[local_column+"_foreign"].append(copy.deepcopy(row_dict))
+                    else:
+                        row_ = row_dict
+                        for column_name, data in row_.items():
+                            response_row_data[column_name] = data
+                response_data.append(response_row_data)
+        else:
+            response_data = [copy.deepcopy(i.__dict__) for i in sql_execute_result.scalars()]
+        if not response_data:
             return Response(status_code=HTTPStatus.NO_CONTENT)
-        # result = parse_obj_as(response_model, result_list)
-        fastapi_response.headers["x-total-count"] = str(len(a))
-        return a
+        fastapi_response.headers["x-total-count"] = str(len(response_data))
+        return response_data
 
     async def async_find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.find_many_sub_func(response_model, sql_execute_result, fastapi_response)
+        result = self.find_many_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs)
         await self.async_commit(kwargs.get('session'))
         return result
 
     def find_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.find_many_sub_func(response_model, sql_execute_result, fastapi_response)
+        result = self.find_many_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs)
         self.commit(kwargs.get('session'))
         return result
 
