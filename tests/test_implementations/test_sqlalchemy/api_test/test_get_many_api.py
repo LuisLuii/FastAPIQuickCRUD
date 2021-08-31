@@ -367,7 +367,8 @@ def test_create_a_more_than_one_data_and_get_many_1():
         response_data = response.json()
         assert len(response_data) == 5
         for i in char_str_sample_data:
-            assert i in response.json()
+            _ = response.json()
+            assert i in _
         for i in char_test_sample_data:
             assert i not in response.json()
 
@@ -1834,3 +1835,4 @@ def test_get_many_with_ordering_with_empty_input_list():
     assert True
 
 
+test_create_a_more_than_one_data_and_get_many_1()
