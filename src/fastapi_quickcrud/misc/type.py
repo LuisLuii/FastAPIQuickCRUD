@@ -115,3 +115,5 @@ class JSONBMatchingMode(str, Enum):
 class SessionObject(StrEnum):
     sqlalchemy = auto()
     databases = auto()
+
+

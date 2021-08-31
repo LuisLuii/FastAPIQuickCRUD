@@ -222,7 +222,7 @@ class SQLALChemyBaseRouteSource(object):
                                          db_session)
                                      ):
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(session=session,query=query, join_mode=join)
+                stmt = query_service.get_many(query=query, join_mode=join)
 
                 query_result = await execute_service.async_execute(session, stmt)
 
@@ -241,9 +241,8 @@ class SQLALChemyBaseRouteSource(object):
                              db_session)
                          ):
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(query=query)
-                query_result = execute_service.execute(session, stmt, join_mode=join)
-
+                stmt = query_service.get_many(query=query, join_mode= join)
+                query_result = execute_service.execute(session, stmt)
                 parsed_response = parsing_service.find_many(response_model=response_model,
                                                             sql_execute_result=query_result,
                                                             fastapi_response=response,

@@ -208,7 +208,7 @@ use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Table
 
 
 - argument:
-  - db_model: ```SQLALchemy Declarative Base Class```
+  - db_model: ```SQLALchemy Declarative Base Class or Table```
   - crud_methods: ```CrudMethods```
     > - CrudMethods.FIND_ONE
     > - CrudMethods.FIND_MANY
@@ -253,7 +253,7 @@ async def get_transaction_session() -> AsyncSession:
         async with session.begin():
             yield session
 ```
-- db_model `SQLALchemy Declarative Base Class`
+- db_model `SQLALchemy Declarative Base Class or Table`
     
     >  **Note**: There are some constraint in the SQLALchemy Schema
     

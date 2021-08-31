@@ -228,23 +228,47 @@ class ApiParameterSchemaBuilder:
         for r in mapper.relationships:
             foreign_table = r.mapper.class_
             foreign_table_name = foreign_table.__tablename__
-            assert r.synchronize_pairs
+            r.local_columns
             local_reference_pairs = []
-            for i in r.local_remote_pairs:
-                local = str(i[0]).split('.')
+            for i in r.synchronize_pairs:
+                local = str(i[1]).split('.')
                 local_table = local[0]
                 local_column = local[1]
-                reference = str(i[1]).split('.')
+                reference = str(i[0]).split('.')
                 reference_table = reference[0]
                 reference_column = reference[1]
-                local_reference_pairs.append({'local':{"local_table":local_table,
-                                                       "local_column":local_column},
-                                              "reference":{"reference_table":reference_table,
-                                                           "reference_column":reference_column}})
+                local_table_instance = i[1].table
+                reference_table_instance = i[0].table
+                local_reference_pairs.append({'local': {"local_table": local_table,
+                                                        "local_column": local_column},
+                                              "reference": {"reference_table": reference_table,
+                                                            "reference_column": reference_column},
+                                              'local_table': local_table_instance,
+                                              'local_table_columns': local_table_instance.c,
+                                              'reference_table': reference_table_instance,
+                                              'reference_table_columns': reference_table_instance.c})
+            for i in r.secondary_synchronize_pairs:
+                local = str(i[1]).split('.')
+                local_table = local[0]
+                local_column = local[1]
+                reference = str(i[0]).split('.')
+                reference_table = reference[0]
+                reference_column = reference[1]
+                local_table_instance = i[1].table
+                reference_table_instance = i[0].table
+                local_reference_pairs.append({'local': {"local_table": local_table,
+                                                        "local_column": local_column},
+                                              "reference": {"reference_table": reference_table,
+                                                            "reference_column": reference_column},
+                                              'local_table': local_table_instance,
+                                              'local_table_columns': local_table_instance.c,
+                                              'reference_table': reference_table_instance,
+                                              'reference_table_columns': reference_table_instance.c})
             all_fields_ = self._extract_all_field(foreign_table)
             foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
                                                      'fields': all_fields_,
-                                                     'instance': foreign_table }
+                                                     'instance': foreign_table,
+                                                     'db_column': foreign_table}
         return foreign_key_table
 
     def _alias_mapping_builder(self) -> Dict[str, str]:
@@ -1338,6 +1362,7 @@ class ApiParameterSchemaBuilderForTable:
         self.json_type_columns = []
         self.array_type_columns = []
         self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
+        # self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
 
     # def _alias_mapping_builder(self) -> Dict[str, str]:
@@ -1359,7 +1384,41 @@ class ApiParameterSchemaBuilderForTable:
             if column.foreign_keys:
                 foreign_column, = column.foreign_keys
                 foreign_table = foreign_column.column.table
-                foreign_key_table[str(foreign_table)] = foreign_table
+                all_fields_ = self._extract_all_field(foreign_table.c)
+                foreign_table_name = str(foreign_table.__str__())
+                local = str(foreign_column.parent).split('.')
+                reference = foreign_column.target_fullname.split('.')
+
+                class BaseClass(object):
+                    def __init__(self):
+                        pass
+
+                TableClass = type(f'{foreign_table_name}', (BaseClass,), {})
+                # table_class = mapper(TableClass, foreign_table)
+
+                local_reference_pairs = [{'local': {"local_table": local[0],
+                                                    "local_column": local[1]},
+                                          "reference": {"reference_table": reference[0],
+                                                        "reference_column": reference[1]},
+                                          'reference_table': foreign_table,
+                                          'reference_table_columns': foreign_table.c,
+                                          'local_table': foreign_column.parent.table,
+                                          'local_table_columns': foreign_column.parent.table.c}]
+                # foreign_key_table[foreign_table_name] = foreign_table
+                # all_column = {}
+                column_label = {}
+                for i in foreign_table.c:
+                    column_name = str(i).split('.')[1]
+                    # all_column[column_name] = i
+                    setattr(TableClass, column_name, i)
+                    # all_column[column_name] = i
+                    column_label[column_name] = i
+
+                foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
+                                                         'fields': all_fields_,
+                                                         'instance': foreign_table,
+                                                         'db_column': TableClass,
+                                                         'column_label': column_label}
         return foreign_key_table
 
     def _extract_unique(self) -> List[str]:
@@ -1496,9 +1555,13 @@ class ApiParameterSchemaBuilderForTable:
 
     @staticmethod
     def _assign_join_table_instance(request_or_response_object, join_table_mapping):
-
         received_request = deepcopy(request_or_response_object.__dict__)
-        print()
+        join_table_replace = {}
+        if 'join_foreign_table' in received_request:
+            for join_table in received_request['join_foreign_table']:
+                if join_table in join_table_mapping:
+                    join_table_replace[str(join_table)] = join_table_mapping[join_table]
+            setattr(request_or_response_object, 'join_foreign_table', join_table_replace)
 
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
@@ -1536,10 +1599,12 @@ class ApiParameterSchemaBuilderForTable:
                 default = None
         return default
 
-    def _extract_all_field(self) -> List[dict]:
+    def _extract_all_field(self, columns=None) -> List[dict]:
         fields: List[dict] = []
+        if not columns:
+            columns = self.__columns
 
-        for column in self.__columns:
+        for column in columns:
             column_name = str(column.key)
             default = self._extra_default_value(column)
             if column_name in self._exclude_column:
@@ -1712,7 +1777,7 @@ class ApiParameterSchemaBuilderForTable:
                 description=self._get_many_order_by_columns_description_builder(
                     all_columns=all_column_,
                     regex_validation=regex_validation,
-                    primary_name=self.primary_key_str)))
+                    primary_name='any name of column')))
         ]:
             result_.append(i)
         return result_
@@ -1846,7 +1911,6 @@ class ApiParameterSchemaBuilderForTable:
                                     i['column_type'],
                                     None))
             # i['column_type']))
-
         request_fields = []
         for i in query_param:
             if isinstance(i, Tuple):
@@ -1857,13 +1921,14 @@ class ApiParameterSchemaBuilderForTable:
                                        Query(i['column_default'])))
             else:
                 raise UnknownError(f'Unknown error, {i}')
+
         request_validation = [lambda self_object: _filter_none(self_object)]
+        if self.table_of_foreign:
+            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
+                                                                                           self.table_of_foreign))
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
-        if self.table_of_foreign:
-            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object
-                                                                                           , self.table_of_foreign))
 
         request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyRequestBody',
                                              request_fields,
@@ -1875,19 +1940,22 @@ class ApiParameterSchemaBuilderForTable:
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
+                                                  response_fields,
+                                                  )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_list_item_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function},
-        #                                                config=OrmConfig)
-        # else:
+        if self.alias_mapper and response_list_item_model:
+            validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
+            response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function},
+                                                       config=OrmConfig)
+        else:
 
-        response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
-                                                                             config=OrmConfig)
+            response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
+                                                                                 config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
-            **{'__root__': (List[response_list_item_model], None), '__config__': OrmConfig}
+            **{'__root__': (Union[List[response_list_item_model], Any], None), '__config__': OrmConfig}
         )
 
         return request_query_model, None, response_model

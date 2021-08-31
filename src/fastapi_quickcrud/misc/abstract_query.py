@@ -2,9 +2,9 @@ from typing import List, Union
 
 from sqlalchemy import and_, text, select, delete, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import mapper
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.schema import Table
+
 from .exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
 from .type import Ordering
 from .utils import alias_to_column
@@ -39,8 +39,6 @@ from .utils import find_query_builder
 #         raise NotImplementedError
 
 
-
-
 class SQLAlchemyQueryService(object):
 
     def __init__(self, *, model, async_mode):
@@ -58,7 +56,6 @@ class SQLAlchemyQueryService(object):
             self.model_columns = model
         self.async_mode = async_mode
 
-
     def insert_one(self, *,
                    insert_args):
         insert_args = insert_args.__dict__
@@ -69,7 +66,6 @@ class SQLAlchemyQueryService(object):
         return insert_stmt
 
     def get_many(self, *,
-                 session,
                  join_mode,
                  query,
                  ):
@@ -83,8 +79,29 @@ class SQLAlchemyQueryService(object):
         # for table_name, table_instance in self.model.metadata.tables.items():
         if join_mode:
             for table_name, table_instance in join_mode.items():
-                join_table_instance_list.append(table_instance['instance'])
-        stmt = select(*[self.model]+join_table_instance_list).where(and_(*filter_list))
+                for local_reference in table_instance['local_reference_pairs_set']:
+                    for column in local_reference['reference_table_columns']:
+                        foreign_name = local_reference['local']['local_column']
+                        join_table_instance_list.append(
+                            column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+                # table_model = table_instance['instance']
+                # if isinstance(table_model, DeclarativeMeta):
+                #     join_table_instance_list.append(table_instance['instance'])
+                # elif isinstance(table_model, Table):
+                #     for column in table_instance['instance'].c:
+                #         foreign_name = ''
+                #         for y in table_instance['local_reference_pairs_set']:
+                #             if foreign_name:
+                #                 foreign_name = foreign_name+'_'+y['local']['local_column']
+                #             else:
+                #                 foreign_name = y['local']['local_column']
+                #         join_table_instance_list.append(column.label(foreign_name+'_foreign_____'+str(column).split('.')[1]))
+
+        if not isinstance(self.model, Table):
+            model = self.model.__table__
+        else:
+            model = self.model
+        stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list))
         if order_by_columns:
             order_by_query_list = []
 
@@ -104,6 +121,19 @@ class SQLAlchemyQueryService(object):
                     raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
             stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
+        if join_mode:
+            for join_table, data in join_mode.items():
+
+                for local_reference in data['local_reference_pairs_set']:
+                    local = local_reference['local']['local_column']
+                    reference = local_reference['reference']['reference_column']
+                    local_column = getattr(local_reference['local_table_columns'], local)
+                    reference_column = getattr(local_reference['reference_table_columns'], reference)
+                    table = local_reference['reference_table']
+                    stmt = stmt.join(table, local_column == reference_column)
+
+            # stmt = stmt.join(*join_table_instance_list,)
+
         return stmt
 
     def get_one(self, *,
@@ -149,7 +179,8 @@ class SQLAlchemyQueryService(object):
                 conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
 
             conflict_list = alias_to_column(model=self.model_columns, param=unique_fields)
-            conflict_update_dict = alias_to_column(model=self.model_columns, param=conflict_update_dict, column_collection=True)
+            conflict_update_dict = alias_to_column(model=self.model_columns, param=conflict_update_dict,
+                                                   column_collection=True)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,
                                                             set_=conflict_update_dict
                                                             )
