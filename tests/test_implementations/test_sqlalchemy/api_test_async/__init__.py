@@ -40,10 +40,9 @@ class UntitledTable256(Base):
     unique_fields = ['primary_key', 'int4_value', 'float4_value']
     __tablename__ = 'test_build_myself_async'
     __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
+        UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
-    id = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True,server_default="nextval('test_build_myself_id_seq'::regclass)")
-    primary_key = synonym('id')
+    primary_key = Column(Integer, primary_key=True, info={'alias_name': 'primary_key'},autoincrement=True,server_default="nextval('test_build_myself_id_seq'::regclass)")
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))

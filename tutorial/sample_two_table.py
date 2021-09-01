@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
     String, Table, ForeignKey, DateTime, Text, text, select, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, synonym
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
@@ -958,7 +958,7 @@ t_apikeys = Table(
 class Dashboard(Base):
     __tablename__ = 'dashboards'
 
-    id = Column(UUID, primary_key=True)
+    id = Column(UUID, primary_key=True,info={'alias_name': 'primary_key'})
     icon = Column(String(1000), server_default=text("NULL::character varying"))
     name_en = Column(String(750), nullable=False)
     name_chn = Column(String(150), nullable=False)
@@ -1136,7 +1136,8 @@ class WidgetLayout(Base):
         Index('widget_layout_dashboard_id_idx', 'deleted_at', 'dashboard_id')
     )
 
-    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True, nullable=False)
+    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'), info={'alias_name': 'primary_key'}, primary_key=True, nullable=False)
+    primary_key = synonym('dashboard_id')
     tenant_id = Column(ForeignKey('tenants.id', ondelete='SET NULL', onupdate='CASCADE'), nullable=False)
     widget_data_id = Column(ForeignKey('widget_info.id'), nullable=False)
     user_id = Column(ForeignKey('users.id', onupdate='CASCADE'), nullable=False)

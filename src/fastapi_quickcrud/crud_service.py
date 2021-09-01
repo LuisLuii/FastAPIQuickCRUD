@@ -7,7 +7,7 @@
 #
 # from .misc.exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
 # from .misc.type import Ordering
-# from .misc.utils import Base, alias_to_column
+# from .misc.utils import Base, clean_input_fields
 # from .misc.utils import find_query_builder
 #
 #
@@ -29,7 +29,7 @@
 #                    insert_args,
 #                    session) -> List[SchemaModelType]:
 #
-#         insert_arg_dict: list[dict] = alias_to_column(model=self.model, param=insert_args)
+#         insert_arg_dict: list[dict] = clean_input_fields(model=self.model, param=insert_args)
 #         insert_stmt = insert(self.model).values([insert_arg_dict])
 #         insert_stmt = insert_stmt.returning(text("*"))
 #         return insert_stmt
@@ -93,12 +93,12 @@
 #
 #         if not isinstance(insert_arg_dict, list):
 #             insert_arg_dict: list[dict] = [insert_arg_dict]
-#         insert_arg_dict: list[dict] = [alias_to_column(model=self.model, param=insert_arg)
+#         insert_arg_dict: list[dict] = [clean_input_fields(model=self.model, param=insert_arg)
 #                                        for insert_arg in insert_arg_dict]
 #         insert_stmt = insert(self.model).values(insert_arg_dict)
 #
 #         if unique_fields and insert_with_conflict_handle:
-#             update_columns = alias_to_column(insert_with_conflict_handle.__dict__.get('update_columns', None),
+#             update_columns = clean_input_fields(insert_with_conflict_handle.__dict__.get('update_columns', None),
 #                                              self.model)
 #             if not update_columns:
 #                 raise UpdateColumnEmptyException('update_columns parameter must be a non-empty list ')
@@ -108,8 +108,8 @@
 #                     conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
 #                 else:
 #                     raise UnknownColumn(f'the {columns} is not exited')
-#             conflict_list = alias_to_column(model=self.model, param=unique_fields)
-#             conflict_update_dict = alias_to_column(model=self.model,
+#             conflict_list = clean_input_fields(model=self.model, param=unique_fields)
+#             conflict_update_dict = clean_input_fields(model=self.model,
 #                                                       param=conflict_update_dict,
 #                                                       column_collection=True)
 #             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,

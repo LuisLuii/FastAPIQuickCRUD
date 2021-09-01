@@ -29,7 +29,7 @@ __all__ = [
     'find_query_builder',
     'Base',
     'sqlalchemy_table_to_pydantic',
-    'alias_to_column',
+    'clean_input_fields',
     'get_many_order_by_columns_description_builder',
     'get_many_string_matching_patterns_description_builder']
 
@@ -40,7 +40,7 @@ partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
 
-def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
+def clean_input_fields(param: Union[dict, list], model: Base, column_collection: bool = False):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
 
     if isinstance(param, dict):
