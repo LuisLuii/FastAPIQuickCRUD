@@ -7,7 +7,7 @@ from sqlalchemy.sql.schema import Table
 
 from .exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
 from .type import Ordering
-from .utils import alias_to_column
+from .utils import clean_input_fields
 from .utils import find_query_builder
 
 
@@ -59,9 +59,9 @@ class SQLAlchemyQueryService(object):
     def insert_one(self, *,
                    insert_args):
         insert_args = insert_args.__dict__
-        update_columns = alias_to_column(insert_args,
-                                         self.model_columns)
-        insert_stmt = insert(self.model).values(update_columns)
+        update_columns = clean_input_fields(insert_args,
+                                            self.model_columns)
+        insert_stmt = insert(self.model).values(insert_args)
         insert_stmt = insert_stmt.returning(text("*"))
         return insert_stmt
 
@@ -79,7 +79,10 @@ class SQLAlchemyQueryService(object):
         # for table_name, table_instance in self.model.metadata.tables.items():
         if join_mode:
             for table_name, table_instance in join_mode.items():
+
                 for local_reference in table_instance['local_reference_pairs_set']:
+                    if 'exclude' in local_reference:
+                        continue
                     for column in local_reference['reference_table_columns']:
                         foreign_name = local_reference['local']['local_column']
                         join_table_instance_list.append(
@@ -132,7 +135,6 @@ class SQLAlchemyQueryService(object):
                     table = local_reference['reference_table']
                     stmt = stmt.join(table, local_column == reference_column)
 
-            # stmt = stmt.join(*join_table_instance_list,)
 
         return stmt
 
@@ -165,22 +167,22 @@ class SQLAlchemyQueryService(object):
 
         if not isinstance(insert_arg_dict, list):
             insert_arg_dict: list[dict] = [insert_arg_dict]
-        insert_arg_dict: list[dict] = [alias_to_column(model=self.model_columns, param=insert_arg)
+        insert_arg_dict: list[dict] = [clean_input_fields(model=self.model_columns, param=insert_arg)
                                        for insert_arg in insert_arg_dict]
         insert_stmt = insert(self.model).values(insert_arg_dict)
 
         if unique_fields and insert_with_conflict_handle:
-            update_columns = alias_to_column(insert_with_conflict_handle.__dict__.get('update_columns', None),
-                                             self.model_columns)
+            update_columns = clean_input_fields(insert_with_conflict_handle.__dict__.get('update_columns', None),
+                                                self.model_columns)
             if not update_columns:
                 raise UpdateColumnEmptyException('update_columns parameter must be a non-empty list ')
             conflict_update_dict = {}
             for columns in update_columns:
                 conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
 
-            conflict_list = alias_to_column(model=self.model_columns, param=unique_fields)
-            conflict_update_dict = alias_to_column(model=self.model_columns, param=conflict_update_dict,
-                                                   column_collection=True)
+            conflict_list = clean_input_fields(model=self.model_columns, param=unique_fields)
+            conflict_update_dict = clean_input_fields(model=self.model_columns, param=conflict_update_dict,
+                                                      column_collection=True)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,
                                                             set_=conflict_update_dict
                                                             )
