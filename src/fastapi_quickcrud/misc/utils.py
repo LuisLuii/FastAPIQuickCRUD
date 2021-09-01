@@ -26,12 +26,11 @@ BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 
 __all__ = [
     'sqlalchemy_to_pydantic',
+    'sqlalchemy_table_to_pydantic',
     'find_query_builder',
     'Base',
-    'sqlalchemy_table_to_pydantic',
     'clean_input_fields',
-    'get_many_order_by_columns_description_builder',
-    'get_many_string_matching_patterns_description_builder']
+    'group_find_many_join']
 
 unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]

@@ -275,7 +275,7 @@ class ApiParameterSchemaBuilder:
                                               'local_table_columns': local_table_instance.c,
                                               'reference_table': reference_table_instance,
                                               'reference_table_columns': reference_table_instance.c,
-                                              'exclude' :True})
+                                              'exclude': True})
 
             all_fields_ = self._extract_all_field(foreign_table)
             response_fields = []
@@ -283,17 +283,18 @@ class ApiParameterSchemaBuilder:
                 response_fields.append((i['column_name'],
                                         i['column_type'],
                                         None))
-            response_model_dataclass = make_dataclass(f'foreign_{foreign_table_name + str(uuid.uuid4())}_FindManyResponseItemModel',
-                                                      response_fields,
-                                                      )
+            response_model_dataclass = make_dataclass(
+                f'foreign_{foreign_table_name + str(uuid.uuid4())}_FindManyResponseItemModel',
+                response_fields,
+                )
             response_item_model = _model_from_dataclass(response_model_dataclass)
 
             response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model,
-                                                                                 config=OrmConfig)
+                                                                            config=OrmConfig)
             # response_item_model = _add_validators(response_item_model,
             #                                            config=OrmConfig)
             response_model = create_model(
-                f'foreign_{foreign_table_name+ str(uuid.uuid4())}_UpsertManyResponseListModel',
+                f'foreign_{foreign_table_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
                 **{'__root__': (List[response_item_model], None)}
             )
             self.foreign_table_response_model_sets[foreign_table_name] = response_model
@@ -303,7 +304,7 @@ class ApiParameterSchemaBuilder:
                                                      'db_column': foreign_table}
         return foreign_key_table
 
-    def _alias_mapping_builder(self, db_model = None) -> Dict[str, str]:
+    def _alias_mapping_builder(self, db_model=None) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
         # return dictionary
         #   key: original name
@@ -434,7 +435,6 @@ class ApiParameterSchemaBuilder:
                 f'The column of {primary_key_column.key} has not default value '
                 f'and it is not nullable but in exclude_list'
                 f'it may throw error when you write data through Fast-qucikcrud greated API')
-        column_name = primary_key_column.key
         # if column_name in self.alias_mapper:
         #     primary_column_name = self.alias_mapper[column_name]
         # else:
@@ -451,7 +451,9 @@ class ApiParameterSchemaBuilder:
                                                             primary_field_definitions[1],
                                                             Query(primary_field_definitions[2]))],
                                                           namespace={
-                                                              '__post_init__': lambda self_object: [i(self_object) for i in request_validation]
+                                                              '__post_init__': lambda self_object: [i(self_object) for i
+                                                                                                    in
+                                                                                                    request_validation]
                                                           })
 
         assert primary_column_name and primary_columns_model and primary_field_definitions
@@ -489,16 +491,14 @@ class ApiParameterSchemaBuilder:
                                 str_value_ = str(value_)
                             setattr(request_or_response_object, received_column_name, str_value_)
 
-
     @staticmethod
     def _alias_to_original(request_or_response_object, alias_mapping):
         received_request = deepcopy(request_or_response_object.__dict__)
-        alias_original_mapping = {v:k  for k,v in alias_mapping.items()}
+        alias_original_mapping = {v: k for k, v in alias_mapping.items()}
         for k, v in received_request.items():
             if k in alias_original_mapping:
-                delattr(request_or_response_object,k)
-                setattr(request_or_response_object,alias_original_mapping[k], v)
-
+                delattr(request_or_response_object, k)
+                setattr(request_or_response_object, alias_original_mapping[k], v)
 
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
@@ -923,7 +923,7 @@ class ApiParameterSchemaBuilder:
         # else:
 
         response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
-                                                                                 config=OrmConfig)
+                                                                             config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
@@ -1414,6 +1414,8 @@ class ApiParameterSchemaBuilderForTable:
         self.bool_type_columns = []
         self.json_type_columns = []
         self.array_type_columns = []
+        self.reference_mapper = {}
+        self.foreign_table_response_model_sets = {}
         self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         # self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
@@ -1457,6 +1459,8 @@ class ApiParameterSchemaBuilderForTable:
                                           'reference_table_columns': foreign_table.c,
                                           'local_table': foreign_column.parent.table,
                                           'local_table_columns': foreign_column.parent.table.c}]
+
+                self.reference_mapper[local[1]] = foreign_table_name
                 # foreign_key_table[foreign_table_name] = foreign_table
                 # all_column = {}
                 column_label = {}
@@ -1472,6 +1476,34 @@ class ApiParameterSchemaBuilderForTable:
                                                          'instance': foreign_table,
                                                          'db_column': TableClass,
                                                          'column_label': column_label}
+
+                # ------------
+                response_fields = []
+                for i in all_fields_:
+                    response_fields.append((i['column_name'],
+                                            i['column_type'],
+                                            None))
+                response_model_dataclass = make_dataclass(
+                    f'foreign_{foreign_table_name + str(uuid.uuid4())}_FindManyResponseItemModel',
+                    response_fields,
+                )
+                response_item_model = _model_from_dataclass(response_model_dataclass)
+
+                response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model,
+                                                                                config=OrmConfig)
+                # response_item_model = _add_validators(response_item_model,
+                #                                            config=OrmConfig)
+                response_model = create_model(
+                    f'foreign_{foreign_table_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
+                    **{'__root__': (List[response_item_model], None)}
+                )
+
+                self.foreign_table_response_model_sets[foreign_table_name] = response_model
+                foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
+                                                         'fields': all_fields_,
+                                                         'instance': foreign_table,
+                                                         'db_column': foreign_table}
+
         return foreign_key_table
 
     def _extract_unique(self) -> List[str]:
@@ -1901,7 +1933,7 @@ class ApiParameterSchemaBuilderForTable:
         conflict_model = make_dataclass(
             f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
             [conflict_columns])
-        on_conflict_handle = [(f'on_conflict', Optional[conflict_model],
+        on_conflict_handle = [('on_conflict', Optional[conflict_model],
                                Body(None))]
 
         # Ready the Request and Response Model
@@ -1960,6 +1992,10 @@ class ApiParameterSchemaBuilderForTable:
         response_fields = []
         all_field = deepcopy(self.all_field)
         for i in all_field:
+            if i['column_name'] in self.reference_mapper:
+                response_fields.append((f"{i['column_name']}_foreign",
+                                        self.foreign_table_response_model_sets[self.reference_mapper[i['column_name']]],
+                                        None))
             response_fields.append((i['column_name'],
                                     i['column_type'],
                                     None))
