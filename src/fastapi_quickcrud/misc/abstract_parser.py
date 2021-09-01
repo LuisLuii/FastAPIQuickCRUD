@@ -169,9 +169,6 @@ class SQLAlchemyResultParse(object):
         fastapi_response.headers["x-total-count"] = str(len(response))
         if join:
             response = group_find_many_join(response)
-        a = response_model.__fields__['__root__']
-        # print(dir(a))
-        # b = dict(a)
         response = parse_obj_as(response_model, response)
         return response
 
