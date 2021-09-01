@@ -146,6 +146,7 @@ class ApiParameterSchemaBuilder:
         self.array_type_columns = []
         self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
+        self.foreign_table_response_model_sets = {}
         # self.foreign_all_field = self._extra_foreign_table_field()
 
     def _extra_foreign_table_field(self):
@@ -228,17 +229,23 @@ class ApiParameterSchemaBuilder:
         for r in mapper.relationships:
             foreign_table = r.mapper.class_
             foreign_table_name = foreign_table.__tablename__
-            r.local_columns
             local_reference_pairs = []
             for i in r.synchronize_pairs:
-                local = str(i[1]).split('.')
+                if r.secondary_synchronize_pairs:
+                    local_index = 0
+                    reference_index = 1
+                else:
+                    local_index = 1
+                    reference_index = 0
+                local = str(i[local_index]).split('.')
                 local_table = local[0]
                 local_column = local[1]
-                reference = str(i[0]).split('.')
+                reference = str(i[reference_index]).split('.')
                 reference_table = reference[0]
                 reference_column = reference[1]
-                local_table_instance = i[1].table
-                reference_table_instance = i[0].table
+
+                local_table_instance = i[local_index].table
+                reference_table_instance = i[reference_index].table
                 local_reference_pairs.append({'local': {"local_table": local_table,
                                                         "local_column": local_column},
                                               "reference": {"reference_table": reference_table,
@@ -264,6 +271,8 @@ class ApiParameterSchemaBuilder:
                                               'local_table_columns': local_table_instance.c,
                                               'reference_table': reference_table_instance,
                                               'reference_table_columns': reference_table_instance.c})
+
+            foreign_alias_mapper: Dict[str, str] = self._alias_mapping_builder(foreign_table)
             all_fields_ = self._extract_all_field(foreign_table)
             foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
                                                      'fields': all_fields_,
@@ -271,14 +280,15 @@ class ApiParameterSchemaBuilder:
                                                      'db_column': foreign_table}
         return foreign_key_table
 
-    def _alias_mapping_builder(self) -> Dict[str, str]:
+    def _alias_mapping_builder(self, db_model) -> Dict[str, str]:
         # extract all field and check the alias_name in info and build a mapping
         # return dictionary
         #   key: original name
         #   value : alias name
         alias_mapping = {}
-
-        mapper = inspect(self.__db_model)
+        if not db_model:
+            db_model = self.__db_model
+        mapper = inspect(db_model)
         for attr in mapper.attrs:
             if isinstance(attr, ColumnProperty):
                 if attr.columns:
@@ -343,12 +353,14 @@ class ApiParameterSchemaBuilder:
                                         Tuple[Union[str, Any],
                                               Union[Type[uuid.UUID], Any],
                                               Optional[Any]]]:
+
         # get the primary columns with alias
         #   handle:
         #       primary key
         #   exception:
         #       composite primary key constraint not supported
         #       can not more than one primary key
+
         if hasattr(self.__db_model, '__table_args__'):
             for constraints in self.__db_model.__table_args__:
                 if isinstance(constraints, PrimaryKeyConstraint):
@@ -405,14 +417,16 @@ class ApiParameterSchemaBuilder:
             primary_column_name = primary_key_column.key
         primary_field_definitions = (primary_column_name, column_type, default)
 
+        request_validation = [lambda self_object: self._value_of_list_to_str(
+            self_object, self.uuid_type_columns)]
+        if self.alias_mapper:
+            request_validation.append(lambda self_object: self._alias_to_original(self_object, self.alias_mapper))
         primary_columns_model: DataClass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PrimaryKeyModel',
                                                           [(primary_field_definitions[0],
                                                             primary_field_definitions[1],
                                                             Query(primary_field_definitions[2]))],
                                                           namespace={
-                                                              '__post_init__': lambda
-                                                                  self_object: self._value_of_list_to_str(
-                                                                  self_object, self.uuid_type_columns)
+                                                              '__post_init__': lambda self_object: [i(self_object) for i in request_validation]
                                                           })
 
         assert primary_column_name and primary_columns_model and primary_field_definitions
@@ -449,6 +463,17 @@ class ApiParameterSchemaBuilder:
                             else:
                                 str_value_ = str(value_)
                             setattr(request_or_response_object, received_column_name, str_value_)
+
+
+    @staticmethod
+    def _alias_to_original(request_or_response_object, alias_mapping):
+        received_request = deepcopy(request_or_response_object.__dict__)
+        alias_original_mapping = {v:k  for k,v in alias_mapping.items()}
+        for k, v in received_request.items():
+            if k in alias_original_mapping:
+                delattr(request_or_response_object,k)
+                setattr(request_or_response_object,alias_original_mapping[k], v)
+
 
     @staticmethod
     def _get_many_string_matching_patterns_description_builder():
@@ -857,9 +882,6 @@ class ApiParameterSchemaBuilder:
                                                                                        for validator_ in
                                                                                        request_validation]}
                                              )
-        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
-                                                  response_fields,
-                                                  )
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )

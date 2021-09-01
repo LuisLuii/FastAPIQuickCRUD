@@ -1157,7 +1157,7 @@ class WidgetLayout(Base):
     widget_data = relationship('WidgetInfo')
 
 
-user_model_set = sqlalchemy_to_pydantic(db_model=TenantPolicy,
+user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
                                         crud_methods=[
                                             CrudMethods.FIND_MANY,
                                             CrudMethods.FIND_ONE,
@@ -1169,9 +1169,9 @@ user_model_set = sqlalchemy_to_pydantic(db_model=TenantPolicy,
                                             CrudMethods.PATCH_MANY,
 
                                         ],
-                                        exclude_columns=[])
+                                        exclude_columns=['bytea_value'])
 
-# friend_model_set = sqlalchemy_to_pydantic(db_model=Tenant,
+# friend_model_set = sqlalchemy_table_to_pydantic(db_model=t_list_of_critical_fault,
 #                                                 crud_methods=[
 #                                                     CrudMethods.FIND_MANY,
 #                                                     CrudMethods.UPSERT_MANY,
@@ -1185,7 +1185,7 @@ user_model_set = sqlalchemy_to_pydantic(db_model=TenantPolicy,
 
 crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=user_model_set,
-                                   db_model=TenantPolicy,
+                                   db_model=WidgetLayout,
                                    prefix="/widget",
                                    dependencies=[],
                                    async_mode=True,
@@ -1193,7 +1193,7 @@ crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    )
 # crud_route_2 = crud_router_builder(db_session=get_transaction_session,
 #                                    crud_models=friend_model_set,
-#                                    db_model=Tenant,
+#                                    db_model=t_list_of_critical_fault,
 #                                    async_mode=True,
 #                                    prefix="/friend",
 #                                    dependencies=[],
