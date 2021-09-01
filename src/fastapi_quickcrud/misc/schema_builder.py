@@ -73,14 +73,14 @@ def _model_from_dataclass(kls: DataClass) -> Type[BaseModel]:
     return pydantic_dataclass(kls).__pydantic_model__
 
 
-def _original_data_to_alias(alias_name_dict):
-    def core(_, values):
-        for original_name, alias_name in alias_name_dict.items():
-            if original_name in values:
-                values[alias_name] = values.pop(original_name)
-        return values
-
-    return core
+# def _original_data_to_alias(alias_name_dict):
+#     def core(_, values):
+#         for original_name, alias_name in alias_name_dict.items():
+#             if original_name in values:
+#                 values[alias_name] = values.pop(original_name)
+#         return values
+#
+#     return core
 
 
 def _to_require_but_default(model: Type[BaseModelT]) -> Type[BaseModelT]:
@@ -2029,18 +2029,14 @@ class ApiParameterSchemaBuilderForTable:
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
                                                   response_fields,
                                                   )
-        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
-                                                  response_fields,
-                                                  )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
-        if self.alias_mapper and response_list_item_model:
-            validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-            response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function},
-                                                       config=OrmConfig)
-        else:
-
-            response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
-                                                                                 config=OrmConfig)
+        # if self.alias_mapper and response_list_item_model:
+        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
+        #     response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function},
+        #                                                config=OrmConfig)
+        # else:
+        response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
+                                                                             config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
