@@ -1,15 +1,15 @@
 from typing import \
     Any, \
     List, \
-    TypeVar, Dict
+    TypeVar, Union
 
 from fastapi import \
-    APIRouter, \
-    Depends
+    Depends, APIRouter
 from pydantic import \
     BaseModel
 from sqlalchemy.sql.schema import Table
 
+from . import sqlalchemy_table_to_pydantic, sqlalchemy_to_pydantic
 from .misc.abstract_execute import SQLALchemyExecuteService
 from .misc.abstract_parser import SQLAlchemyResultParse, SQLAlchemyTableResultParse
 from .misc.abstract_query import SQLAlchemyQueryService
@@ -25,14 +25,19 @@ OnConflictModelType = TypeVar("OnConflictModelType", bound=BaseModel)
 def crud_router_builder(
         *,
         db_session,
-        crud_models: CRUDModel,
-        db_model,
+        db_model: Union[Table, 'DeclarativeBaseModel'],
+        crud_methods: List[CrudMethods] = None,
+        exclude_columns: List[str] = None,
         dependencies: List[callable] = None,
+        crud_models=None,
         async_mode=False,
         autocommit=True,
+
         **router_kwargs: Any) -> APIRouter:
     """
     :param db_session: db_session
+    :param crud_methods:
+    :param exclude_columns:
     :param crud_models:
     :param db_model:
     :param dependencies:
@@ -42,9 +47,34 @@ def crud_router_builder(
     :return:
     """
 
+    if exclude_columns is None:
+        exclude_columns = []
     if dependencies is None:
         dependencies = []
+    if isinstance(db_model, Table):
+        if not crud_methods:
+            crud_methods = CrudMethods.get_table_full_crud_method()
+        crud_models_builder: CRUDModel = sqlalchemy_table_to_pydantic
+        result_parser_builder = SQLAlchemyTableResultParse
+    else:
+        if not crud_methods:
+            crud_methods = CrudMethods.get_declarative_model_full_crud_method()
+        crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
+        result_parser_builder = SQLAlchemyResultParse
+
     api = APIRouter(**router_kwargs)
+    dependencies = [Depends(dep) for dep in dependencies]
+    routes_source = SQLALChemyBaseRouteSource
+    if not crud_models:
+        crud_models: CRUDModel = crud_models_builder(db_model=db_model,
+                                                     crud_methods=crud_methods,
+                                                     exclude_columns=exclude_columns)
+    result_parser = result_parser_builder(async_model=async_mode,
+                                          crud_models=crud_models,
+                                          autocommit=autocommit)
+
+    crud_service = SQLAlchemyQueryService(model=db_model, async_mode=async_mode)
+    execute_service = SQLALchemyExecuteService()
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
     if primary_name:
@@ -52,22 +82,6 @@ def crud_router_builder(
     else:
         path = ""
     unique_list: List[str] = crud_models.UNIQUE_LIST
-    # foreign_table: Dict[str, Table] = crud_models.FOREIGN_TABLE
-    dependencies = [Depends(dep) for dep in dependencies]
-
-    routes_source = SQLALChemyBaseRouteSource
-
-    if isinstance(db_model, Table):
-        result_parser = SQLAlchemyTableResultParse(async_model=async_mode,
-                                                   crud_models=crud_models,
-                                                   autocommit=autocommit)
-    else:
-        result_parser = SQLAlchemyResultParse(async_model=async_mode,
-                                              crud_models=crud_models,
-                                              autocommit=autocommit)
-    crud_service = SQLAlchemyQueryService(model=db_model, async_mode=async_mode)
-
-    execute_service = SQLALchemyExecuteService()
 
     def find_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -86,7 +100,6 @@ def crud_router_builder(
                                async_mode=async_mode)
 
     def find_many_api(request_response_model: dict, dependencies):
-
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         routes_source.find_many(path="",
@@ -164,7 +177,6 @@ def crud_router_builder(
                                   async_mode=async_mode)
 
     def post_redirect_get_api(request_response_model: dict, dependencies):
-
         _request_body_model = request_response_model.get('requestBodyModel', None)
         _response_model = request_response_model.get('responseModel', None)
 
@@ -179,7 +191,6 @@ def crud_router_builder(
                                         response_model=_response_model)
 
     def patch_one_api(request_response_model: dict, dependencies):
-
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -199,7 +210,6 @@ def crud_router_builder(
                                 response_model=_response_model)
 
     def patch_many_api(request_response_model: dict, dependencies):
-
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_body_model = request_response_model.get('requestBodyModel', None)
