@@ -1,12 +1,6 @@
-import asyncio
-from datetime import datetime, timezone
-
 import uvicorn
 from fastapi import FastAPI
-from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey, DateTime, Text, text, select, Index, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
@@ -29,29 +23,32 @@ async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
         async with session.begin():
             yield session
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, TIMESTAMP, UUID
+
+
+from sqlalchemy import CHAR, Column, ForeignKey, Integer, Table
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 metadata = Base.metadata
 association_table = Table('association', Base.metadata,
-    Column('left_id', ForeignKey('left.id')),
-    Column('right_id', ForeignKey('right.id'))
-)
+                          Column('left_id', ForeignKey('left.id')),
+                          Column('right_id', ForeignKey('right.id'))
+                          )
+
 
 class Parent(Base):
     __tablename__ = 'left'
     id = Column(Integer, primary_key=True)
     children = relationship("Child",
-                    secondary=association_table)
+                            secondary=association_table)
+
 
 class Child(Base):
     __tablename__ = 'right'
     id = Column(Integer, primary_key=True)
     name = Column(CHAR, nullable=True)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -59,18 +56,16 @@ async def startup_event():
         await conn.run_sync(Base.metadata.create_all)
 
 
-
 user_model_m2m = sqlalchemy_table_to_pydantic(db_model=association_table,
-                                        crud_methods=[
-                                            CrudMethods.FIND_MANY,
-                                            CrudMethods.UPSERT_ONE,
-                                            CrudMethods.UPDATE_MANY,
-                                            CrudMethods.DELETE_MANY,
-                                            CrudMethods.PATCH_MANY,
+                                              crud_methods=[
+                                                  CrudMethods.FIND_MANY,
+                                                  CrudMethods.UPSERT_ONE,
+                                                  CrudMethods.UPDATE_MANY,
+                                                  CrudMethods.DELETE_MANY,
+                                                  CrudMethods.PATCH_MANY,
 
-                                        ],
-                                        exclude_columns=[])
-
+                                              ],
+                                              exclude_columns=[])
 
 user_model_set = sqlalchemy_to_pydantic(db_model=Parent,
                                         crud_methods=[
@@ -87,16 +82,15 @@ user_model_set = sqlalchemy_to_pydantic(db_model=Parent,
                                         exclude_columns=[])
 
 friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
-                                                crud_methods=[
-                                                    CrudMethods.FIND_MANY,
-                                                    CrudMethods.UPSERT_MANY,
-                                                    CrudMethods.UPDATE_MANY,
-                                                    CrudMethods.DELETE_MANY,
-                                                    CrudMethods.PATCH_MANY,
+                                          crud_methods=[
+                                              CrudMethods.FIND_MANY,
+                                              CrudMethods.UPSERT_MANY,
+                                              CrudMethods.UPDATE_MANY,
+                                              CrudMethods.DELETE_MANY,
+                                              CrudMethods.PATCH_MANY,
 
-                                                ],
-                                                exclude_columns=[])
-
+                                          ],
+                                          exclude_columns=[])
 
 crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=user_model_set,
@@ -122,7 +116,6 @@ crud_route_2 = crud_router_builder(db_session=get_transaction_session,
                                    dependencies=[],
                                    tags=["Child"]
                                    )
-
 
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
