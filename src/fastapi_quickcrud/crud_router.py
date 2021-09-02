@@ -1,7 +1,8 @@
+import inspect
 from typing import \
     Any, \
     List, \
-    TypeVar, Union
+    TypeVar, Union, Callable, Optional
 
 from fastapi import \
     Depends, APIRouter
@@ -24,29 +25,67 @@ OnConflictModelType = TypeVar("OnConflictModelType", bound=BaseModel)
 
 def crud_router_builder(
         *,
-        db_session,
+        db_session: Callable,
         db_model: Union[Table, 'DeclarativeBaseModel'],
-        crud_methods: List[CrudMethods] = None,
-        exclude_columns: List[str] = None,
-        dependencies: List[callable] = None,
-        crud_models=None,
-        async_mode=False,
-        autocommit=True,
-
+        autocommit: bool = True,
+        crud_methods: Optional[List[CrudMethods]] = None,
+        exclude_columns: Optional[List[str]] = None,
+        dependencies: Optional[List[callable]] = None,
+        crud_models: Optional[CRUDModel] = None,
+        async_mode: Optional[bool] = None,
         **router_kwargs: Any) -> APIRouter:
     """
-    :param db_session: db_session
-    :param crud_methods:
-    :param exclude_columns:
+    :param db_session: Callable function
+        db_session should be a callable function, and return a session generator.
+        Also you can handle commit by yourelf or othe business logic
+
+        SQLAlchemy based example(SQLAlchemy was supported async since 1.4 version):
+            async:
+            async def get_transaction_session() -> AsyncSession:
+                async with async_session() as session:
+                    async with session.begin():
+                        yield session
+            sync:
+            def get_transaction_session():
+                try:
+                    db = sync_session()
+                    yield db
+                    db.commit()
+                except Exception as e:
+                    db.rollback()
+                    raise e
+                finally:
+                    db.close()
+
+
+    :param crud_methods: List[CrudMethods]
+        Fastapi Quick CRUD supports a few of crud methods, and they save into the Enum class,
+        get it by : from fastapi_quickcrud import CrudMethods
+        example:
+            [CrudMethods.GET_MANY,CrudMethods.ONE]
+        note:
+            if there is no primary key in your SQLAlchemy model, it dose not support request with
+            specific resource, such as GET_ONE, UPDATE_ONE, DELETE_ONE, PATCH_ONE AND POST_REDIRECT_GET
+            this is because POST_REDIRECT_GET need to redirect to GET_ONE api
+
+    :param exclude_columns: List[str]
+        Fastapi Quick CRUD will get all the columns in you table to generate a CRUD router,
+        it is allow you exclude some columns you dont want it expose to operated by API
+        note:
+            if the column in exclude list but is it not nullable or no default_value, it may throw error
+            when you do insert
+
     :param crud_models:
     :param db_model:
+        SQLAlchemy model,
     :param dependencies:
     :param async_mode:
     :param autocommit:
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
-
+    if async_mode is None:
+        async_mode = inspect.isasyncgen(db_session())
     if exclude_columns is None:
         exclude_columns = []
     if dependencies is None:
