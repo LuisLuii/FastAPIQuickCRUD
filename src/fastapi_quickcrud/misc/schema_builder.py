@@ -32,6 +32,12 @@ DataClass = NewType('DataClass', Any)
 DeclarativeClass = NewType('DeclarativeClass', declarative_base)
 
 
+class ExcludeUnsetBaseModel(BaseModel):
+    def dict(self, *args, **kwargs):
+        if kwargs and kwargs.get("exclude_none") is not None:
+            kwargs["exclude_unset"] = True
+            return BaseModel.dict(self, *args, **kwargs)
+
 class OrmConfig(BaseConfig):
     orm_mode = True
 
@@ -144,8 +150,8 @@ class ApiParameterSchemaBuilder:
         self.bool_type_columns = []
         self.json_type_columns = []
         self.array_type_columns = []
-        self.foreign_table_response_model_sets = {}
-        self.reference_mapper = {}
+        self.foreign_table_response_model_sets = {} # foreign_table_name: model_of_the foreign table
+        self.reference_mapper = {} # local_column : foreign_table
         self.table_of_foreign: Dict[str, Table] = self._extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
         # self.foreign_all_field = self._extra_foreign_table_field()
@@ -224,30 +230,42 @@ class ApiParameterSchemaBuilder:
             foreign_field[table_name] = fields
         return foreign_field
 
+
     def _extra_foreign_table(self) -> Dict[str, Table]:
         mapper = inspect(self.__db_model)
         foreign_key_table = {}
         for r in mapper.relationships:
+            local, = r.local_columns
+            local = mapper.get_property_by_column(local).expression
+            local_table = str(local).split('.')[0]
+            local_column = str(local).split('.')[1]
+            local_table_instance = local.table
 
             foreign_table = r.mapper.class_
             foreign_table_name = foreign_table.__tablename__
+            foreign_secondary_table_name = ''
+            if r.secondary_synchronize_pairs:
+                # foreign_table_name = r.secondary.key
+                foreign_secondary_table_name = str(r.secondary.key)
+
             local_reference_pairs = []
-            for i in r.synchronize_pairs:
+            '''
+                        for i in r.synchronize_pairs:
                 if r.secondary_synchronize_pairs:
-                    local_index = 0
-                    reference_index = 1
+                    local = str(i[0]).split('.')
+                    reference = str(i[1]).split('.')
+                    local_table_instance = i[0].table
+                    reference_table_instance = i[1].table
                 else:
-                    local_index = 1
-                    reference_index = 0
-                local = str(i[local_index]).split('.')
+                    local = str(r.local).split('.')
+                    reference = str(i[0]).split('.')
+                    local_table_instance = r.local.table
+                    reference_table_instance = i[0].table
                 local_table = local[0]
                 local_column = local[1]
-                reference = str(i[reference_index]).split('.')
                 reference_table = reference[0]
                 reference_column = reference[1]
                 self.reference_mapper[local_column] = foreign_table_name
-                local_table_instance = i[local_index].table
-                reference_table_instance = i[reference_index].table
                 local_reference_pairs.append({'local': {"local_table": local_table,
                                                         "local_column": local_column},
                                               "reference": {"reference_table": reference_table,
@@ -256,25 +274,57 @@ class ApiParameterSchemaBuilder:
                                               'local_table_columns': local_table_instance.c,
                                               'reference_table': reference_table_instance,
                                               'reference_table_columns': reference_table_instance.c})
-            for i in r.secondary_synchronize_pairs:
-                local = str(i[1]).split('.')
-                local_table = local[0]
-                local_column = local[1]
-                reference = str(i[0]).split('.')
-                reference_table = reference[0]
-                reference_column = reference[1]
-                local_table_instance = i[1].table
-                reference_table_instance = i[0].table
+            
+            '''
+            for i in r.synchronize_pairs:
+                for column in i:
+                    table_name_ = str(column).split('.')[0]
+                    column_name_ = str(column).split('.')[1]
+                    if table_name_ not in [foreign_secondary_table_name, foreign_table_name ]:
+                        continue
 
-                self.reference_mapper[local_column] = foreign_table_name
-                local_reference_pairs.append({'local': {"local_table": local_table,
-                                                        "local_column": local_column},
-                                              "reference": {"reference_table": reference_table,
-                                                            "reference_column": reference_column},
-                                              'local_table': local_table_instance,
-                                              'local_table_columns': local_table_instance.c,
-                                              'reference_table': reference_table_instance,
-                                              'reference_table_columns': reference_table_instance.c,
+                    reference_table = table_name_
+                    reference_column = column_name_
+                    self.reference_mapper[local_column] = foreign_table
+                    reference_table_instance = column.table
+                    local_reference_pairs.append({'local': {"local_table": local_table,
+                                                            "local_column": local_column},
+                                                  "reference": {"reference_table": reference_table,
+                                                                "reference_column": reference_column},
+                                                  'local_table': local_table_instance,
+                                                  'local_table_columns': local_table_instance.c,
+                                                  'reference_table': reference_table_instance,
+                                                  'reference_table_columns': reference_table_instance.c})
+            for i in r.secondary_synchronize_pairs:
+                local_table_: str = None
+                local_column_: str = None
+                reference_table_: str = None
+                reference_column_: str = None
+                local_table_instance_: Table = None
+                reference_table_instance_: Table = None
+                for column in i:
+
+                    table_name_ = str(column).split('.')[0]
+                    column_name_ = str(column).split('.')[1]
+                    if table_name_ == foreign_secondary_table_name:
+                        local_table_ = str(column).split('.')[0]
+                        local_column_ = str(column).split('.')[1]
+                        local_table_instance_ = column.table
+                    if table_name_ == foreign_table_name:
+                        reference_table_ = str(column).split('.')[0]
+                        reference_column_ = str(column).split('.')[1]
+                        reference_table_instance_ = column.table
+
+
+                # self.reference_mapper[column_name_] = foreign_table_name
+                local_reference_pairs.append({'local': {"local_table": local_table_,
+                                                        "local_column": local_column_},
+                                              "reference": {"reference_table": reference_table_,
+                                                            "reference_column": reference_column_},
+                                              'local_table': local_table_instance_,
+                                              'local_table_columns': local_table_instance_.c,
+                                              'reference_table': reference_table_instance_,
+                                              'reference_table_columns': reference_table_instance_.c,
                                               'exclude': True})
 
             all_fields_ = self._extract_all_field(foreign_table)
@@ -291,13 +341,12 @@ class ApiParameterSchemaBuilder:
 
             response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model,
                                                                             config=OrmConfig)
-            # response_item_model = _add_validators(response_item_model,
-            #                                            config=OrmConfig)
+
             response_model = create_model(
-                f'foreign_{foreign_table_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
-                **{'__root__': (List[response_item_model], None)}
+                f'foreign_{foreign_table_name + str(uuid.uuid4())}_GetManyResponseForeignModel',
+                **{'__root__': (Union[List[response_item_model],None], None)}
             )
-            self.foreign_table_response_model_sets[foreign_table_name] = response_model
+            self.foreign_table_response_model_sets[foreign_table] = response_model
             foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
                                                      'fields': all_fields_,
                                                      'instance': foreign_table,
@@ -913,7 +962,7 @@ class ApiParameterSchemaBuilder:
                                                                                        request_validation]}
                                              )
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindManyResponseItemModel',
-                                                  response_fields,
+                                                  response_fields
                                                   )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
         # if self.alias_mapper and response_list_item_model:
@@ -927,7 +976,7 @@ class ApiParameterSchemaBuilder:
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
-            **{'__root__': (List[response_list_item_model], None), '__config__': OrmConfig}
+            **{'__root__': (List[response_list_item_model], None), '__base__': ExcludeUnsetBaseModel}
         )
 
         return request_query_model, None, response_model
@@ -1466,9 +1515,7 @@ class ApiParameterSchemaBuilderForTable:
                 column_label = {}
                 for i in foreign_table.c:
                     column_name = str(i).split('.')[1]
-                    # all_column[column_name] = i
                     setattr(TableClass, column_name, i)
-                    # all_column[column_name] = i
                     column_label[column_name] = i
 
                 foreign_key_table[foreign_table_name] = {'local_reference_pairs_set': local_reference_pairs,
@@ -1477,7 +1524,6 @@ class ApiParameterSchemaBuilderForTable:
                                                          'db_column': TableClass,
                                                          'column_label': column_label}
 
-                # ------------
                 response_fields = []
                 for i in all_fields_:
                     response_fields.append((i['column_name'],
@@ -2040,7 +2086,7 @@ class ApiParameterSchemaBuilderForTable:
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_FindManyResponseListModel',
-            **{'__root__': (Union[List[response_list_item_model], Any], None), '__config__': OrmConfig}
+            **{'__root__': (Union[List[response_list_item_model], Any], None), '__base__': ExcludeUnsetBaseModel}
         )
 
         return request_query_model, None, response_model

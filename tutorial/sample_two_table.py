@@ -1,17 +1,10 @@
-import asyncio
-from datetime import datetime, timezone
-
 import uvicorn
 from fastapi import FastAPI
-from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey, DateTime, Text, text, select, Index, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship, synonym
+from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
 from fastapi_quickcrud import sqlalchemy_table_to_pydantic
-from fastapi_quickcrud import sqlalchemy_to_pydantic
 
 app = FastAPI()
 
@@ -29,7 +22,10 @@ async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
         async with session.begin():
             yield session
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
+
+
+from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, \
+    JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import NullType
@@ -42,7 +38,8 @@ metadata = Base.metadata
 class Category(Base):
     __tablename__ = 'category'
 
-    category_id = Column(Integer, primary_key=True, server_default=text("nextval('category_category_id_seq'::regclass)"))
+    category_id = Column(Integer, primary_key=True,
+                         server_default=text("nextval('category_category_id_seq'::regclass)"))
     name = Column(String(50))
 
     movies = relationship('Movie', secondary='movie_category_junction')
@@ -61,7 +58,8 @@ t_critical_fault_chart = Table(
 class DataRestCachingCompOption(Base):
     __tablename__ = 'data_rest_caching_comp_option'
 
-    comp_id = Column(Integer, primary_key=True, server_default=text("nextval('data_rest_caching_comp_option_comp_id_seq'::regclass)"))
+    comp_id = Column(Integer, primary_key=True,
+                     server_default=text("nextval('data_rest_caching_comp_option_comp_id_seq'::regclass)"))
     comp_hash = Column(CHAR(64), nullable=False, unique=True)
     comp_content = Column(JSONB(astext_type=Text()), nullable=False)
     created_at = Column(DateTime(True), server_default=text("now()"))
@@ -70,7 +68,8 @@ class DataRestCachingCompOption(Base):
 class DataRestCachingFilterOption(Base):
     __tablename__ = 'data_rest_caching_filter_option'
 
-    filter_id = Column(Integer, primary_key=True, server_default=text("nextval('data_rest_caching_filter_option_filter_id_seq'::regclass)"))
+    filter_id = Column(Integer, primary_key=True,
+                       server_default=text("nextval('data_rest_caching_filter_option_filter_id_seq'::regclass)"))
     filter_hash = Column(CHAR(64), nullable=False, unique=True)
     filter_content = Column(JSONB(astext_type=Text()), nullable=False)
     created_at = Column(DateTime(True), server_default=text("now()"))
@@ -79,7 +78,8 @@ class DataRestCachingFilterOption(Base):
 class DataRestCachingQueryOption(Base):
     __tablename__ = 'data_rest_caching_query_option'
 
-    query_id = Column(Integer, primary_key=True, server_default=text("nextval('data_rest_caching_query_option_query_id_seq'::regclass)"))
+    query_id = Column(Integer, primary_key=True,
+                      server_default=text("nextval('data_rest_caching_query_option_query_id_seq'::regclass)"))
     query_hash = Column(CHAR(64), nullable=False, unique=True)
     query_content = Column(JSONB(astext_type=Text()), nullable=False)
     created_at = Column(DateTime(True), server_default=text("now()"))
@@ -96,7 +96,6 @@ t_data_rest_pre_aggregated_data_view = Table(
     Column('updated_at', DateTime(True))
 )
 
-
 t_display_fault = Table(
     'display_fault', metadata,
     Column('log_datetime', TIMESTAMP(True, 0)),
@@ -108,7 +107,6 @@ t_display_fault = Table(
     Column('plot_metadata', JSONB(astext_type=Text())),
     Column('impact', JSONB(astext_type=Text()))
 )
-
 
 t_equipment_fault_overview = Table(
     'equipment_fault_overview', metadata,
@@ -127,7 +125,8 @@ class EquipmentTypeNew(Base):
         UniqueConstraint('equip_type_id', 'equip_type_name'),
     )
 
-    equip_type_id = Column(Integer, primary_key=True, unique=True, server_default=text("nextval('equipment_type_equip_type_id_seq'::regclass)"))
+    equip_type_id = Column(Integer, primary_key=True, unique=True,
+                           server_default=text("nextval('equipment_type_equip_type_id_seq'::regclass)"))
     created_at = Column(DateTime(True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(True))
     equip_type_name = Column(String(64), nullable=False, unique=True)
@@ -136,7 +135,8 @@ class EquipmentTypeNew(Base):
 class EquipmentType(Base):
     __tablename__ = 'equipment_types'
 
-    equip_type_id = Column(Integer, primary_key=True, server_default=text("nextval('equipment_types_equip_type_id_seq'::regclass)"))
+    equip_type_id = Column(Integer, primary_key=True,
+                           server_default=text("nextval('equipment_types_equip_type_id_seq'::regclass)"))
     equip_type_name = Column(String(64), nullable=False, unique=True)
     creation_time = Column(DateTime(True), server_default=text("now()"))
 
@@ -196,7 +196,6 @@ t_fault_diagnosis_view = Table(
     Column('impact', JSONB(astext_type=Text()))
 )
 
-
 t_fault_features_view = Table(
     'fault_features_view', metadata,
     Column('log_date', Date),
@@ -206,7 +205,6 @@ t_fault_features_view = Table(
     Column('sub_type', String(64)),
     Column('value_json', JSONB(astext_type=Text()))
 )
-
 
 t_fault_list = Table(
     'fault_list', metadata,
@@ -257,14 +255,16 @@ class Movie(Base):
 class ProcessedFilter(Base):
     __tablename__ = 'processed_filter'
 
-    filter_id = Column(Integer, primary_key=True, server_default=text("nextval('processed_filter_filter_id_seq'::regclass)"))
+    filter_id = Column(Integer, primary_key=True,
+                       server_default=text("nextval('processed_filter_filter_id_seq'::regclass)"))
     name = Column(String, nullable=False, unique=True)
 
 
 class ProcessedResolution(Base):
     __tablename__ = 'processed_resolution'
 
-    resolution_id = Column(Integer, primary_key=True, server_default=text("nextval('processed_resolution_resolution_id_seq'::regclass)"))
+    resolution_id = Column(Integer, primary_key=True,
+                           server_default=text("nextval('processed_resolution_resolution_id_seq'::regclass)"))
     name = Column(String, nullable=False, unique=True)
 
 
@@ -568,7 +568,8 @@ class TestTable(Base):
         UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
 
-    primary_key = Column(Integer, primary_key=True, server_default=text("nextval('test_table_primary_key_seq'::regclass)"))
+    primary_key = Column(Integer, primary_key=True,
+                         server_default=text("nextval('test_table_primary_key_seq'::regclass)"))
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))
@@ -689,7 +690,8 @@ class UntitledTable256(Base):
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
 
-    id = Column(Integer, primary_key=True, nullable=False, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True, nullable=False,
+                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
     bool_value = Column(Boolean, primary_key=True, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))
@@ -730,7 +732,6 @@ t_user_group_dashboard = Table(
     Column('item_type', String)
 )
 
-
 t_user_policy_table = Table(
     'user_policy_table', metadata,
     Column('user_group_name', String),
@@ -747,7 +748,8 @@ t_user_policy_table = Table(
 class ZFaultDiagnosisType(Base):
     __tablename__ = 'z_fault_diagnosis_type'
 
-    diagnosis_type_id = Column(Integer, primary_key=True, server_default=text("nextval('z_fault_diagnosis_type_diagnosis_type_id_seq'::regclass)"))
+    diagnosis_type_id = Column(Integer, primary_key=True,
+                               server_default=text("nextval('z_fault_diagnosis_type_diagnosis_type_id_seq'::regclass)"))
     created_at = Column(DateTime(True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(True))
     severity = Column(String(16))
@@ -762,7 +764,8 @@ class FaultFeatureTypeNew(Base):
         UniqueConstraint('equip_type_id', 'feature_name', 'sub_type', 'frequency', 'attribute_name'),
     )
 
-    feature_type_id = Column(Integer, primary_key=True, server_default=text("nextval('fault_feature_type_feature_type_id_seq'::regclass)"))
+    feature_type_id = Column(Integer, primary_key=True,
+                             server_default=text("nextval('fault_feature_type_feature_type_id_seq'::regclass)"))
     equip_type_id = Column(ForeignKey('equipment_type_new.equip_type_id'), nullable=False)
     created_at = Column(DateTime(True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(True))
@@ -780,7 +783,8 @@ class FaultFeatureType(Base):
         UniqueConstraint('feature_name', 'sub_type', 'equip_type_id'),
     )
 
-    feature_type_id = Column(Integer, primary_key=True, server_default=text("nextval('fault_feature_types_feature_type_id_seq'::regclass)"))
+    feature_type_id = Column(Integer, primary_key=True,
+                             server_default=text("nextval('fault_feature_types_feature_type_id_seq'::regclass)"))
     feature_name = Column(String(64), nullable=False)
     sub_type = Column(String(64), nullable=False)
     equip_type_id = Column(ForeignKey('equipment_types.equip_type_id'), nullable=False)
@@ -795,7 +799,8 @@ class FaultSymptomType(Base):
         UniqueConstraint('equip_type_id', 'symptom_name', 'frequency', 'attribute_names'),
     )
 
-    symptom_type_id = Column(Integer, primary_key=True, server_default=text("nextval('fault_symptom_type_symptom_type_id_seq'::regclass)"))
+    symptom_type_id = Column(Integer, primary_key=True,
+                             server_default=text("nextval('fault_symptom_type_symptom_type_id_seq'::regclass)"))
     created_at = Column(DateTime(True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(True))
     symptom_name = Column(String(64), nullable=False)
@@ -824,7 +829,6 @@ t_movie_category_junction = Table(
     Column('movie_id', ForeignKey('movie.movie_id'), primary_key=True, nullable=False),
     Column('category_id', ForeignKey('category.category_id'), primary_key=True, nullable=False)
 )
-
 
 t_relationship_test_b = Table(
     'relationship_test_b', metadata,
@@ -958,7 +962,7 @@ t_apikeys = Table(
 class Dashboard(Base):
     __tablename__ = 'dashboards'
 
-    id = Column(UUID, primary_key=True,info={'alias_name': 'primary_key'})
+    id = Column(UUID, primary_key=True, info={'alias_name': 'primary_key'})
     icon = Column(String(1000), server_default=text("NULL::character varying"))
     name_en = Column(String(750), nullable=False)
     name_chn = Column(String(150), nullable=False)
@@ -982,9 +986,12 @@ class DataRestCachingPayload(Base):
 
     site_code = Column(ForeignKey('sites.site_code', ondelete='CASCADE'), primary_key=True, nullable=False)
     timestamp = Column(DateTime(True), primary_key=True, nullable=False)
-    query_id = Column(ForeignKey('data_rest_caching_query_option.query_id', ondelete='CASCADE'), primary_key=True, nullable=False)
-    filter_id = Column(ForeignKey('data_rest_caching_filter_option.filter_id', ondelete='CASCADE'), primary_key=True, nullable=False)
-    comp_id = Column(ForeignKey('data_rest_caching_comp_option.comp_id', ondelete='CASCADE'), primary_key=True, nullable=False)
+    query_id = Column(ForeignKey('data_rest_caching_query_option.query_id', ondelete='CASCADE'), primary_key=True,
+                      nullable=False)
+    filter_id = Column(ForeignKey('data_rest_caching_filter_option.filter_id', ondelete='CASCADE'), primary_key=True,
+                       nullable=False)
+    comp_id = Column(ForeignKey('data_rest_caching_comp_option.comp_id', ondelete='CASCADE'), primary_key=True,
+                     nullable=False)
     payload = Column(LargeBinary)
     updated_at = Column(DateTime(True), server_default=text("now()"))
 
@@ -992,7 +999,6 @@ class DataRestCachingPayload(Base):
     filter = relationship('DataRestCachingFilterOption')
     query = relationship('DataRestCachingQueryOption')
     site = relationship('Site')
-
 
 
 class Device(Base):
@@ -1074,7 +1080,6 @@ t_link_site_func_group = Table(
     Column('deleted_at', DateTime(True))
 )
 
-
 t_link_user_group = Table(
     'link_user_group', metadata,
     Column('user_id', ForeignKey('users.id', onupdate='CASCADE'), nullable=False),
@@ -1083,7 +1088,6 @@ t_link_user_group = Table(
     Column('updated_at', DateTime(True)),
     Column('deleted_at', DateTime(True))
 )
-
 
 t_link_user_group_site_func = Table(
     'link_user_group_site_func', metadata,
@@ -1119,7 +1123,8 @@ class UserDashboard(Base):
     updated_at = Column(DateTime(True), nullable=False)
     deleted_at = Column(DateTime(True), index=True)
     version = Column(Integer, nullable=False, server_default=text("0"))
-    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True, nullable=False, index=True)
+    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True,
+                          nullable=False, index=True)
     user_id = Column(ForeignKey('users.id', onupdate='CASCADE'), primary_key=True, nullable=False, index=True)
     tenant_id = Column(ForeignKey('tenants.id', ondelete='SET NULL', onupdate='CASCADE'), nullable=False, index=True)
     children_list = Column(ARRAY(UUID()))
@@ -1136,7 +1141,8 @@ class WidgetLayout(Base):
         Index('widget_layout_dashboard_id_idx', 'deleted_at', 'dashboard_id')
     )
 
-    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'), info={'alias_name': 'primary_key'}, primary_key=True, nullable=False)
+    dashboard_id = Column(ForeignKey('dashboards.id', ondelete='CASCADE', onupdate='CASCADE'),
+                          info={'alias_name': 'primary_key'}, primary_key=True, nullable=False)
     primary_key = synonym('dashboard_id')
     tenant_id = Column(ForeignKey('tenants.id', ondelete='SET NULL', onupdate='CASCADE'), nullable=False)
     widget_data_id = Column(ForeignKey('widget_info.id'), nullable=False)
@@ -1158,21 +1164,21 @@ class WidgetLayout(Base):
     widget_data = relationship('WidgetInfo')
 
 
-user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
-                                        crud_methods=[
-                                            CrudMethods.FIND_MANY,
-                                            CrudMethods.FIND_ONE,
-                                            CrudMethods.UPSERT_ONE,
-                                            CrudMethods.UPDATE_MANY,
-                                            CrudMethods.UPDATE_ONE,
-                                            CrudMethods.DELETE_ONE,
-                                            CrudMethods.DELETE_MANY,
-                                            CrudMethods.PATCH_MANY,
-
-                                        ],
-                                        exclude_columns=['bytea_value'])
-
-# friend_model_set = sqlalchemy_table_to_pydantic(db_model=t_list_of_critical_fault,
+# user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
+#                                         crud_methods=[
+#                                             CrudMethods.FIND_MANY,
+#                                             CrudMethods.FIND_ONE,
+#                                             CrudMethods.UPSERT_ONE,
+#                                             CrudMethods.UPDATE_MANY,
+#                                             CrudMethods.UPDATE_ONE,
+#                                             CrudMethods.DELETE_ONE,
+#                                             CrudMethods.DELETE_MANY,
+#                                             CrudMethods.PATCH_MANY,
+#
+#                                         ],
+#                                         exclude_columns=['bytea_value'])
+#
+# friend_model_set = sqlalchemy_table_to_pydantic(db_model=t_link_user_group_site_func,
 #                                                 crud_methods=[
 #                                                     CrudMethods.FIND_MANY,
 #                                                     CrudMethods.UPSERT_MANY,
@@ -1182,26 +1188,19 @@ user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
 #
 #                                                 ],
 #                                                 exclude_columns=[])
-
-
-crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=user_model_set,
-                                   db_model=WidgetLayout,
-                                   prefix="/widget",
-                                   dependencies=[],
-                                   async_mode=True,
-                                   tags=["widget"]
-                                   )
-# crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-#                                    crud_models=friend_model_set,
-#                                    db_model=t_list_of_critical_fault,
-#                                    async_mode=True,
-#                                    prefix="/friend",
+#
+#
+# crud_route_1 = crud_router_builder(db_session=get_transaction_session,
+#                                    crud_models=user_model_set,
+#                                    db_model=WidgetLayout,
+#                                    prefix="/widget",
 #                                    dependencies=[],
-#                                    tags=["Friend"]
+#                                    async_mode=True,
+#                                    tags=["widget"]
 #                                    )
-
-
-app.include_router(crud_route_1)
-# app.include_router(crud_route_2)
+crud_route_2 = crud_router_builder(db_session=get_transaction_session,
+                                   db_model=Function,
+                                   prefix="/friend",
+                                   )
+app.include_router(crud_route_2)
 uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
