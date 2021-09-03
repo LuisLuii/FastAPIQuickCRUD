@@ -25,7 +25,7 @@ async def get_transaction_session() -> AsyncSession:
 
 
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
+    JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import NullType
@@ -684,38 +684,38 @@ class TestUuidPrimarySync(Base):
     array_str__value = Column(ARRAY(String()))
 
 
-class UntitledTable256(Base):
-    __tablename__ = 'untitled_table_256'
-    __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
-    )
-
-    id = Column(Integer, primary_key=True, nullable=False,
-                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-    bool_value = Column(Boolean, primary_key=True, nullable=False, server_default=text("false"))
-    bytea_value = Column(LargeBinary)
-    char_value = Column(CHAR(10))
-    date_value = Column(Date, server_default=text("now()"))
-    float4_value = Column(Float, nullable=False)
-    float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
-    int2_value = Column(SmallInteger, nullable=False)
-    int4_value = Column(Integer, nullable=False)
-    int8_value = Column(BigInteger, server_default=text("99"))
-    interval_value = Column(INTERVAL)
-    json_value = Column(JSON)
-    jsonb_value = Column(JSONB(astext_type=Text()))
-    numeric_value = Column(Numeric)
-    text_value = Column(Text)
-    time_value = Column(Time)
-    timestamp_value = Column(DateTime)
-    timestamptz_value = Column(DateTime(True))
-    timetz_value = Column(Time(True))
-    uuid_value = Column(UUID)
-    varchar_value = Column(String)
-    xml_value = Column(NullType)
-    array_value = Column(ARRAY(Integer()))
-    array_str__value = Column(ARRAY(String()))
-    box_valaue = Column(NullType)
+# class UntitledTable256(Base):
+#     __tablename__ = 'untitled_table_256'
+#     __table_args__ = (
+#         UniqueConstraint('id', 'int4_value', 'float4_value'),
+#     )
+#
+#     id = Column(Integer, primary_key=True, nullable=False,
+#                 server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+#     bool_value = Column(Boolean, primary_key=True, nullable=False, server_default=text("false"))
+#     bytea_value = Column(LargeBinary)
+#     char_value = Column(CHAR(10))
+#     date_value = Column(Date, server_default=text("now()"))
+#     float4_value = Column(Float, nullable=False)
+#     float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
+#     int2_value = Column(SmallInteger, nullable=False)
+#     int4_value = Column(Integer, nullable=False)
+#     int8_value = Column(BigInteger, server_default=text("99"))
+#     interval_value = Column(INTERVAL)
+#     json_value = Column(JSON)
+#     jsonb_value = Column(JSONB(astext_type=Text()))
+#     numeric_value = Column(Numeric)
+#     text_value = Column(Text)
+#     time_value = Column(Time)
+#     timestamp_value = Column(DateTime)
+#     timestamptz_value = Column(DateTime(True))
+#     timetz_value = Column(Time(True))
+#     uuid_value = Column(UUID)
+#     varchar_value = Column(String)
+#     xml_value = Column(NullType)
+#     array_value = Column(ARRAY(Integer()))
+#     array_str__value = Column(ARRAY(String()))
+#     box_valaue = Column(NullType)
 
 
 t_user_group_dashboard = Table(
@@ -1163,6 +1163,37 @@ class WidgetLayout(Base):
     user = relationship('User')
     widget_data = relationship('WidgetInfo')
 
+class UntitledTable256(Base):
+    __tablename__ = 'untitled_table_256'
+    __table_args__ = (
+        UniqueConstraint('id', 'int4_value', 'float4_value'),
+    )
+
+    id = Column(Integer, primary_key=True, nullable=False, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    bool_value = Column(Boolean,nullable=False, server_default=text("false"))
+    bytea_value = Column(LargeBinary)
+    char_value = Column(CHAR(10))
+    date_value = Column(Date, server_default=text("now()"))
+    float4_value = Column(Float, nullable=False)
+    float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
+    int2_value = Column(SmallInteger, nullable=False)
+    int4_value = Column(Integer, nullable=False)
+    int8_value = Column(BigInteger, server_default=text("99"))
+    interval_value = Column(INTERVAL)
+    json_value = Column(JSON)
+    jsonb_value = Column(JSONB(astext_type=Text()))
+    numeric_value = Column(Numeric)
+    text_value = Column(Text)
+    time_value = Column(Time)
+    timestamp_value = Column(DateTime)
+    timestamptz_value = Column(DateTime(True))
+    timetz_value = Column(Time(True))
+    uuid_value = Column(UUID)
+    varchar_value = Column(String)
+    xml_value = Column(NullType)
+    array_value = Column(ARRAY(Integer()))
+    array_str__value = Column(ARRAY(String()))
+    box_valaue = Column(NullType)
 
 # user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
 #                                         crud_methods=[
@@ -1199,7 +1230,8 @@ class WidgetLayout(Base):
 #                                    tags=["widget"]
 #                                    )
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   db_model=Function,
+                                   db_model=UntitledTable256,
+                                   exclude_columns=['bytea_value','xml_value','box_valaue'],
                                    prefix="/friend",
                                    )
 app.include_router(crud_route_2)

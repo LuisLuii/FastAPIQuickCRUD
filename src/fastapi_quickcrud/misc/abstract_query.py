@@ -81,8 +81,6 @@ class SQLAlchemyQueryService(object):
             for table_name, table_instance in join_mode.items():
 
                 for local_reference in table_instance['local_reference_pairs_set']:
-                    if 'exclude' in local_reference:
-                        continue
                     for column in local_reference['reference_table_columns']:
                         foreign_name = local_reference['local']['local_column']
                         join_table_instance_list.append(

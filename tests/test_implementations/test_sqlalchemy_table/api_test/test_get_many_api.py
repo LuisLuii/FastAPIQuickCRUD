@@ -7,10 +7,10 @@ from starlette.testclient import TestClient
 from src.fastapi_quickcrud.misc.exceptions import UnknownColumn, UnknownOrderType
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
-from src.fastapi_quickcrud.misc.utils import sqlalchemy_table_to_pydantic
+from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                      crud_methods=[
                                                          CrudMethods.UPSERT_MANY,
                                                      ],
@@ -74,7 +74,7 @@ test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        tags=["test"]
                                        )
 
-UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                      crud_methods=[
                                                          CrudMethods.FIND_MANY,
                                                      ],

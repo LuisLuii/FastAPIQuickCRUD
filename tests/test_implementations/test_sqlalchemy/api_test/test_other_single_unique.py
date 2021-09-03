@@ -751,4 +751,3 @@ def teardown_module(module):
 
     UUIDTable.__table__.drop(engine, checkfirst=True)
 
-
