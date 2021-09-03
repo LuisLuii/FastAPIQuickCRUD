@@ -3430,9 +3430,7 @@ class ApiParameterSchemaBuilder():
                                              }
                                              )
         response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteOneResponseModel',
-                                        [(self._primary_key_field_definition[0],
-                                          self._primary_key_field_definition[1],
-                                          ...)],
+                                        response_fields,
                                         namespace={
                                             '__post_init__': lambda self_object: [validator_(self_object)
                                                                                   for validator_ in
@@ -3479,9 +3477,7 @@ class ApiParameterSchemaBuilder():
         #                                                                           response_validation]}
         #                                 )
         response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseModel',
-                                        [(self._primary_key_field_definition[0],
-                                          self._primary_key_field_definition[1],
-                                          ...)],
+                                        response_fields,
                                         namespace={
                                             '__post_init__': lambda self_object: [validator_(self_object)
                                                                                   for validator_ in

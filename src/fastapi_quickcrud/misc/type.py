@@ -23,16 +23,14 @@ class CrudMethods(Enum):
 
     @staticmethod
     def get_table_full_crud_method():
-        return [CrudMethods.FIND_MANY,CrudMethods.UPSERT_MANY,CrudMethods.UPSERT_ONE,CrudMethods.UPDATE_MANY,CrudMethods.PATCH_MANY,
+        return [CrudMethods.FIND_MANY,CrudMethods.UPSERT_ONE,CrudMethods.UPDATE_MANY,CrudMethods.PATCH_MANY,
                 CrudMethods.DELETE_MANY]
     @staticmethod
     def get_declarative_model_full_crud_method():
         return [CrudMethods.FIND_MANY,CrudMethods.FIND_ONE,
                 CrudMethods.UPDATE_MANY,CrudMethods.UPDATE_ONE,
-                CrudMethods.PATCH_MANY,CrudMethods.PATCH_ONE,
-                CrudMethods.UPSERT_MANY,CrudMethods.UPSERT_ONE,
-                CrudMethods.DELETE_MANY,CrudMethods.DELETE_ONE,
-                CrudMethods.POST_REDIRECT_GET]
+                CrudMethods.PATCH_MANY,CrudMethods.PATCH_ONE,CrudMethods.UPSERT_ONE,
+                CrudMethods.DELETE_MANY,CrudMethods.DELETE_ONE]
 
 
 class RequestMethods(Enum):

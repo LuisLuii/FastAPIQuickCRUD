@@ -249,8 +249,8 @@ class SQLAlchemyResultParse(object):
 
     def delete_one_sub_func(self, response_model, sql_execute_result, fastapi_response):
         if sql_execute_result.rowcount:
-            deleted_primary_key_value, = [i for i in sql_execute_result.scalars()]
-            result = parse_obj_as(response_model, {self.primary_name: deleted_primary_key_value})
+            deleted_row = dict(sql_execute_result.fetchone())
+            result = parse_obj_as(response_model, deleted_row)
             fastapi_response.headers["x-total-count"] = str(1)
         else:
             result = Response(status_code=HTTPStatus.NOT_FOUND)
@@ -270,9 +270,10 @@ class SQLAlchemyResultParse(object):
         if not sql_execute_result.rowcount:
             return Response(status_code=HTTPStatus.NO_CONTENT)
 
-        result_list = [{self.primary_name: i} for i in sql_execute_result.scalars()]
-        result = parse_obj_as(response_model, result_list)
-        fastapi_response.headers["x-total-count"] = str(len(result_list))
+        deleted_rows= sql_execute_result.fetchall()
+        deleted_rows_dict = [dict(deleted_row) for deleted_row in deleted_rows]
+        result = parse_obj_as(response_model, deleted_rows_dict)
+        fastapi_response.headers["x-total-count"] = str(len(deleted_rows_dict))
         return result
 
     def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
