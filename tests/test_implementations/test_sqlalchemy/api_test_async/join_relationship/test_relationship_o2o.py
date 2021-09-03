@@ -9,7 +9,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 
-TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_URL', 'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL', 'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
 
 app = FastAPI()
 

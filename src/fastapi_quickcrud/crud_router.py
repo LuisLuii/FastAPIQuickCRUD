@@ -86,8 +86,6 @@ def crud_router_builder(
     """
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
-    if exclude_columns is None:
-        exclude_columns = []
     if dependencies is None:
         dependencies = []
     crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
