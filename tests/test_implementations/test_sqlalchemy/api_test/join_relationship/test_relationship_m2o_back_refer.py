@@ -37,7 +37,7 @@ class Parent(Base):
     __tablename__ = 'parent_m2o_back_populates'
     id = Column(Integer, primary_key=True)
     child_id = Column(Integer, ForeignKey('child_m2o_back_populates.id'))
-    child = relationship("Child", backref="parents")
+    child = relationship("Child", backref="child_m2o_back_populates")
 
 crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,

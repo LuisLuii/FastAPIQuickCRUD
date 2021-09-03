@@ -76,32 +76,21 @@ class SQLAlchemyQueryService(object):
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model_columns)
         join_table_instance_list = []
-        # for table_name, table_instance in self.model.metadata.tables.items():
         if join_mode:
             for table_name, table_instance in join_mode.items():
-
                 for local_reference in table_instance['local_reference_pairs_set']:
+                    if 'exclude' in local_reference and local_reference['exclude']:
+                        continue
                     for column in local_reference['reference_table_columns']:
                         foreign_name = local_reference['local']['local_column']
                         join_table_instance_list.append(
                             column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
-                # table_model = table_instance['instance']
-                # if isinstance(table_model, DeclarativeMeta):
-                #     join_table_instance_list.append(table_instance['instance'])
-                # elif isinstance(table_model, Table):
-                #     for column in table_instance['instance'].c:
-                #         foreign_name = ''
-                #         for y in table_instance['local_reference_pairs_set']:
-                #             if foreign_name:
-                #                 foreign_name = foreign_name+'_'+y['local']['local_column']
-                #             else:
-                #                 foreign_name = y['local']['local_column']
-                #         join_table_instance_list.append(column.label(foreign_name+'_foreign_____'+str(column).split('.')[1]))
 
         if not isinstance(self.model, Table):
             model = self.model.__table__
         else:
             model = self.model
+
         stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list))
         if order_by_columns:
             order_by_query_list = []
@@ -120,11 +109,11 @@ class SQLAlchemyQueryService(object):
                     order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
                 else:
                     raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
-            stmt = stmt.order_by(*order_by_query_list)
+            if order_by_query_list:
+                stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
         if join_mode:
             for join_table, data in join_mode.items():
-
                 for local_reference in data['local_reference_pairs_set']:
                     local = local_reference['local']['local_column']
                     reference = local_reference['reference']['reference_column']
@@ -132,7 +121,6 @@ class SQLAlchemyQueryService(object):
                     reference_column = getattr(local_reference['reference_table_columns'], reference)
                     table = local_reference['reference_table']
                     stmt = stmt.join(table, local_column == reference_column)
-
 
         return stmt
 
@@ -202,7 +190,7 @@ class SQLAlchemyQueryService(object):
             filter_list += find_query_builder(param=primary_key,
                                               model=self.model_columns)
 
-        delete_stmt = delete( self.model).where(and_(*filter_list))
+        delete_stmt = delete(self.model).where(and_(*filter_list))
         delete_stmt = delete_stmt.returning(text('*'))
         delete_stmt = delete_stmt.execution_options(synchronize_session=False)
         return delete_stmt

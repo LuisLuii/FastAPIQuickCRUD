@@ -160,7 +160,6 @@ crud_route_2 = crud_router_builder(db_session=get_transaction_session,
 
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
-uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 ```
 
 * Note:

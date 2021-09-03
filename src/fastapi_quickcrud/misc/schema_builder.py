@@ -17,8 +17,7 @@ from sqlalchemy.orm import declarative_base
 from strenum import StrEnum
 
 from .exceptions import SchemaException, \
-    ColumnTypeNotSupportedException, \
-    UnknownError
+    ColumnTypeNotSupportedException
 from .type import MatchingPatternInString, \
     RangeFromComparisonOperators, \
     Ordering, \
@@ -2925,8 +2924,14 @@ class ApiParameterSchemaBuilder():
 
                     reference_table = table_name_
                     reference_column = column_name_
-                    self.reference_mapper[local_column] = foreign_table
                     reference_table_instance = column.table
+                    if r.secondary_synchronize_pairs:
+
+                        exclude = True
+                    else:
+                        self.reference_mapper[local_column] = foreign_table
+
+                        exclude = False
                     local_reference_pairs.append({'local': {"local_table": local_table,
                                                             "local_column": local_column},
                                                   "reference": {"reference_table": reference_table,
@@ -2934,7 +2939,8 @@ class ApiParameterSchemaBuilder():
                                                   'local_table': local_table_instance,
                                                   'local_table_columns': local_table_instance.c,
                                                   'reference_table': reference_table_instance,
-                                                  'reference_table_columns': reference_table_instance.c})
+                                                  'reference_table_columns': reference_table_instance.c,
+                                                  'exclude': exclude})
             for i in r.secondary_synchronize_pairs:
                 local_table_: str = None
                 local_column_: str = None
@@ -2955,7 +2961,7 @@ class ApiParameterSchemaBuilder():
                         reference_column_ = str(column).split('.')[1]
                         reference_table_instance_ = column.table
 
-                # self.reference_mapper[column_name_] = foreign_table_name
+                self.reference_mapper[local_column_] = foreign_table
                 local_reference_pairs.append({'local': {"local_table": local_table_,
                                                         "local_column": local_column_},
                                               "reference": {"reference_table": reference_table_,
@@ -2964,7 +2970,7 @@ class ApiParameterSchemaBuilder():
                                               'local_table_columns': local_table_instance_.c,
                                               'reference_table': reference_table_instance_,
                                               'reference_table_columns': reference_table_instance_.c,
-                                              'exclude': True})
+                                              'exclude': False})
 
             all_fields_ = self._extract_all_field(foreign_table)
             response_fields = []
@@ -3304,11 +3310,12 @@ class ApiParameterSchemaBuilder():
 
         response_fields = []
         all_field = deepcopy(self.all_field)
+        for i in self.reference_mapper:
+            response_fields.append((f"{i}_foreign",
+                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
+                                    None))
         for i in all_field:
-            if i['column_name'] in self.reference_mapper:
-                response_fields.append((f"{i['column_name']}_foreign",
-                                        self.foreign_table_response_model_sets[self.reference_mapper[i['column_name']]],
-                                        None))
+
             response_fields.append((i['column_name'],
                                     i['column_type'],
                                     None))
