@@ -37,17 +37,14 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 metadata = Base.metadata
-
-class Parent(Base):
-    __tablename__ = 'parent'
-    id = Column(Integer, primary_key=True)
-    child_id = Column(Integer, ForeignKey('child.id'))
-    child = relationship("Child", back_populates="parents")
-
 class Child(Base):
-    __tablename__ = 'child'
+    __tablename__ = 'child_m2o_back_populates'
     id = Column(Integer, primary_key=True)
-    parents = relationship("Parent", back_populates="child")
+class Parent(Base):
+    __tablename__ = 'parent_m2o_back_populates'
+    id = Column(Integer, primary_key=True)
+    child_id = Column(Integer, ForeignKey('child_m2o_back_populates.id'))
+    child = relationship("Child", backref="parents")
 
 @app.on_event("startup")
 async def startup_event():
@@ -90,6 +87,7 @@ crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    async_mode=True,
                                    tags=["Parent"]
                                    )
+
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=friend_model_set,
                                    db_model=Child,

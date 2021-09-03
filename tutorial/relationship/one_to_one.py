@@ -31,17 +31,19 @@ metadata = Base.metadata
 
 
 class Parent(Base):
-    __tablename__ = 'parent'
+    __tablename__ = 'parent_o2o'
     id = Column(Integer, primary_key=True)
+
+    # one-to-many collection
     children = relationship("Child", back_populates="parent")
 
-
 class Child(Base):
-    __tablename__ = 'child'
+    __tablename__ = 'child_o2o'
     id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey('parent.id'))
-    parent = relationship("Parent", back_populates="children")
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'))
 
+    # many-to-one scalar
+    parent = relationship("Parent", back_populates="children")
 
 @app.on_event("startup")
 async def startup_event():

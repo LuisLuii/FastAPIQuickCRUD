@@ -10,7 +10,7 @@ from pydantic import \
     BaseModel
 from sqlalchemy.sql.schema import Table
 
-from . import sqlalchemy_table_to_pydantic, sqlalchemy_to_pydantic
+from . import sqlalchemy_to_pydantic
 from .misc.abstract_execute import SQLALchemyExecuteService
 from .misc.abstract_parser import SQLAlchemyResultParse, SQLAlchemyTableResultParse
 from .misc.abstract_query import SQLAlchemyQueryService
@@ -90,15 +90,16 @@ def crud_router_builder(
         exclude_columns = []
     if dependencies is None:
         dependencies = []
+    crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
+
     if isinstance(db_model, Table):
         if not crud_methods:
             crud_methods = CrudMethods.get_table_full_crud_method()
-        crud_models_builder: CRUDModel = sqlalchemy_table_to_pydantic
+
         result_parser_builder = SQLAlchemyTableResultParse
     else:
         if not crud_methods:
             crud_methods = CrudMethods.get_declarative_model_full_crud_method()
-        crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
         result_parser_builder = SQLAlchemyResultParse
 
     api = APIRouter(**router_kwargs)
