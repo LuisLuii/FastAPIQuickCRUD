@@ -379,6 +379,6 @@ def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
                         response[k].append(v)
             for response_ in response:
                 i.pop(response_, None)
-            result = i | response
+            result = {**i,**response}
         response_list.append(result)
     return response_list
