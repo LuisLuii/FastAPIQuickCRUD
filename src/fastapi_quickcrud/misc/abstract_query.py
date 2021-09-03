@@ -202,7 +202,7 @@ class SQLAlchemyQueryService(object):
             filter_list += find_query_builder(param=primary_key,
                                               model=self.model_columns)
 
-        delete_stmt = delete(self.model).where(and_(*filter_list))
+        delete_stmt = delete( self.model).where(and_(*filter_list))
         delete_stmt = delete_stmt.returning(text('*'))
         delete_stmt = delete_stmt.execution_options(synchronize_session=False)
         return delete_stmt
