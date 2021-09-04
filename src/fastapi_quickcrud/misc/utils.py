@@ -36,7 +36,7 @@ unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
-def clean_input_fields(param: Union[dict, list], model: Base, column_collection: bool = False):
+def clean_input_fields(param: Union[dict, list], model: Base):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
 
     if isinstance(param, dict):
@@ -44,13 +44,8 @@ def clean_input_fields(param: Union[dict, list], model: Base, column_collection:
         for column_name, value in param.items():
             if column_name == '__initialised__':
                 continue
-            # if not hasattr(model, column_name):
-            #     raise UnknownColumn(f'the {column_name} is not exited')
-            alias_name = getattr(model, column_name)
-            if column_collection:
-                actual_column_name = getattr(model, alias_name.expression.key)
-            else:
-                actual_column_name = alias_name.expression.key
+            column = getattr(model, column_name)
+            actual_column_name = column.expression.key
             stmt[actual_column_name] = value
         return stmt
     if isinstance(param, list) or isinstance(param, set):
@@ -58,11 +53,8 @@ def clean_input_fields(param: Union[dict, list], model: Base, column_collection:
         for column_name in param:
             if not hasattr(model, column_name):
                 raise UnknownColumn(f'column {column_name} is not exited')
-            alias_name = getattr(model, column_name)
-            if column_collection:
-                actual_column_name = getattr(model, alias_name.expression.key)
-            else:
-                actual_column_name = alias_name.expression.key
+            column = getattr(model, column_name)
+            actual_column_name = column.expression.key
             stmt.append(actual_column_name)
         return stmt
 

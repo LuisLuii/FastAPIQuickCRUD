@@ -167,8 +167,7 @@ class SQLAlchemyQueryService(object):
                 conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
 
             conflict_list = clean_input_fields(model=self.model_columns, param=unique_fields)
-            conflict_update_dict = clean_input_fields(model=self.model_columns, param=conflict_update_dict,
-                                                      column_collection=True)
+            conflict_update_dict = clean_input_fields(model=self.model_columns, param=conflict_update_dict)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,
                                                             set_=conflict_update_dict
                                                             )
