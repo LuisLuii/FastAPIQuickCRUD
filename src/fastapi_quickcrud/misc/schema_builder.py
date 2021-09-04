@@ -55,22 +55,22 @@ def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs):
                         __validators__=validators)
 
 
-def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseModelT]:
-    """
-    Create a new BaseModel with the exact same fields as `model`
-    but making them all optional and no default
-    """
-
-    config = kwargs.get('config', None)
-
-    field_definitions = {
-        name_: (field_.outer_type_, field_.field_info.default)
-        for name_, field_ in model.__fields__.items()
-    }
-    return create_model(f'{model.__name__}WithValidators',
-                        **field_definitions,
-                        __config__=config,
-                        __validators__={**validators})
+# def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseModelT]:
+#     """
+#     Create a new BaseModel with the exact same fields as `model`
+#     but making them all optional and no default
+#     """
+# 
+#     config = kwargs.get('config', None)
+# 
+#     field_definitions = {
+#         name_: (field_.outer_type_, field_.field_info.default)
+#         for name_, field_ in model.__fields__.items()
+#     }
+#     return create_model(f'{model.__name__}WithValidators',
+#                         **field_definitions,
+#                         __config__=config,
+#                         __validators__={**validators})
 
 
 def _model_from_dataclass(kls: DataClass) -> Type[BaseModel]:
