@@ -2930,7 +2930,6 @@ class ApiParameterSchemaBuilder():
                         exclude = True
                     else:
                         self.reference_mapper[local_column] = foreign_table
-
                         exclude = False
                     local_reference_pairs.append({'local': {"local_table": local_table,
                                                             "local_column": local_column},
