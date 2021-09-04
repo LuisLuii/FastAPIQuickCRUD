@@ -203,15 +203,15 @@ class SQLAlchemyResultParse(object):
         self.commit(kwargs.get('session'))
         return result
 
-    async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        await self.async_commit(kwargs.get('session'))
-        return result
-
-    def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        self.commit(kwargs.get('session'))
-        return result
+    # async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # def patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
+    #     self.commit(kwargs.get('session'))
+    #     return result
 
     @staticmethod
     def upsert_one_sub_func(response_model, sql_execute_result, fastapi_response):
