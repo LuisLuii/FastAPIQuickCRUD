@@ -119,23 +119,37 @@ class SQLAlchemyResultParse(object):
         return result
 
     @staticmethod
-    def find_one_sub_func(sql_execute_result, response_model, fastapi_response):
-        one_row_data = sql_execute_result.one_or_none()
+    def find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs):
+        one_row_data = sql_execute_result.fetchone()
         if not one_row_data:
             return Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
-        row, = one_row_data
-        data_dict = row.__dict__
-        result = parse_obj_as(response_model, data_dict)
+        # row, = one_row_data
+        result__ = copy.deepcopy(dict(one_row_data))
+        result = {}
+        for key_, value_ in result__.items():
+            if '_____' in key_:
+                key, foreign_column = key_.split('_____')
+                if key not in result:
+                    result[key] = {foreign_column: value_}
+                else:
+                    result[key][foreign_column] = value_
+            else:
+                result[key_] = value_
+        if 'join_mode' in kwargs:
+            join = kwargs['join_mode']
+            if join:
+                result = group_find_many_join([result])[0]
+        # result = parse_obj_as(response_model, data_dict)
         fastapi_response.headers["x-total-count"] = str(1)
         return result
 
     async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.find_one_sub_func(sql_execute_result, response_model, fastapi_response)
+        result = self.find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs)
         await self.async_commit(kwargs.get('session'))
         return result
 
     def find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.find_one_sub_func(sql_execute_result, response_model, fastapi_response)
+        result = self.find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs)
         self.commit(kwargs.get('session'))
         return result
 
