@@ -57,18 +57,18 @@ class SQLAlchemyQueryService(object):
         self.async_mode = async_mode
 
     def insert_one(self, *,
-                   insert_args):
+                   insert_args) -> BinaryExpression:
         insert_args = insert_args.__dict__
         update_columns = clean_input_fields(insert_args,
                                             self.model_columns)
-        insert_stmt = insert(self.model).values(insert_args)
+        insert_stmt = insert(self.model).values(update_columns)
         insert_stmt = insert_stmt.returning(text("*"))
         return insert_stmt
 
     def get_many(self, *,
                  join_mode,
                  query,
-                 ):
+                 ) -> BinaryExpression:
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
@@ -127,7 +127,7 @@ class SQLAlchemyQueryService(object):
     def get_one(self, *,
                 extra_args,
                 filter_args,
-                ):
+                ) -> BinaryExpression:
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
@@ -138,10 +138,11 @@ class SQLAlchemyQueryService(object):
         stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
         return stmt
 
-    def upsert(self, *, insert_arg,
+    def upsert(self, *,
+               insert_arg,
                unique_fields: List[str],
                upsert_one=True,
-               ):
+               ) -> BinaryExpression:
         insert_arg_dict: Union[list, dict] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
@@ -180,7 +181,7 @@ class SQLAlchemyQueryService(object):
                *,
                delete_args,
                primary_key=None,
-               ):
+               ) -> BinaryExpression:
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model_columns)
@@ -198,7 +199,7 @@ class SQLAlchemyQueryService(object):
                update_args,
                extra_query,
                primary_key=None,
-               ):
+               ) -> BinaryExpression:
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
