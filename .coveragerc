@@ -14,15 +14,15 @@ exclude_lines =
     return async_execute_and_expire_result
     if 'duplicate key value violates unique constraint' not in err_msg:
     raise UnknownError(f'Unknown error, {i}')
-    response_result = await parsing_service.async_find_one(response_model=response_model,
+    response_result = await parsing_service.async_find_one
     return response_result
-    parsed_response = await parsing_service.async_find_many(response_model=response_model,
-    return await parsing_service.async_upsert_one(response_model=response_model,
-    return await parsing_service.async_upsert_many(response_model=response_model,
-    return await parsing_service.async_delete_one(response_model=response_model,
-    return await parsing_service.async_delete_many(response_model=response_model,
-    return await result_parser.async_post_redirect_get(response_model=response_model,
-    return await result_parser.async_update_one(response_model=response_model,
-    return await result_parser.async_patch_many(response_model=response_model,
-    return await result_parser.async_update_one(response_model=response_model,
-    return await result_parser.async_update_many(response_model=response_model,
+    parsed_response = await parsing_service.async_find_many*
+    return await parsing_service.async_upsert_one*
+    return await parsing_service.async_upsert_many*
+    return await parsing_service.async_delete_one*
+    return await parsing_service.async_delete_many*
+    return await result_parser.async_post_redirect_get*
+    return await result_parser.async_update_one*
+    return await result_parser.async_patch_many*
+    return await result_parser.async_update_one*
+    return await result_parser.async_update_many*
