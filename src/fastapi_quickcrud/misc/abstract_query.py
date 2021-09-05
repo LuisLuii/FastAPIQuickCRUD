@@ -78,7 +78,9 @@ class SQLAlchemyQueryService(object):
         return join_table_instance_list
 
 
-    def get_join_by_excpression(self,stmt: BinaryExpression, join_mode) -> BinaryExpression:
+    def get_join_by_excpression(self,stmt: BinaryExpression, join_mode = None) -> BinaryExpression:
+        if not join_mode:
+            return stmt
         for join_table, data in join_mode.items():
             for local_reference in data['local_reference_pairs_set']:
                 local = local_reference['local']['local_column']
@@ -129,8 +131,7 @@ class SQLAlchemyQueryService(object):
             if order_by_query_list:
                 stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        if join_mode:
-            stmt = self.get_join_by_excpression(stmt,join_mode=join_mode)
+        stmt = self.get_join_by_excpression(stmt,join_mode=join_mode)
 
         return stmt
 
