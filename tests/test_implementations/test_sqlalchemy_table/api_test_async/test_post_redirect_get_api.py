@@ -7,11 +7,11 @@ from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import CrudMethods
 from src.fastapi_quickcrud import crud_router_builder
-from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, \
     UntitledTable256
 
-UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                      crud_methods=[
                                                          CrudMethods.POST_REDIRECT_GET
                                                      ],
@@ -74,7 +74,7 @@ test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_sess
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                      crud_methods=[
                                                          CrudMethods.FIND_ONE
                                                      ],
@@ -116,7 +116,7 @@ test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     tags=["test"]
                                     )
 
-UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.POST_REDIRECT_GET
                                                ],

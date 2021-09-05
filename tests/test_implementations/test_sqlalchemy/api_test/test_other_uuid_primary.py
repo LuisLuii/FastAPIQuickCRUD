@@ -44,11 +44,10 @@ class UUIDTable(Base):
     unique_fields = ['primary_key', 'int4_value', 'float4_value']
     __tablename__ = 'test_uuid_primary_sync'
     __table_args__ = (
-        UniqueConstraint('id', 'int4_value', 'float4_value'),
+        UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
+    primary_key = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
                 server_default=text("uuid_generate_v4()"))
-    primary_key = synonym('id')
     bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))

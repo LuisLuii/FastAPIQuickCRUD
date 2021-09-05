@@ -1,9 +1,12 @@
-from typing import Optional, Dict, List
+from typing import (Optional,
+                    Dict,
+                    List)
 
 from pydantic import BaseModel
 from pydantic.main import ModelMetaclass
 
-from .exceptions import RequestMissing, InvalidRequestMethod
+from .exceptions import (RequestMissing,
+                         InvalidRequestMethod)
 from .type import CrudMethods
 
 
