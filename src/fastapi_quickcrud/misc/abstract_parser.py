@@ -6,8 +6,6 @@ from pydantic import parse_obj_as
 from starlette.responses import Response, RedirectResponse
 
 from .exceptions import FindOneApiNotRegister
-
-
 # class ResultParserBase(ABC):
 #
 #     @abstractmethod
@@ -135,11 +133,10 @@ class SQLAlchemyResultParse(object):
                     result[key][foreign_column] = value_
             else:
                 result[key_] = value_
-        if 'join_mode' in kwargs:
-            join = kwargs['join_mode']
-            if join:
-                result = group_find_many_join([result])[0]
-        # result = parse_obj_as(response_model, data_dict)
+
+        join = kwargs.get('join_mode', None)
+        if join:
+            result = group_find_many_join([result])[0]
         fastapi_response.headers["x-total-count"] = str(1)
         return result
 
@@ -160,7 +157,7 @@ class SQLAlchemyResultParse(object):
         #     print(dir(table))
         #     print(table._asdict())
         # FIXME handle NO_CONTENT
-        join = kwargs['join_mode']
+        join = kwargs.get('join_mode', None)
         result = sql_execute_result.fetchall()
         if not result:
             return Response(status_code=HTTPStatus.NO_CONTENT)
@@ -284,7 +281,7 @@ class SQLAlchemyResultParse(object):
         if not sql_execute_result.rowcount:
             return Response(status_code=HTTPStatus.NO_CONTENT)
 
-        deleted_rows= sql_execute_result.fetchall()
+        deleted_rows = sql_execute_result.fetchall()
         deleted_rows_dict = [dict(deleted_row) for deleted_row in deleted_rows]
         result = parse_obj_as(response_model, deleted_rows_dict)
         fastapi_response.headers["x-total-count"] = str(len(deleted_rows_dict))
@@ -594,13 +591,11 @@ class SQLAlchemyTableResultParse(object):
         redirect_url = fastapi_request.url.path + "/" + str(primary_key_field)
         return redirect_url
 
-
     def get_post_redirect_get_url(self, response_model, sql_execute_result, fastapi_request):
         redirect_url = self.post_redirect_get_sub_func(response_model, sql_execute_result, fastapi_request)
         header_dict = {i[0].decode("utf-8"): i[1].decode("utf-8") for i in fastapi_request.headers.__dict__['_list']}
         redirect_url += f'?{urlencode(header_dict)}'
         return redirect_url
-
 
     async def async_post_redirect_get(self, *, response_model, sql_execute_result, fastapi_request, **kwargs):
         session = kwargs['session']
