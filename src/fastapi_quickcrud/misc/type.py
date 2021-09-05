@@ -21,6 +21,17 @@ class CrudMethods(Enum):
     DELETE_MANY = "DELETE_MANY"
     POST_REDIRECT_GET = "POST_REDIRECT_GET"
 
+    @staticmethod
+    def get_table_full_crud_method():
+        return [CrudMethods.FIND_MANY,CrudMethods.UPSERT_ONE,CrudMethods.UPDATE_MANY,CrudMethods.PATCH_MANY,
+                CrudMethods.DELETE_MANY]
+    @staticmethod
+    def get_declarative_model_full_crud_method():
+        return [CrudMethods.FIND_MANY,CrudMethods.FIND_ONE,
+                CrudMethods.UPDATE_MANY,CrudMethods.UPDATE_ONE,
+                CrudMethods.PATCH_MANY,CrudMethods.PATCH_ONE,CrudMethods.UPSERT_ONE,
+                CrudMethods.DELETE_MANY,CrudMethods.DELETE_ONE]
+
 
 class RequestMethods(Enum):
     GET = "GET"
@@ -115,3 +126,5 @@ class JSONBMatchingMode(str, Enum):
 class SessionObject(StrEnum):
     sqlalchemy = auto()
     databases = auto()
+
+

@@ -4,9 +4,10 @@ from sqlalchemy import and_, text, select, delete, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.schema import Table
+
 from .exceptions import UnknownOrderType, UpdateColumnEmptyException, UnknownColumn
 from .type import Ordering
-from .utils import alias_to_column
+from .utils import clean_input_fields
 from .utils import find_query_builder
 
 
@@ -38,8 +39,6 @@ from .utils import find_query_builder
 #         raise NotImplementedError
 
 
-
-
 class SQLAlchemyQueryService(object):
 
     def __init__(self, *, model, async_mode):
@@ -57,26 +56,42 @@ class SQLAlchemyQueryService(object):
             self.model_columns = model
         self.async_mode = async_mode
 
-
     def insert_one(self, *,
-                   insert_args):
+                   insert_args) -> BinaryExpression:
         insert_args = insert_args.__dict__
-        update_columns = alias_to_column(insert_args,
-                                         self.model_columns)
+        update_columns = clean_input_fields(insert_args,
+                                            self.model_columns)
         insert_stmt = insert(self.model).values(update_columns)
         insert_stmt = insert_stmt.returning(text("*"))
         return insert_stmt
 
     def get_many(self, *,
+                 join_mode,
                  query,
-                 ):
+                 ) -> BinaryExpression:
         filter_args = query.__dict__
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
         order_by_columns = filter_args.pop('order_by_columns', None)
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model_columns)
-        stmt = select(self.model).where(and_(*filter_list))
+        join_table_instance_list = []
+        if join_mode:
+            for table_name, table_instance in join_mode.items():
+                for local_reference in table_instance['local_reference_pairs_set']:
+                    if 'exclude' in local_reference and local_reference['exclude']:
+                        continue
+                    for column in local_reference['reference_table_columns']:
+                        foreign_name = local_reference['local']['local_column']
+                        join_table_instance_list.append(
+                            column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+
+        if not isinstance(self.model, Table):
+            model = self.model.__table__
+        else:
+            model = self.model
+
+        stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list))
         if order_by_columns:
             order_by_query_list = []
 
@@ -94,14 +109,25 @@ class SQLAlchemyQueryService(object):
                     order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
                 else:
                     raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
-            stmt = stmt.order_by(*order_by_query_list)
+            if order_by_query_list:
+                stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
+        if join_mode:
+            for join_table, data in join_mode.items():
+                for local_reference in data['local_reference_pairs_set']:
+                    local = local_reference['local']['local_column']
+                    reference = local_reference['reference']['reference_column']
+                    local_column = getattr(local_reference['local_table_columns'], local)
+                    reference_column = getattr(local_reference['reference_table_columns'], reference)
+                    table = local_reference['reference_table']
+                    stmt = stmt.join(table, local_column == reference_column)
+
         return stmt
 
     def get_one(self, *,
                 extra_args,
                 filter_args,
-                ):
+                ) -> BinaryExpression:
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
@@ -112,10 +138,11 @@ class SQLAlchemyQueryService(object):
         stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
         return stmt
 
-    def upsert(self, *, insert_arg,
+    def upsert(self, *,
+               insert_arg,
                unique_fields: List[str],
                upsert_one=True,
-               ):
+               ) -> BinaryExpression:
         insert_arg_dict: Union[list, dict] = insert_arg.__dict__
 
         insert_with_conflict_handle = insert_arg_dict.pop('on_conflict', None)
@@ -127,21 +154,21 @@ class SQLAlchemyQueryService(object):
 
         if not isinstance(insert_arg_dict, list):
             insert_arg_dict: list[dict] = [insert_arg_dict]
-        insert_arg_dict: list[dict] = [alias_to_column(model=self.model_columns, param=insert_arg)
+        insert_arg_dict: list[dict] = [clean_input_fields(model=self.model_columns, param=insert_arg)
                                        for insert_arg in insert_arg_dict]
         insert_stmt = insert(self.model).values(insert_arg_dict)
 
         if unique_fields and insert_with_conflict_handle:
-            update_columns = alias_to_column(insert_with_conflict_handle.__dict__.get('update_columns', None),
-                                             self.model_columns)
+            update_columns = clean_input_fields(insert_with_conflict_handle.__dict__.get('update_columns', None),
+                                                self.model_columns)
             if not update_columns:
                 raise UpdateColumnEmptyException('update_columns parameter must be a non-empty list ')
             conflict_update_dict = {}
             for columns in update_columns:
                 conflict_update_dict[columns] = getattr(insert_stmt.excluded, columns)
 
-            conflict_list = alias_to_column(model=self.model_columns, param=unique_fields)
-            conflict_update_dict = alias_to_column(model=self.model_columns, param=conflict_update_dict, column_collection=True)
+            conflict_list = clean_input_fields(model=self.model_columns, param=unique_fields)
+            conflict_update_dict = clean_input_fields(model=self.model_columns, param=conflict_update_dict)
             insert_stmt = insert_stmt.on_conflict_do_update(index_elements=conflict_list,
                                                             set_=conflict_update_dict
                                                             )
@@ -154,7 +181,7 @@ class SQLAlchemyQueryService(object):
                *,
                delete_args,
                primary_key=None,
-               ):
+               ) -> BinaryExpression:
         delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model_columns)
@@ -172,7 +199,7 @@ class SQLAlchemyQueryService(object):
                update_args,
                extra_query,
                primary_key=None,
-               ):
+               ) -> BinaryExpression:
         update_args = update_args.__dict__
         extra_query = extra_query.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=extra_query,
