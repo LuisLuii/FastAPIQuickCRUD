@@ -176,13 +176,17 @@ class SQLALChemyBaseRouteSource(object):
                                        url_param=Depends(request_url_param_model),
                                        query=Depends(request_query_model),
                                        session=Depends(db_session)):
+
+                join = query.__dict__.pop('join_foreign_table', None)
                 stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param)
+                                             extra_args=url_param,
+                                             join_mode=join)
                 query_result = execute_service.execute(session, stmt)
                 response_result = parsing_service.find_one(response_model=response_model,
                                                            sql_execute_result=query_result,
                                                            fastapi_response=response,
-                                                           session=session)
+                                                           session=session,
+                                                           join_mode=join)
                 return response_result
         else:
             @api.get(path, status_code=200, response_model=response_model, dependencies=dependencies)
@@ -191,14 +195,18 @@ class SQLALChemyBaseRouteSource(object):
                                                    url_param=Depends(request_url_param_model),
                                                    query=Depends(request_query_model),
                                                    session=Depends(db_session)):
+
+                join = query.__dict__.pop('join_foreign_table', None)
                 stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param)
+                                             extra_args=url_param,
+                                             join_mode=join)
                 query_result = await execute_service.async_execute(session, stmt)
 
                 response_result = await parsing_service.async_find_one(response_model=response_model,
                                                                        sql_execute_result=query_result,
                                                                        fastapi_response=response,
-                                                                       session=session)
+                                                                       session=session,
+                                                                       join_mode=join)
                 return response_result
 
     @classmethod
@@ -241,7 +249,7 @@ class SQLALChemyBaseRouteSource(object):
                              db_session)
                          ):
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(query=query, join_mode= join)
+                stmt = query_service.get_many(query=query, join_mode=join)
                 query_result = execute_service.execute(session, stmt)
                 parsed_response = parsing_service.find_many(response_model=response_model,
                                                             sql_execute_result=query_result,
@@ -759,8 +767,6 @@ class SQLALChemyBaseRouteSource(object):
                                                  sql_execute_result=query_result,
                                                  fastapi_response=response,
                                                  session=session)
-
-
 
 # class SQLALChemyMySQLRouteSource(object):
 #

@@ -1193,40 +1193,11 @@ class UntitledTable256(Base):
     array_str__value = Column(ARRAY(String()))
     box_valaue = Column(NullType)
 
-# user_model_set = sqlalchemy_to_pydantic(db_model=WidgetLayout,
-#                                         crud_methods=[
-#                                             CrudMethods.FIND_MANY,
-#                                             CrudMethods.FIND_ONE,
-#                                             CrudMethods.UPSERT_ONE,
-#                                             CrudMethods.UPDATE_MANY,
-#                                             CrudMethods.UPDATE_ONE,
-#                                             CrudMethods.DELETE_ONE,
-#                                             CrudMethods.DELETE_MANY,
-#                                             CrudMethods.PATCH_MANY,
-#
-#                                         ],
-#                                         exclude_columns=['bytea_value'])
-#
-# friend_model_set = sqlalchemy_table_to_pydantic(db_model=t_link_user_group_site_func,
-#                                                 crud_methods=[
-#                                                     CrudMethods.FIND_MANY,
-#                                                     CrudMethods.UPSERT_MANY,
-#                                                     CrudMethods.UPDATE_MANY,
-#                                                     CrudMethods.DELETE_MANY,
-#                                                     CrudMethods.PATCH_MANY,
-#
-#                                                 ],
-#                                                 exclude_columns=[])
-#
-#
-# crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-#                                    crud_models=user_model_set,
-#                                    db_model=WidgetLayout,
-#                                    prefix="/widget",
-#                                    dependencies=[],
-#                                    async_mode=True,
-#                                    tags=["widget"]
-#                                    )
+    def test(self):
+        print('ok')
+
+
+
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
                                    db_model=UntitledTable256,
                                    exclude_columns=['bytea_value','xml_value','box_valaue'],
