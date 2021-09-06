@@ -57,10 +57,13 @@ I believe that everyone who's working with FastApi and building some RESTful of 
   - [x] **CRUD route automatically generated** - Support Declarative class definitions and Imperative table
     
   - [x] **Flexible API request** - `UPDATE ONE/MANY` `FIND ONE/MANY` `PATCH ONE/MANY` `DELETE ONE/MANY` supports Path Parameters (primary key) and Query Parameters as a command to the resource to filter and limit the scope of the scope of data in request.
+     
+  - [x] **SQL Relationship** - `FIND ONE/MANY` supports Path get data with relationship
     
 ## Constraint
    
   - ❌ Alias is not support yet
+  - ❌ Only support PostgreSQL, since using RETURNING clause (still think about how to deal with different SQL in general instead of RETURNING)
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
   - ❌ **Composite primary key** is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
@@ -167,17 +170,48 @@ app.include_router(crud_route_2)
 
 ### Main module
 
-#### covert SQLAlchemy to model set
+#### Generate CRUD router
 
+**crud_router_builder args**
+- db_session [Require] `execute session generator` 
+    - example:
+        - sync SQLALchemy:
+      ```python
+        def get_transaction_session():
+            try:
+                db = sessionmaker(...)
+                yield db
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                raise e
+            finally:
+                db.close()
+        ```
+        - Async SQLALchemy
+        ```python
+        async def get_transaction_session() -> AsyncSession:
+            async with async_session() as session:
+                async with session.begin():
+                    yield session
+        ```
+- db_model [Require] `SQLALchemy Declarative Base Class or Table`
+    
+    >  **Note**: There are some constraint in the SQLALchemy Schema
+    
+- async_mode  [Optional (auto set by db_session)] `bool`: if your db session is async
+    
+    >  **Note**: require async session generator if True
+    
+- autocommit [Optional (default True)] `bool`: if you don't need to commit by your self    
+    
+    >  **Note**: require handle the commit in your async session generator if False
+    
+- dependencies [Optional]: API dependency injection of fastapi
+        
+    >  **Note**: Get the example usage in `./example`        
 
-use **sqlalchemy_to_pydantic** if SQLAlchemy model is Declarative Base Class
-
-use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Table
-
-
-- argument:
-  - db_model: ```SQLALchemy Declarative Base Class or Table```
-  - crud_methods: ```CrudMethods```
+- crud_methods: ```CrudMethods```
     > - CrudMethods.FIND_ONE
     > - CrudMethods.FIND_MANY
     > - CrudMethods.UPDATE_ONE
@@ -190,57 +224,11 @@ use **sqlalchemy_table_to_pydantic** if SQLAlchemy model is Table
     > - CrudMethods.DELETE_MANY
     > - CrudMethods.POST_REDIRECT_GET
 
-  - exclude_columns: `list` 
-    > set the columns that not to be operated but the columns should nullable or set the default value)
+- exclude_columns: `list` 
+  > set the columns that not to be operated but the columns should nullable or set the default value)
 
-----
-
-#### Generate CRUD router
-
-**crud_router_builder**
-- db_session: `execute session generator` 
-    - example:
-        - sync SQLALchemy:
-```python
-def get_transaction_session():
-    try:
-        db = sessionmaker(...)
-        yield db
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise e
-    finally:
-        db.close()
-```
-
-- Async SQLALchemy
-```python
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
-```
-- db_model `SQLALchemy Declarative Base Class or Table`
-    
-    >  **Note**: There are some constraint in the SQLALchemy Schema
-    
-- async_mode`bool`: if your db session is async
-    
-    >  **Note**: require async session generator if True
-    
-- autocommit`bool`: if you don't need to commit by your self    
-    
-    >  **Note**: require handle the commit in your async session generator if False
-    
-- dependencies: API dependency injection of fastapi
-        
-    >  **Note**: Get the example usage in `./example`        
-
-- crud_models `sqlalchemy_to_pydantic` 
 
 - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
-
 
 
 # Design
@@ -397,24 +385,133 @@ The tool uses `unique columns` in the table as a parameter of on conflict , and 
 
 ![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
+## Relationship
 
-## Alias
-
-Alias is supported already
-
-usage:
-
+Now, `FIND_ONE` and `FIND_MANY` are supporting select data with join operation
 ```python
-id = Column('primary_key',Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-```
 
-you can use info argument to set the alias name of column, 
-and use synonym to map the column between alias column and original column
+class Parent(Base):
+    __tablename__ = 'parent_o2o'
+    id = Column(Integer, primary_key=True)
+    children = relationship("Child", back_populates="parent")
 
-```python
-id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-primary_key = synonym('id')
+class Child(Base):
+    __tablename__ = 'child_o2o'
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'))
+    parent = relationship("Parent", back_populates="children")
 ```
+there is a relationship with using back_populates between Parent table and Child table, the `parent_id` in `Child` will refer to `id` column in `Parent`.
+
+`FastApi Quick CRUD` will generate an api with a `join_foreign_table` field, and get api will respond to your selection of the reference data row of the corresponding table in `join_foreign_table` field, 
+
+![join_1](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_preview_1.png?raw=true)
+
+![join_2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_preview_2.png?raw=true)
+
+* Try Request
+now there are some data in these two table
+  
+![parent](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_parent.png?raw=true)
+
+![child](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_child.png?raw=true)
+
+when i request
+* Case One
+    ```commandline
+    curl -X 'GET' \
+    'http://0.0.0.0:8000/parent?join_foreign_table=child_o2o' \
+    -H 'accept: application/json'
+    ```
+    Response data
+    ```json
+    [
+      {
+        "id_foreign": [
+          {
+            "id": 1,
+            "parent_id": 1
+          },
+          {
+            "id": 2,
+            "parent_id": 1
+          }
+        ],
+        "id": 1
+      },
+      {
+        "id_foreign": [
+          {
+            "id": 3,
+            "parent_id": 2
+          },
+          {
+            "id": 4,
+            "parent_id": 2
+          }
+        ],
+        "id": 2
+      }
+    ]
+    ```
+    Response headers
+    ```text
+     x-total-count: 4 
+    ```
+    
+    There are response 4 data, response data will be grouped by the parent row, if the child refer to the same parent row
+    
+* Case Two
+    ```commandline
+    curl -X 'GET' \
+    'http://0.0.0.0:8000/child?join_foreign_table=parent_o2o' \
+    -H 'accept: application/json'
+    ```
+    Response data
+    ```json
+    [
+      {
+        "parent_id_foreign": [
+          {
+            "id": 1
+          }
+        ],
+        "id": 1,
+        "parent_id": 1
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 1
+          }
+        ],
+        "id": 2,
+        "parent_id": 1
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 2
+          }
+        ],
+        "id": 3,
+        "parent_id": 2
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 2
+          }
+        ],
+        "id": 4,
+        "parent_id": 2
+      }
+    ]
+    ```
+    Response Header
+    ```text
+    x-total-count: 4 
+    ```
 
 #### FastAPI_quickcrud Response Status Code standard 
 
@@ -450,4 +547,4 @@ If there are no users in the system, then, in this case, you should return 204.
 ### TODO
 
 - handle relationship
-- support MYSQL , MSSQL cfand Sqllite
+- support MYSQL , MSSQL and Sql-lite
