@@ -65,8 +65,10 @@ class SQLAlchemyQueryService(object):
         insert_stmt = insert_stmt.returning(text("*"))
         return insert_stmt
 
-    def get_join_select_fields(self, join_mode):
+    def get_join_select_fields(self, join_mode = None):
         join_table_instance_list = []
+        if not join_mode:
+            return join_table_instance_list
         for table_name, table_instance in join_mode.items():
             for local_reference in table_instance['local_reference_pairs_set']:
                 if 'exclude' in local_reference and local_reference['exclude']:
@@ -101,9 +103,7 @@ class SQLAlchemyQueryService(object):
         order_by_columns = filter_args.pop('order_by_columns', None)
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model_columns)
-        join_table_instance_list = []
-        if join_mode:
-            join_table_instance_list = self.get_join_select_fields(join_mode)
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
 
         if not isinstance(self.model, Table):
             model = self.model.__table__
@@ -147,9 +147,7 @@ class SQLAlchemyQueryService(object):
 
         extra_query_expression: List[BinaryExpression] = find_query_builder(param=extra_args,
                                                                             model=self.model_columns)
-        join_table_instance_list = []
-        if join_mode:
-            join_table_instance_list = self.get_join_select_fields(join_mode)
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
         if not isinstance(self.model, Table):
             model = self.model.__table__
         else:

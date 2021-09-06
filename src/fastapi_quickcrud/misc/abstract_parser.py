@@ -118,27 +118,43 @@ class SQLAlchemyResultParse(object):
 
     @staticmethod
     def find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs):
-        one_row_data = sql_execute_result.fetchone()
+        join = kwargs.get('join_mode', None)
+        one_row_data = sql_execute_result.fetchall()
         if not one_row_data:
             return Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
         # row, = one_row_data
-        result__ = copy.deepcopy(dict(one_row_data))
-        result = {}
-        for key_, value_ in result__.items():
-            if '_____' in key_:
-                key, foreign_column = key_.split('_____')
-                if key not in result:
-                    result[key] = {foreign_column: value_}
+        response = []
+        for i in one_row_data:
+            i = dict(i)
+            result__ = copy.deepcopy(i)
+            tmp = {}
+            for key_, value_ in result__.items():
+                if '_____' in key_:
+                    key, foreign_column = key_.split('_____')
+                    if key not in tmp:
+                        tmp[key] = {foreign_column: value_}
+                    else:
+                        tmp[key][foreign_column] = value_
                 else:
-                    result[key][foreign_column] = value_
-            else:
-                result[key_] = value_
+                    tmp[key_] = value_
+            response.append(tmp)
+        # result = {}
+        # for key_, value_ in result__.items():
+        #     if '_____' in key_:
+        #         key, foreign_column = key_.split('_____')
+        #         if key not in result:
+        #             result[key] = {foreign_column: value_}
+        #         else:
+        #             result[key][foreign_column] = value_
+        #     else:
+        #         result[key_] = value_
 
-        join = kwargs.get('join_mode', None)
         if join:
-            result = group_find_many_join([result])[0]
+            response = group_find_many_join(response)
+        if isinstance(response, list):
+            response = response[0]
         fastapi_response.headers["x-total-count"] = str(1)
-        return result
+        return response
 
     async def async_find_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
         result = self.find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs)
