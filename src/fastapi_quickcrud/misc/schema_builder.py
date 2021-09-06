@@ -963,6 +963,12 @@ class ApiParameterSchemaBuilder():
         #     response_model = _add_validators(response_model, {"root_validator": validator_function}, config=OrmConfig)
         # else:
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
+        response_model = create_model(
+            f'{self.db_name + str(uuid.uuid4())}_FindOneResponseListModel',
+            **{'__root__': (response_model, None), '__base__': ExcludeUnsetBaseModel}
+        )
+
         return self._primary_key_dataclass_model, request_query_model, None, response_model, None
 
     def delete_one(self) -> Tuple:

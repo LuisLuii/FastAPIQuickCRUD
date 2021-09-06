@@ -97,6 +97,22 @@ def test_get_many_with_join():
         }
     ]
 
+    response = client.get('/parent/1?join_foreign_table=child_one_to_many', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id_foreign": [
+                {
+                    "id": 1,
+                    "parent_id": 1
+                },
+                {
+                    "id": 2,
+                    "parent_id": 1
+                }
+            ],
+            "id": 1
+        }
+
 
 def test_get_child_many_with_join():
     headers = {
@@ -122,6 +138,12 @@ def test_get_child_many_with_join():
             "id": 4,
             "parent_id": 2
         }]
+    response = client.get('/child/1', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id": 1,
+            "parent_id": 1
+        }
 
 
 def test_get_many_without_join():
@@ -142,6 +164,12 @@ def test_get_many_without_join():
             "id": 2
         }
     ]
+
+    response = client.get('/parent/1', headers=headers, data=data)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id": 1
+        }
 
 
 def setup_module(module):
