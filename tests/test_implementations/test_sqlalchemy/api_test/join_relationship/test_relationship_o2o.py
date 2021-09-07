@@ -44,6 +44,8 @@ class Child(Base):
     # many-to-one scalar
     parent = relationship("Parent", back_populates="children")
 
+    def test_function(self, *args, **kwargs ):
+        print("hello")
 crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
                                        prefix="/child",
