@@ -43,3 +43,48 @@ try:
 except PrimaryMissing as e:
     print(str(e))
     assert 'The generation of this API [PATCH_ONE] requires a primary key' in str(e)
+
+
+try:
+    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+                                                   crud_methods=[
+                                                       CrudMethods.FIND_ONE,
+                                                   ],
+                                                   exclude_columns=['xml_value', 'box_valaue'])
+except PrimaryMissing as e:
+    print(str(e))
+    assert 'The generation of this API [FIND_ONE] requires a primary key' in str(e)
+
+
+try:
+    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+                                                   crud_methods=[
+                                                       CrudMethods.DELETE_ONE,
+                                                   ],
+                                                   exclude_columns=['xml_value', 'box_valaue'])
+except PrimaryMissing as e:
+    print(str(e))
+    assert 'The generation of this API [DELETE_ONE] requires a primary key' in str(e)
+
+
+try:
+    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+                                                   crud_methods=[
+                                                       CrudMethods.UPDATE_ONE,
+                                                   ],
+                                                   exclude_columns=['xml_value', 'box_valaue'])
+except PrimaryMissing as e:
+    print(str(e))
+    assert 'The generation of this API [UPDATE_ONE] requires a primary key' in str(e)
+
+
+try:
+    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+                                                   crud_methods=[
+                                                       CrudMethods.POST_REDIRECT_GET,
+                                                   ],
+                                                   exclude_columns=['xml_value', 'box_valaue'])
+except PrimaryMissing as e:
+    print(str(e))
+    assert 'The generation of this API [POST_REDIRECT_GET] requires a primary key' in str(e)
+

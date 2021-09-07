@@ -520,7 +520,8 @@ class SQLAlchemyTableResultParse(object):
     @staticmethod
     def upsert_one_sub_func(response_model, sql_execute_result, fastapi_response):
         sql_execute_result = sql_execute_result.fetchone()
-        result = parse_obj_as(response_model, dict(sql_execute_result))
+        a = dict(sql_execute_result)
+        result = parse_obj_as(response_model, a)
         fastapi_response.headers["x-total-count"] = str(1)
         return result
 
