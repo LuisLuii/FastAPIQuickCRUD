@@ -84,7 +84,6 @@ def crud_router_builder(
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
-    from inspect import getmembers, isfunction
 
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
