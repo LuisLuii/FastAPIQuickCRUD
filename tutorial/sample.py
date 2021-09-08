@@ -58,15 +58,15 @@ async def startup_event():
 
 class Parent(Base):
     __tablename__ = 'parent_o2o'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True,info=({'description':'parent_test'}))
 
     # one-to-many collection
     children = relationship("Child", back_populates="parent")
 
 class Child(Base):
     __tablename__ = 'child_o2o'
-    id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey('parent_o2o.id'))
+    id = Column(Integer, primary_key=True,info=({'description':'child_pk_test'}))
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
 
     # many-to-one scalar
     parent = relationship("Parent", back_populates="children")
@@ -92,7 +92,6 @@ crud_route_child = crud_router_builder(db_session=get_transaction_session,
 
 crud_route_parent = crud_router_builder(db_session=get_transaction_session,
                                         db_model=Parent,
-                                        crud_methods=[Ordering.DESC],
                                         prefix="/parent",
                                         tags=["parent"]
                                         )
