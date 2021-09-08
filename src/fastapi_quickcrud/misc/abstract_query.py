@@ -65,6 +65,34 @@ class SQLAlchemyQueryService(object):
         insert_stmt = insert_stmt.returning(text("*"))
         return insert_stmt
 
+    def get_join_select_fields(self, join_mode = None):
+        join_table_instance_list = []
+        if not join_mode:
+            return join_table_instance_list
+        for table_name, table_instance in join_mode.items():
+            for local_reference in table_instance['local_reference_pairs_set']:
+                if 'exclude' in local_reference and local_reference['exclude']:
+                    continue
+                for column in local_reference['reference_table_columns']:
+                    foreign_name = local_reference['local']['local_column']
+                    join_table_instance_list.append(
+                        column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+        return join_table_instance_list
+
+
+    def get_join_by_excpression(self,stmt: BinaryExpression, join_mode = None) -> BinaryExpression:
+        if not join_mode:
+            return stmt
+        for join_table, data in join_mode.items():
+            for local_reference in data['local_reference_pairs_set']:
+                local = local_reference['local']['local_column']
+                reference = local_reference['reference']['reference_column']
+                local_column = getattr(local_reference['local_table_columns'], local)
+                reference_column = getattr(local_reference['reference_table_columns'], reference)
+                table = local_reference['reference_table']
+                stmt = stmt.join(table, local_column == reference_column)
+        return stmt
+
     def get_many(self, *,
                  join_mode,
                  query,
@@ -75,16 +103,7 @@ class SQLAlchemyQueryService(object):
         order_by_columns = filter_args.pop('order_by_columns', None)
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
                                                                  model=self.model_columns)
-        join_table_instance_list = []
-        if join_mode:
-            for table_name, table_instance in join_mode.items():
-                for local_reference in table_instance['local_reference_pairs_set']:
-                    if 'exclude' in local_reference and local_reference['exclude']:
-                        continue
-                    for column in local_reference['reference_table_columns']:
-                        foreign_name = local_reference['local']['local_column']
-                        join_table_instance_list.append(
-                            column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
 
         if not isinstance(self.model, Table):
             model = self.model.__table__
@@ -112,21 +131,14 @@ class SQLAlchemyQueryService(object):
             if order_by_query_list:
                 stmt = stmt.order_by(*order_by_query_list)
         stmt = stmt.limit(limit).offset(offset)
-        if join_mode:
-            for join_table, data in join_mode.items():
-                for local_reference in data['local_reference_pairs_set']:
-                    local = local_reference['local']['local_column']
-                    reference = local_reference['reference']['reference_column']
-                    local_column = getattr(local_reference['local_table_columns'], local)
-                    reference_column = getattr(local_reference['reference_table_columns'], reference)
-                    table = local_reference['reference_table']
-                    stmt = stmt.join(table, local_column == reference_column)
+        stmt = self.get_join_by_excpression(stmt,join_mode=join_mode)
 
         return stmt
 
     def get_one(self, *,
                 extra_args,
                 filter_args,
+                join_mode
                 ) -> BinaryExpression:
         filter_args = filter_args.__dict__
         extra_args = extra_args.__dict__
@@ -135,7 +147,14 @@ class SQLAlchemyQueryService(object):
 
         extra_query_expression: List[BinaryExpression] = find_query_builder(param=extra_args,
                                                                             model=self.model_columns)
-        stmt = select(self.model).where(and_(*filter_list + extra_query_expression))
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
+        if not isinstance(self.model, Table):
+            model = self.model.__table__
+        else:
+            model = self.model
+
+        stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list + extra_query_expression))
+        stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
         return stmt
 
     def upsert(self, *,

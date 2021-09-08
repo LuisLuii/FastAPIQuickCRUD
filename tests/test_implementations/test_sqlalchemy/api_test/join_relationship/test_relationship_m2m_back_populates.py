@@ -147,47 +147,31 @@ def test_get_parent_many_with_join():
         }
     ]
 
-    response = client.get('/parent?join_foreign_table=test_right_second', headers=headers)
+    response = client.get('/parent/1?join_foreign_table=test_right', headers=headers)
     assert response.status_code == 200
-    assert response.json() == [
-        {
-            "right_id_second_foreign": [
+    assert response.json() == {
+            "right_id_foreign": [
                 {
                     "id": 1
                 }
             ],
             "id": 1
-        },
-        {
-            "right_id_second_foreign": [
-                {
-                    "id": 2
-                }
-            ],
-            "id": 2
-        },
-        {
-            "right_id_second_foreign": [
-                {
-                    "id": 3
-                }
-            ],
-            "id": 3
-        },
-        {
-            "right_id_second_foreign": [
-                {
-                    "id": 4
-                }
-            ],
-            "id": 4
         }
-    ]
 
-    response = client.get('/parent?join_foreign_table=test_right&join_foreign_table=test_right_second', headers=headers)
+    response = client.get('/parent/1?join_foreign_table=test_right_second', headers=headers)
     assert response.status_code == 200
-    assert response.json() == [
-        {
+    assert response.json() == {
+            "right_id_second_foreign": [
+                {
+                    "id": 1
+                }
+            ],
+            "id": 1
+        }
+
+    response = client.get('/parent/1?join_foreign_table=test_right&join_foreign_table=test_right_second', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
             "right_id_foreign": [
                 {
                     "id": 1
@@ -199,47 +183,7 @@ def test_get_parent_many_with_join():
                 }
             ],
             "id": 1
-        },
-        {
-            "right_id_foreign": [
-                {
-                    "id": 2
-                }
-            ],
-            "right_id_second_foreign": [
-                {
-                    "id": 2
-                }
-            ],
-            "id": 2
-        },
-        {
-            "right_id_foreign": [
-                {
-                    "id": 3
-                }
-            ],
-            "right_id_second_foreign": [
-                {
-                    "id": 3
-                }
-            ],
-            "id": 3
-        },
-        {
-            "right_id_foreign": [
-                {
-                    "id": 4
-                }
-            ],
-            "right_id_second_foreign": [
-                {
-                    "id": 4
-                }
-            ],
-            "id": 4
         }
-    ]
 
 
 def test_get_child_many_without_join():
@@ -655,42 +599,59 @@ def test_get_child_many_second_with_join():
         }
     ]
 
+    response = client.get('/child_second/1', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id": 1
+        }
+
     response = client.get('/child_second?join_foreign_table=test_left', headers=headers)
     assert response.status_code == 200
     assert response.json() == [
-  {
+        {
+            "left_id_second_foreign": [
+                {
+                    "id": 1
+                }
+            ],
+            "id": 1
+        },
+        {
+            "left_id_second_foreign": [
+                {
+                    "id": 2
+                }
+            ],
+            "id": 2
+        },
+        {
+            "left_id_second_foreign": [
+                {
+                    "id": 3
+                }
+            ],
+            "id": 3
+        },
+        {
+            "left_id_second_foreign": [
+                {
+                    "id": 4
+                }
+            ],
+            "id": 4
+        }
+    ]
+
+    response = client.get('/child_second/1?join_foreign_table=test_left', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
     "left_id_second_foreign": [
       {
         "id": 1
       }
     ],
     "id": 1
-  },
-  {
-    "left_id_second_foreign": [
-      {
-        "id": 2
-      }
-    ],
-    "id": 2
-  },
-  {
-    "left_id_second_foreign": [
-      {
-        "id": 3
-      }
-    ],
-    "id": 3
-  },
-  {
-    "left_id_second_foreign": [
-      {
-        "id": 4
-      }
-    ],
-    "id": 4
   }
-]
 
 
 def setup_module(module):

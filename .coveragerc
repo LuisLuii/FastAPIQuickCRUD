@@ -26,3 +26,12 @@ exclude_lines =
     return await result_parser.async_patch_many*
     return await result_parser.async_update_one*
     return await result_parser.async_update_many*
+    return result
+    raise FindOneApiNotRegister*
+    return RedirectResponse.*?redirect_url
+    raise QueryOperatorNotFound(f'The query operator of {column_name} not found!')
+    raise InvalidRequestMethod(f'{request_method} is not an available request method')
+    raise RequestMissing*
+    raise InvalidRequestMethod.*?f'{value} is not an available request method, Please use CrudMethods
+    delattr(received_insert, received_insert_item)
+    delattr(request_or_response_object, name)

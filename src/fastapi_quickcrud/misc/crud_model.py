@@ -12,6 +12,7 @@ from .type import CrudMethods
 
 class RequestResponseModel(BaseModel):
     requestUrlParamModel: Optional[ModelMetaclass]
+    requestRelationshipUrlParamField: Optional[List[str]]
     requestQueryModel: Optional[ModelMetaclass]
     requestBodyModel: Optional[ModelMetaclass]
     responseModel: Optional[ModelMetaclass]
