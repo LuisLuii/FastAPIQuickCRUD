@@ -69,7 +69,7 @@ class SQLAlchemyQueryService(object):
         join_table_instance_list = []
         if not join_mode:
             return join_table_instance_list
-        for table_name, table_instance in join_mode.items():
+        for _, table_instance in join_mode.items():
             for local_reference in table_instance['local_reference_pairs_set']:
                 if 'exclude' in local_reference and local_reference['exclude']:
                     continue
