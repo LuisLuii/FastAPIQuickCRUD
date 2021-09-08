@@ -108,6 +108,19 @@ def test_get_parent_many_with_join():
     ]
 
 
+    response = client.get('/parent/1?join_foreign_table=child_m2o_back_populates', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id": 1,
+            "child_id_foreign": [
+                {
+                    "id": 1
+                }
+            ],
+            "child_id": 1
+        }
+
+
 def test_get_child_many_with_join():
     headers = {
         'accept': '*/*',
@@ -116,8 +129,40 @@ def test_get_child_many_with_join():
 
     response = client.get('/child?join_foreign_table=parent_m2o_back_populates', headers=headers)
     assert response.status_code == 200
+    a = response.json()
     assert response.json() == [
-  {
+        {
+            "id_foreign": [
+                {
+                    "id": 1,
+                    "child_id": 1
+                },
+                {
+                    "id": 2,
+                    "child_id": 1
+                }
+            ],
+            "id": 1
+        },
+        {
+            "id_foreign": [
+                {
+                    "id": 3,
+                    "child_id": 2
+                },
+                {
+                    "id": 4,
+                    "child_id": 2
+                }
+            ],
+            "id": 2
+        }
+    ]
+    response = client.get('/child/1?join_foreign_table=parent_m2o_back_populates', headers=headers)
+    assert response.status_code == 200
+    a = response.json()
+
+    assert response.json() == {
     "id_foreign": [
       {
         "id": 1,
@@ -129,21 +174,7 @@ def test_get_child_many_with_join():
       }
     ],
     "id": 1
-  },
-  {
-    "id_foreign": [
-      {
-        "id": 3,
-        "child_id": 2
-      },
-      {
-        "id": 4,
-        "child_id": 2
-      }
-    ],
-    "id": 2
   }
-]
 
 
 def test_get_child_many_without_join():
@@ -155,24 +186,31 @@ def test_get_child_many_without_join():
     response = client.get('/parent', headers=headers)
     assert response.status_code == 200
     assert response.json() == [
-  {
+        {
+            "id": 1,
+            "child_id": 1
+        },
+        {
+            "id": 2,
+            "child_id": 1
+        },
+        {
+            "id": 3,
+            "child_id": 2
+        },
+        {
+            "id": 4,
+            "child_id": 2
+        }
+    ]
+
+
+    response = client.get('/parent/1', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
     "id": 1,
     "child_id": 1
-  },
-  {
-    "id": 2,
-    "child_id": 1
-  },
-  {
-    "id": 3,
-    "child_id": 2
-  },
-  {
-    "id": 4,
-    "child_id": 2
   }
-]
-
 
 def test_get_parent_many_without_join():
     headers = {
@@ -183,20 +221,25 @@ def test_get_parent_many_without_join():
     response = client.get('/child', headers=headers)
     assert response.status_code == 200
     assert response.json() == [
-  {
-    "id": 1
-  },
-  {
-    "id": 2
-  },
-  {
-    "id": 3
-  },
-  {
-    "id": 4
-  }
-]
+        {
+            "id": 1
+        },
+        {
+            "id": 2
+        },
+        {
+            "id": 3
+        },
+        {
+            "id": 4
+        }
+    ]
 
+    response = client.get('/child/1', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+    "id": 1
+  }
 
 
 def setup_module(module):

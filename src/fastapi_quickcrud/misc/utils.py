@@ -222,7 +222,8 @@ def sqlalchemy_to_pydantic(
             request_url_param_model, \
             request_query_model, \
             request_body_model, \
-            response_model = model_builder.find_one()
+            response_model, \
+            relationship_list = model_builder.find_one()
         elif crud_method.value == CrudMethods.FIND_MANY.value:
             request_query_model, \
             request_body_model, \
@@ -371,6 +372,6 @@ def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
                         response[k].append(v)
             for response_ in response:
                 i.pop(response_, None)
-            result = {**i,**response}
+            result = {**i, **response}
         response_list.append(result)
     return response_list

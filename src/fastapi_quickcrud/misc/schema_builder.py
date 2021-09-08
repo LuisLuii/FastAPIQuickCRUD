@@ -26,8 +26,9 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import declarative_base
 from strenum import StrEnum
+
 from .exceptions import (SchemaException,
-                        ColumnTypeNotSupportedException)
+                         ColumnTypeNotSupportedException)
 from .type import (MatchingPatternInString,
                    RangeFromComparisonOperators,
                    Ordering,
@@ -35,7 +36,6 @@ from .type import (MatchingPatternInString,
                    ExtraFieldTypePrefix,
                    ExtraFieldType,
                    ItemComparisonOperators)
-
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 DataClassT = TypeVar('DataClassT', bound=Any)
@@ -68,6 +68,7 @@ def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs) -> BaseM
                         **field_definitions,
                         __config__=config,
                         __validators__=validators)
+
 
 # def _add_validators(model: Type[BaseModelT], validators, **kwargs) -> Type[BaseModelT]:
 #     """
@@ -251,8 +252,8 @@ class ApiParameterSchemaBuilder():
         if default is ...:
             warnings.warn(
                 f'The column of {primary_key_column.key} has not default value '
-                f'and it is not nullable but in exclude_list'
-                f'it may throw error when you write data through Fast-qucikcrud greated API')
+                f'and it is not nullable and in exclude_list'
+                f'it may throw error when you insert data ')
         primary_column_name = str(primary_key_column.key)
         primary_field_definitions = (primary_column_name, column_type, default)
 
@@ -516,7 +517,7 @@ class ApiParameterSchemaBuilder():
                                               'reference_table_columns': reference_table_instance_.c,
                                               'exclude': False})
 
-            all_fields_ = self._extract_all_field(foreign_table)
+            all_fields_ = self._extract_all_field(foreign_table.__table__.c)
             response_fields = []
             for i in all_fields_:
                 response_fields.append((i['column_name'],
@@ -609,7 +610,7 @@ class ApiParameterSchemaBuilder():
                 default = column.default.arg
             elif column.server_default is not None:
                 default = None
-            elif column.primary_key and column.autoincrement:
+            elif column.primary_key and column.autoincrement == True:
                 default = None
             else:
                 default = ...
@@ -849,8 +850,8 @@ class ApiParameterSchemaBuilder():
 
     def find_many(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param()
-        query_param: List[dict] = self._assign_pagination_param(query_param)
-        query_param: List[dict] = self._assign_foreign_join(query_param)
+        query_param: List[Tuple] = self._assign_pagination_param(query_param)
+        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
 
         response_fields = []
         all_field = deepcopy(self.all_field)
@@ -909,9 +910,16 @@ class ApiParameterSchemaBuilder():
 
     def find_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
-
+        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
         response_fields = []
         all_field = deepcopy(self.all_field)
+
+
+        for i in self.reference_mapper:
+            response_fields.append((f"{i}_foreign",
+                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
+                                    None))
+
         for i in all_field:
             response_fields.append((i['column_name'],
                                     i['column_type'],
@@ -919,14 +927,21 @@ class ApiParameterSchemaBuilder():
 
         request_fields = []
         for i in query_param:
-            assert isinstance(i, dict)
-            request_fields.append((i['column_name'],
-                                   i['column_type'],
-                                   Query(i['column_default'])))
+            assert isinstance(i, dict) or isinstance(i, tuple)
+            if isinstance(i, Tuple):
+                request_fields.append(i)
+            else:
+                request_fields.append((i['column_name'],
+                                       i['column_type'],
+                                       Query(i['column_default'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                      self.uuid_type_columns))
+        if self.table_of_foreign:
+            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
+                                                                                           self.table_of_foreign))
+
         request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
                                              request_fields,
                                              namespace={
@@ -948,7 +963,13 @@ class ApiParameterSchemaBuilder():
         #     response_model = _add_validators(response_model, {"root_validator": validator_function}, config=OrmConfig)
         # else:
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
-        return self._primary_key_dataclass_model, request_query_model, None, response_model
+
+        response_model = create_model(
+            f'{self.db_name + str(uuid.uuid4())}_FindOneResponseListModel',
+            **{'__root__': (response_model, None), '__base__': ExcludeUnsetBaseModel}
+        )
+
+        return self._primary_key_dataclass_model, request_query_model, None, response_model, None
 
     def delete_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
