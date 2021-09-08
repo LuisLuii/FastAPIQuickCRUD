@@ -58,14 +58,14 @@ async def startup_event():
 
 class Parent(Base):
     __tablename__ = 'parent_o2o'
-    id = Column(Integer, primary_key=True,info=({'description':'parent_test'}))
+    id = Column(Integer, primary_key=True,comment='test-test-test')
 
     # one-to-many collection
     children = relationship("Child", back_populates="parent")
 
 class Child(Base):
     __tablename__ = 'child_o2o'
-    id = Column(Integer, primary_key=True,info=({'description':'child_pk_test'}))
+    id = Column(Integer, primary_key=True,comment='child_pk_test')
     parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
 
     # many-to-one scalar
