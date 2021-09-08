@@ -789,7 +789,7 @@ class ApiParameterSchemaBuilder():
 
         # Create on_conflict Model
         all_column_ = [i['column_name'] for i in self.all_field]
-        conflict_columns = ('update_columns'+ str(uuid.uuid4()),
+        conflict_columns = ('update_columns',
                             Optional[List[str]],
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
