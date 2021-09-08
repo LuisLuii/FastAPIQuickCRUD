@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.testclient import TestClient
 
-from src.fastapi_quickcrud import sqlalchemy_table_to_pydantic
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 
@@ -70,7 +70,7 @@ def setup_module(module):
     UUIDTable.create(engine, checkfirst=True)
 
 
-model_1 = sqlalchemy_table_to_pydantic(UUIDTable,
+model_1 = sqlalchemy_to_pydantic(UUIDTable,
                                        crud_methods=[
                                            CrudMethods.FIND_ONE,
                                            CrudMethods.FIND_MANY,
@@ -91,7 +91,7 @@ route_1 = crud_router_builder(db_session=get_transaction_session,
                               tags=["test"]
                               )
 
-model_2 = sqlalchemy_table_to_pydantic(UUIDTable,
+model_2 = sqlalchemy_to_pydantic(UUIDTable,
                                        crud_methods=[
                                            CrudMethods.UPSERT_ONE,
                                            CrudMethods.POST_REDIRECT_GET,
@@ -105,7 +105,7 @@ route_2 = crud_router_builder(db_session=get_transaction_session,
                               tags=["test"]
                               )
 
-model_3 = sqlalchemy_table_to_pydantic(UUIDTable,
+model_3 = sqlalchemy_to_pydantic(UUIDTable,
                                        crud_methods=[
                                            CrudMethods.FIND_ONE,
                                            CrudMethods.POST_REDIRECT_GET,

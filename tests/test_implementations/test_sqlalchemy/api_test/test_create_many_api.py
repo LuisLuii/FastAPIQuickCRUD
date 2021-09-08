@@ -10,6 +10,7 @@ from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
+
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
                                                    CrudMethods.UPSERT_MANY,

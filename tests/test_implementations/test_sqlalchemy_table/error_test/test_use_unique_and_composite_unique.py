@@ -3,7 +3,7 @@ from sqlalchemy import ARRAY, BigInteger,Table, Boolean, CHAR, Column, Date, Dat
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
-from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods, sqlalchemy_table_to_pydantic
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods, sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import SchemaException
 
 Base = declarative_base()
@@ -38,7 +38,7 @@ UntitledTable256 = Table(
 )
 
 try:
-    UntitledTable256Model = sqlalchemy_table_to_pydantic(UntitledTable256,
+    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                    crud_methods=[
                                                        CrudMethods.UPSERT_MANY,
                                                    ],
