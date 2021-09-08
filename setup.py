@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1-Alpha-15'
+VERSION = '0.0.1-Alpha-16'
 
 print("""
 
@@ -52,6 +52,7 @@ if __name__ == '__main__':
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
             "Topic :: Internet :: WWW/HTTP",
         ],
