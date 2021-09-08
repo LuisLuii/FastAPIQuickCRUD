@@ -252,8 +252,8 @@ class ApiParameterSchemaBuilder():
         if default is ...:
             warnings.warn(
                 f'The column of {primary_key_column.key} has not default value '
-                f'and it is not nullable but in exclude_list'
-                f'it may throw error when you write data through Fast-qucikcrud greated API')
+                f'and it is not nullable and in exclude_list'
+                f'it may throw error when you insert data ')
         primary_column_name = str(primary_key_column.key)
         primary_field_definitions = (primary_column_name, column_type, default)
 
@@ -517,7 +517,7 @@ class ApiParameterSchemaBuilder():
                                               'reference_table_columns': reference_table_instance_.c,
                                               'exclude': False})
 
-            all_fields_ = self._extract_all_field(foreign_table)
+            all_fields_ = self._extract_all_field(foreign_table.__table__.c)
             response_fields = []
             for i in all_fields_:
                 response_fields.append((i['column_name'],
@@ -610,7 +610,7 @@ class ApiParameterSchemaBuilder():
                 default = column.default.arg
             elif column.server_default is not None:
                 default = None
-            elif column.primary_key and column.autoincrement:
+            elif column.primary_key and column.autoincrement == True:
                 default = None
             else:
                 default = ...
