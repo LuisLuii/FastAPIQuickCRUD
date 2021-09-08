@@ -2,6 +2,8 @@ from enum import Enum, auto
 
 from strenum import StrEnum
 
+from .exceptions import InvalidRequestMethod
+
 
 class Ordering(StrEnum):
     DESC = auto()
@@ -66,6 +68,8 @@ class CRUDRequestMapping(Enum):
     @classmethod
     def get_request_method_by_crud_method(cls, value):
         crud_methods = cls.__dict__
+        if value not in crud_methods:
+            raise InvalidRequestMethod(f'{value} is not an available request method, Please use CrudMethods to select available crud method')
         return crud_methods[value].value
 
 
