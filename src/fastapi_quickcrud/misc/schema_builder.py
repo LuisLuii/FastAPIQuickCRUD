@@ -21,7 +21,7 @@ from pydantic import (BaseModel,
                       create_model,
                       BaseConfig)
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from sqlalchemy import UniqueConstraint, Table
+from sqlalchemy import UniqueConstraint, Table, Column
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import declarative_base
@@ -203,6 +203,14 @@ class ApiParameterSchemaBuilder():
         else:
             return []
 
+    @staticmethod
+    def _get_field_description(column: Column) -> str:
+        if 'description' not in column.info:
+            return ""
+        if not isinstance(column.info['description'], str):
+            return ""
+        return column.info['description']
+
     def _extract_primary(self) -> Union[tuple, Tuple[Union[str, Any],
                                                      DataClassT,
                                                      Tuple[Union[str, Any],
@@ -249,6 +257,7 @@ class ApiParameterSchemaBuilder():
                 f'The type of column {primary_key_column.key} ({column_type}) not supported yet')
 
         default = self._extra_default_value(primary_key_column)
+        description = self._get_field_description(primary_key_column)
         if default is ...:
             warnings.warn(
                 f'The column of {primary_key_column.key} has not default value '
@@ -260,7 +269,8 @@ class ApiParameterSchemaBuilder():
         primary_columns_model: DataClassT = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PrimaryKeyModel',
                                                            [(primary_field_definitions[0],
                                                              primary_field_definitions[1],
-                                                             Query(primary_field_definitions[2]))],
+                                                             Query(primary_field_definitions[2],
+                                                                   description=description))],
                                                            namespace={
                                                                '__post_init__': lambda
                                                                    self_object: self._value_of_list_to_str(
@@ -284,6 +294,7 @@ class ApiParameterSchemaBuilder():
             if column_name in self._exclude_column:
                 continue
             column_type = str(column.type)
+            description = self._get_field_description(column)
             try:
                 python_type = column.type.python_type
                 if column_type in self.unsupported_data_types:
@@ -293,7 +304,6 @@ class ApiParameterSchemaBuilder():
                     warnings.warn(
                         f'The type of column {column_name} ({column_type}) '
                         f'is not support data query (as a query parameters )')
-
             except NotImplementedError:
                 if column_type == "UUID":
                     python_type = uuid.UUID
@@ -329,7 +339,8 @@ class ApiParameterSchemaBuilder():
                     item_type = base_column_detail.type.item_type.python_type
                     fields.append({'column_name': column_name,
                                    'column_type': List[item_type],
-                                   'column_default': default})
+                                   'column_default': default,
+                                   'column_description': description})
                     continue
             else:
                 raise ColumnTypeNotSupportedException(
@@ -338,11 +349,13 @@ class ApiParameterSchemaBuilder():
             if column_type == "JSONB":
                 fields.append({'column_name': column_name,
                                'column_type': Union[python_type, list],
-                               'column_default': default})
+                               'column_default': default,
+                               'column_description': description})
             else:
                 fields.append({'column_name': column_name,
                                'column_type': python_type,
-                               'column_default': default})
+                               'column_default': default,
+                               'column_description': description})
 
         return fields
 
@@ -626,10 +639,12 @@ class ApiParameterSchemaBuilder():
         for i in [
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.Str + ExtraFieldType.Matching_pattern,
              'column_type': Optional[List[MatchingPatternInString]],
-             'column_default': [MatchingPatternInString.case_sensitive]},
+             'column_default': [MatchingPatternInString.case_sensitive],
+             'column_description': ""},
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.Str,
              'column_type': Optional[List[field_of_param['column_type']]],
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
         ]:
             result_.append(i)
         return result_
@@ -641,10 +656,12 @@ class ApiParameterSchemaBuilder():
                 'column_name': field_of_param[
                                    'column_name'] + f'{ExtraFieldTypePrefix.List}{ExtraFieldType.Comparison_operator}',
                 'column_type': Optional[ItemComparisonOperators],
-                'column_default': ItemComparisonOperators.In},
+                'column_default': ItemComparisonOperators.In,
+             'column_description': ""},
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.List,
              'column_type': Optional[List[field_of_param['column_type']]],
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
 
         ]:
             result_.append(i)
@@ -656,24 +673,27 @@ class ApiParameterSchemaBuilder():
             {'column_name': field_of_param[
                                 'column_name'] + f'{ExtraFieldTypePrefix.From}{ExtraFieldType.Comparison_operator}',
              'column_type': Optional[RangeFromComparisonOperators],
-             'column_default': RangeFromComparisonOperators.Greater_than_or_equal_to},
+             'column_default': RangeFromComparisonOperators.Greater_than_or_equal_to,
+             'column_description': ""},
 
             {'column_name': field_of_param[
                                 'column_name'] + f'{ExtraFieldTypePrefix.To}{ExtraFieldType.Comparison_operator}',
              'column_type': Optional[RangeToComparisonOperators],
-             'column_default': RangeToComparisonOperators.Less_than.Less_than_or_equal_to},
+             'column_default': RangeToComparisonOperators.Less_than.Less_than_or_equal_to,
+             'column_description': field_of_param['column_description']},
         ]:
             result_.append(i)
 
         for i in [
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.From,
              'column_type': Optional[NewType(ExtraFieldTypePrefix.From, field_of_param['column_type'])],
-             'column_default': None},
+             'column_default': None,
+             'column_description': ""},
 
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.To,
              'column_type': Optional[NewType(ExtraFieldTypePrefix.To, field_of_param['column_type'])],
-
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
         ]:
             result_.append(i)
         return result_
@@ -754,10 +774,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Body(i['column_default'])))
+                                   Body(i['column_default'],description=i['column_description'])))
             response_fields.append((i['column_name'],
                                     i['column_type'],
-                                    Body(i['column_default'])))
+                                    Body(i['column_default'],description=i['column_description'])))
 
         # Ready the uuid to str validator
         if self.uuid_type_columns:
@@ -805,10 +825,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             insert_fields.append((i['column_name'],
                                   i['column_type'],
-                                  field(default=Body(i['column_default']))))
+                                  field(default=Body(i['column_default'],description=i['column_description']))))
             response_fields.append((i['column_name'],
                                     i['column_type'],
-                                    Body(i['column_default'])))
+                                    Body(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
 
@@ -872,7 +892,7 @@ class ApiParameterSchemaBuilder():
             if isinstance(i, dict):
                 request_fields.append((i['column_name'],
                                        i['column_type'],
-                                       Query(i['column_default'])))
+                                       Query(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.table_of_foreign:
@@ -914,7 +934,6 @@ class ApiParameterSchemaBuilder():
         response_fields = []
         all_field = deepcopy(self.all_field)
 
-
         for i in self.reference_mapper:
             response_fields.append((f"{i}_foreign",
                                     self.foreign_table_response_model_sets[self.reference_mapper[i]],
@@ -933,7 +952,7 @@ class ApiParameterSchemaBuilder():
             else:
                 request_fields.append((i['column_name'],
                                        i['column_type'],
-                                       Query(i['column_default'])))
+                                       Query(i['column_default'],description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -985,7 +1004,7 @@ class ApiParameterSchemaBuilder():
             assert isinstance(i, dict)
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Query(i['column_default'])))
+                                   Query(i['column_default'],description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -1025,7 +1044,7 @@ class ApiParameterSchemaBuilder():
             assert isinstance(i, dict)
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Query(i['column_default'])))
+                                   Query(i['column_default'],description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -1077,14 +1096,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] != self.primary_key_str:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(None)))
+                                            Body(None,description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1133,19 +1152,17 @@ class ApiParameterSchemaBuilder():
             response_fields.append((i['column_name'],
                                     i['column_type'],
                                     Body(i['column_default'])))
-            a = i['column_name']
-            b = self.primary_key_str
             if i['column_name'] != self.primary_key_str:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(...)))
+                                            Body(...,description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1206,14 +1223,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] not in [self.primary_key_str]:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(...)))
+                                            Body(...,description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1275,14 +1292,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] not in [self.primary_key_str]:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(None)))
+                                            Body(None,description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'],description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1335,10 +1352,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             request_body_fields.append((i['column_name'],
                                         i['column_type'],
-                                        Body(i['column_default'])))
+                                        Body(i['column_default'],description=i['column_description'])))
             response_body_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Body(i['column_default'])))
+                                         Body(i['column_default'],description=i['column_description'])))
 
         # Ready the uuid to str validator
         if self.uuid_type_columns:
