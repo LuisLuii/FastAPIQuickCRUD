@@ -46,7 +46,7 @@ class UUIDTable(Base):
     __table_args__ = (
         UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
-    primary_key = Column(UUID(as_uuid=True), primary_key=True, info={'description': 'this is a primary_key'},
+    primary_key = Column(UUID(as_uuid=True), primary_key=True, comment='this is a primary_key',
                 server_default=text("uuid_generate_v4()"))
     bool_value = Column(Boolean, nullable=False, default=False)
     bytea_value = Column(LargeBinary)

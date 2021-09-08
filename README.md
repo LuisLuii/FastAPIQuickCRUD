@@ -391,9 +391,8 @@ The tool uses `unique columns` in the table as a parameter of on conflict , and 
 ![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
 ## Add description into docs
-`FastApi Quick CRUD` may use `sqlalchemy.Column(info={})` to configure extra thing.
 
-You can add ```{'description':'sample column description'}``` into `info` to configure the description of column
+You can declare `comment` argument for `sqlalchemy.Column` to configure the description of column
 
 example:
 
@@ -401,14 +400,14 @@ example:
 
 class Parent(Base):
     __tablename__ = 'parent_o2o'
-    id = Column(Integer, primary_key=True,info=({'description':'parent_test'}))
+    id = Column(Integer, primary_key=True,comment='parent_test')
 
     # one-to-many collection
     children = relationship("Child", back_populates="parent")
 
 class Child(Base):
     __tablename__ = 'child_o2o'
-    id = Column(Integer, primary_key=True,info=({'description':'child_pk_test'}))
+    id = Column(Integer, primary_key=True,comment='child_pk_test')
     parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
 
     # many-to-one scalar

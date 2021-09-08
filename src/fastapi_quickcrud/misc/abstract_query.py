@@ -230,3 +230,4 @@ class SQLAlchemyQueryService(object):
         update_stmt = update_stmt.returning(text('*'))
         update_stmt = update_stmt.execution_options(synchronize_session=False)
         return update_stmt
+

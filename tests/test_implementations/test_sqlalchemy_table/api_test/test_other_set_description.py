@@ -40,7 +40,7 @@ def get_transaction_session():
 
 UUIDTable = Table(
     'test_default_value', metadata,
-    Column('primary_key', UUID, primary_key=True, server_default=text("uuid_generate_v4()"), info = {'description':'this is a primary key'}),
+    Column('primary_key', UUID, primary_key=True, server_default=text("uuid_generate_v4()"), comment='this is a primary_key'),
     Column('bool_value', Boolean, nullable=False, default=False),
     Column('bytea_value', LargeBinary),
     Column('char_value', CHAR(10)),
