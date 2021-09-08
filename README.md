@@ -25,6 +25,10 @@
   - [Query Parameter](#query-parameter)
   - [Request Body](#request-body)
   - [Upsert](#upsert)
+  - [Add description into docs](#add-description-into-docs)
+  - [Relationship](#relationship)
+  - [FastAPI_quickcrud Response Status Code standard](#fastapi_quickcrud-response-status-code-standard)
+    
 
 
 # Introduction
@@ -386,6 +390,32 @@ The tool uses `unique columns` in the table as a parameter of on conflict , and 
 
 ![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
+## Add description into docs
+`FastApi Quick CRUD` may use `sqlalchemy.Column(info={})` to configure extra thing.
+
+You can add ```{'description':'sample column description'}``` into `info` to configure the description of column
+
+example:
+
+```python
+
+class Parent(Base):
+    __tablename__ = 'parent_o2o'
+    id = Column(Integer, primary_key=True,info=({'description':'parent_test'}))
+
+    # one-to-many collection
+    children = relationship("Child", back_populates="parent")
+
+class Child(Base):
+    __tablename__ = 'child_o2o'
+    id = Column(Integer, primary_key=True,info=({'description':'child_pk_test'}))
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
+
+    # many-to-one scalar
+    parent = relationship("Parent", back_populates="children")
+```
+
+
 ## Relationship
 
 Now, `FIND_ONE` and `FIND_MANY` are supporting select data with join operation
@@ -550,3 +580,4 @@ If there are no users in the system, then, in this case, you should return 204.
 - handle relationship
 - support MYSQL , MSSQL and Sql-lite
     
+
