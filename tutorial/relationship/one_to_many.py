@@ -1,10 +1,12 @@
+import asyncio
 from datetime import datetime, timezone
 
 import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker
+    String, Table, ForeignKey, DateTime, Text, text, select, Index, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
@@ -27,23 +29,35 @@ async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:
         async with session.begin():
             yield session
+from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
+from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, TIMESTAMP, UUID
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+metadata = Base.metadata
 
 
-class User(Base):
-    __tablename__ = 'user'
+class Parent(Base):
+    __tablename__ = 'parent_one_to_many_back_ref'
+    id = Column(Integer, primary_key=True)
+    children = relationship("Child", backref="parent_one_to_many_back_ref")
 
-    id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    name = Column(String, nullable=False)
-    email = Column(String, nullable=False, default=datetime.now(timezone.utc).strftime('%H:%M:%S%z'))
+class Child(Base):
+    __tablename__ = 'child_one_to_many_back_ref'
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey('parent_one_to_many_back_ref.id'))
 
 
-friend = Table(
-    'friend', metadata,
-    Column('id', ForeignKey('user.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
-    Column('friend_name', String, nullable=False)
-)
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-user_model_set = sqlalchemy_to_pydantic(db_model=User,
+
+
+user_model_set = sqlalchemy_to_pydantic(db_model=Parent,
                                         crud_methods=[
                                             CrudMethods.FIND_MANY,
                                             CrudMethods.FIND_ONE,
@@ -57,7 +71,7 @@ user_model_set = sqlalchemy_to_pydantic(db_model=User,
                                         ],
                                         exclude_columns=[])
 
-friend_model_set = sqlalchemy_table_to_pydantic(db_model=friend,
+friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
                                                 crud_methods=[
                                                     CrudMethods.FIND_MANY,
                                                     CrudMethods.UPSERT_MANY,
@@ -71,19 +85,19 @@ friend_model_set = sqlalchemy_table_to_pydantic(db_model=friend,
 
 crud_route_1 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=user_model_set,
-                                   db_model=User,
-                                   prefix="/user",
+                                   db_model=Parent,
+                                   prefix="/Parent",
                                    dependencies=[],
                                    async_mode=True,
-                                   tags=["User"]
+                                   tags=["Parent"]
                                    )
 crud_route_2 = crud_router_builder(db_session=get_transaction_session,
                                    crud_models=friend_model_set,
-                                   db_model=friend,
+                                   db_model=Child,
                                    async_mode=True,
-                                   prefix="/friend",
+                                   prefix="/Child",
                                    dependencies=[],
-                                   tags=["Friend"]
+                                   tags=["Child"]
                                    )
 
 

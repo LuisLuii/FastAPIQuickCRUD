@@ -1,6 +1,6 @@
+from itertools import groupby
 from typing import Type, List, Union, TypeVar
 
-from fastapi import FastAPI, APIRouter
 from pydantic import BaseModel, BaseConfig
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.elements import \
@@ -9,12 +9,11 @@ from sqlalchemy.sql.elements import \
 
 from .crud_model import RequestResponseModel, CRUDModel
 from .exceptions import QueryOperatorNotFound, PrimaryMissing, UnknownColumn
-from .schema_builder import ApiParameterSchemaBuilder, ApiParameterSchemaBuilderForTable
+from .schema_builder import ApiParameterSchemaBuilder
 from .type import \
     CrudMethods, \
     CRUDRequestMapping, \
     MatchingPatternInString, \
-    Ordering, \
     ExtraFieldType, \
     RangeFromComparisonOperators, \
     ExtraFieldTypePrefix, \
@@ -27,21 +26,17 @@ BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 
 __all__ = [
     'sqlalchemy_to_pydantic',
+    # 'sqlalchemy_table_to_pydantic',
     'find_query_builder',
     'Base',
-    'sqlalchemy_table_to_pydantic',
-    'alias_to_column',
-    'get_many_order_by_columns_description_builder',
-    'get_many_string_matching_patterns_description_builder']
+    'clean_input_fields',
+    'group_find_many_join']
 
 unsupported_data_types = ["BLOB"]
 partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
 
-
-
-
-def alias_to_column(param: Union[dict, list], model: Base, column_collection: bool = False):
+def clean_input_fields(param: Union[dict, list], model: Base):
     assert isinstance(param, dict) or isinstance(param, list) or isinstance(param, set)
 
     if isinstance(param, dict):
@@ -49,13 +44,8 @@ def alias_to_column(param: Union[dict, list], model: Base, column_collection: bo
         for column_name, value in param.items():
             if column_name == '__initialised__':
                 continue
-            # if not hasattr(model, column_name):
-            #     raise UnknownColumn(f'the {column_name} is not exited')
-            alias_name = getattr(model, column_name)
-            if column_collection:
-                actual_column_name = getattr(model, alias_name.expression.key)
-            else:
-                actual_column_name = alias_name.expression.key
+            column = getattr(model, column_name)
+            actual_column_name = column.expression.key
             stmt[actual_column_name] = value
         return stmt
     if isinstance(param, list) or isinstance(param, set):
@@ -63,11 +53,8 @@ def alias_to_column(param: Union[dict, list], model: Base, column_collection: bo
         for column_name in param:
             if not hasattr(model, column_name):
                 raise UnknownColumn(f'column {column_name} is not exited')
-            alias_name = getattr(model, column_name)
-            if column_collection:
-                actual_column_name = getattr(model, alias_name.expression.key)
-            else:
-                actual_column_name = alias_name.expression.key
+            column = getattr(model, column_name)
+            actual_column_name = column.expression.key
             stmt.append(actual_column_name)
         return stmt
 
@@ -107,13 +94,99 @@ class OrmConfig(BaseConfig):
     orm_mode = True
 
 
-def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMethods],
-                                 exclude_columns: List[str] = None) -> CRUDModel:
+# def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMethods],
+#                                  exclude_columns: List[str] = None) -> CRUDModel:
+#     if exclude_columns is None:
+#         exclude_columns = []
+#     request_response_mode_set = {}
+#     model_builder = ApiParameterSchemaBuilder_(db_model,
+#                                                exclude_column=exclude_columns)
+#     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
+#                                        CrudMethods.FIND_ONE.value,
+#                                        CrudMethods.PATCH_ONE.value,
+#                                        CrudMethods.POST_REDIRECT_GET.value,
+#                                        CrudMethods.UPDATE_ONE.value]
+#     for crud_method in crud_methods:
+#         request_url_param_model = None
+#         request_body_model = None
+#         response_model = None
+#         request_query_model = None
+#         if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD and not model_builder.primary_key_str:
+#             raise PrimaryMissing(f"The generation of this API [{crud_method.value}] requires a primary key")
+#         if crud_method.value == CrudMethods.UPSERT_ONE.value:
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.upsert_one()
+#         elif crud_method.value == CrudMethods.UPSERT_MANY.value:
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.upsert_many()
+#         elif crud_method.value == CrudMethods.DELETE_ONE.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.delete_one()
+#         elif crud_method.value == CrudMethods.DELETE_MANY.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.delete_many()
+#         elif crud_method.value == CrudMethods.FIND_ONE.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.find_one()
+#         elif crud_method.value == CrudMethods.FIND_MANY.value:
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.find_many()
+#         elif crud_method.value == CrudMethods.POST_REDIRECT_GET.value:
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.post_redirect_get()
+#         elif crud_method.value == CrudMethods.PATCH_ONE.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.patch()
+#         elif crud_method.value == CrudMethods.UPDATE_ONE.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.update_one()
+#         elif crud_method.value == CrudMethods.UPDATE_MANY.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.update_many()
+#         elif crud_method.value == CrudMethods.PATCH_MANY.value:
+#             request_url_param_model, \
+#             request_query_model, \
+#             request_body_model, \
+#             response_model = model_builder.patch_many()
+#
+#         request_response_models = {'requestBodyModel': request_body_model,
+#                                    'responseModel': response_model,
+#                                    'requestQueryModel': request_query_model,
+#                                    'requestUrlParamModel': request_url_param_model}
+#         request_response_model = RequestResponseModel(**request_response_models)
+#         request_method = CRUDRequestMapping.get_request_method_by_crud_method(crud_method.value).value
+#         if request_method not in request_response_mode_set:
+#             request_response_mode_set[request_method] = {}
+#         request_response_mode_set[request_method][crud_method.value] = request_response_model
+#     return CRUDModel(
+#         **{**request_response_mode_set,
+#            **{"PRIMARY_KEY_NAME": model_builder.primary_key_str,
+#               "UNIQUE_LIST": model_builder.unique_fields}})
+
+
+def sqlalchemy_to_pydantic(
+        db_model: Type, *, crud_methods: List[CrudMethods], exclude_columns: List[str] = None) -> CRUDModel:
     if exclude_columns is None:
         exclude_columns = []
     request_response_mode_set = {}
-    model_builder = ApiParameterSchemaBuilderForTable(db_model,
-                                                      exclude_column=exclude_columns)
+    model_builder = ApiParameterSchemaBuilder(db_model,
+                                              exclude_column=exclude_columns)
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
                                        CrudMethods.FIND_ONE.value,
                                        CrudMethods.PATCH_ONE.value,
@@ -126,6 +199,7 @@ def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMetho
         request_query_model = None
         if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD and not model_builder.primary_key_str:
             raise PrimaryMissing(f"The generation of this API [{crud_method.value}] requires a primary key")
+
         if crud_method.value == CrudMethods.UPSERT_ONE.value:
             request_query_model, \
             request_body_model, \
@@ -148,7 +222,8 @@ def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMetho
             request_url_param_model, \
             request_query_model, \
             request_body_model, \
-            response_model = model_builder.find_one()
+            response_model, \
+            relationship_list = model_builder.find_one()
         elif crud_method.value == CrudMethods.FIND_MANY.value:
             request_query_model, \
             request_body_model, \
@@ -192,86 +267,6 @@ def sqlalchemy_table_to_pydantic(db_model: Type, *, crud_methods: List[CrudMetho
            **{"PRIMARY_KEY_NAME": model_builder.primary_key_str,
               "UNIQUE_LIST": model_builder.unique_fields}})
 
-
-def sqlalchemy_to_pydantic(
-        db_model: Type, *, crud_methods: List[CrudMethods], exclude_columns: List[str] = None) -> CRUDModel:
-    if exclude_columns is None:
-        exclude_columns = []
-    request_response_mode_set = {}
-    model_builder = ApiParameterSchemaBuilder(db_model,
-                                              exclude_column=exclude_columns)
-
-    for crud_method in crud_methods:
-        request_url_param_model = None
-        request_body_model = None
-        response_model = None
-        request_query_model = None
-
-        if crud_method.value == CrudMethods.UPSERT_ONE.value:
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.upsert_one()
-        elif crud_method.value == CrudMethods.UPSERT_MANY.value:
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.upsert_many()
-        elif crud_method.value == CrudMethods.DELETE_ONE.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.delete_one()
-        elif crud_method.value == CrudMethods.DELETE_MANY.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.delete_many()
-        elif crud_method.value == CrudMethods.FIND_ONE.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.find_one()
-        elif crud_method.value == CrudMethods.FIND_MANY.value:
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.find_many()
-        elif crud_method.value == CrudMethods.POST_REDIRECT_GET.value:
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.post_redirect_get()
-        elif crud_method.value == CrudMethods.PATCH_ONE.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.patch()
-        elif crud_method.value == CrudMethods.UPDATE_ONE.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.update_one()
-        elif crud_method.value == CrudMethods.UPDATE_MANY.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.update_many()
-        elif crud_method.value == CrudMethods.PATCH_MANY.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.patch_many()
-
-        request_response_models = {'requestBodyModel': request_body_model,
-                                   'responseModel': response_model,
-                                   'requestQueryModel': request_query_model,
-                                   'requestUrlParamModel': request_url_param_model}
-        request_response_model = RequestResponseModel(**request_response_models)
-        request_method = CRUDRequestMapping.get_request_method_by_crud_method(crud_method.value).value
-        if request_method not in request_response_mode_set:
-            request_response_mode_set[request_method] = {}
-        request_response_mode_set[request_method][crud_method.value] = request_response_model
-    return CRUDModel(
-        **{**request_response_mode_set,
-           **{"PRIMARY_KEY_NAME": model_builder.primary_key_str,
-              "UNIQUE_LIST": model_builder.unique_fields}})
 
 # def get_many_string_matching_patterns_description_builder() -> str:
 #     return '''<br >Composite string field matching pattern<h5/>
@@ -355,3 +350,28 @@ process_map = {
     MatchingPatternInString.not_similar_to:
         lambda field, values: or_(field.op("NOT SIMILAR TO")(value) for value in values),
 }
+
+
+def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
+    def group_by_foreign_key(item):
+        tmp = {}
+        for k, v in item.items():
+            if '_foreign' not in k:
+                tmp[k] = v
+        return tmp
+
+    response_list = []
+    for key, group in groupby(list_of_dict, group_by_foreign_key):
+        response = {}
+        for i in group:
+            for k, v in i.items():
+                if '_foreign' in k:
+                    if k not in response:
+                        response[k] = [v]
+                    else:
+                        response[k].append(v)
+            for response_ in response:
+                i.pop(response_, None)
+            result = {**i, **response}
+        response_list.append(result)
+    return response_list

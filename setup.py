@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1-Alpha-13'
+VERSION = '0.0.1-Alpha-16'
 
 print("""
 
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         long_description_content_type="text/markdown",
         author='Luis Lui',
         author_email='luis11235178@gmail.com',
-        url='https://gitlab.com/luislui/quickcrud',
+        url='https://github.com/LuisLuii/FastAPIQuickCRUD',
         license="MIT License",
         keywords=["fastapi", "crud", "restful", "routing","SQLAlchemy", "generator", "crudrouter","postgresql","builder"],
         packages=find_packages('src'),
@@ -52,6 +52,7 @@ if __name__ == '__main__':
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
             "Topic :: Internet :: WWW/HTTP",
         ],

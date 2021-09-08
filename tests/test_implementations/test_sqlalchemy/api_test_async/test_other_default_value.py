@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import uuid
@@ -17,47 +18,51 @@ from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 
-TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_URL', 'postgresql://postgres:1234@127.0.0.1:5432/postgres')
-
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-from sqlalchemy import create_engine
+engine = create_async_engine(TEST_DATABASE_URL,
+                             future=True,
+                             echo=True,
+                             pool_use_lifo=True,
+                             pool_pre_ping=True,
+                             pool_recycle=7200)
+async_session = sessionmaker(autocommit=False,
+                             autoflush=False,
+                             bind=engine,
+                             class_=AsyncSession)
 
-engine = create_engine(TEST_DATABASE_URL, future=True, echo=True,
-                       pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
 
 
-def get_transaction_session():
-    try:
-        db = async_session()
-        yield db
-    finally:
-        db.close()
+
 
 
 class UUIDTable(Base):
     primary_key_of_table = "primary_key"
-    unique_fields = ['primary_key', 'test_case_column', 'float4_value']
-    __tablename__ = 'test_alias_unique_column'
+    unique_fields = ['primary_key', 'int4_value', 'float4_value']
+    __tablename__ = 'test_default_value_sync'
     __table_args__ = (
-        UniqueConstraint('id', 'test_case_column', 'float4_value'),
+        UniqueConstraint('primary_key', 'int4_value', 'float4_value'),
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
+    primary_key = Column(UUID(as_uuid=True), primary_key=True, info={'alias_name': 'primary_key'},
                 server_default=text("uuid_generate_v4()"))
-    primary_key = synonym('id')
-    bool_value = Column(Boolean, nullable=False, server_default=text("false"))
+    bool_value = Column(Boolean, nullable=False, default=False)
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))
     date_value = Column(Date, server_default=text("now()"))
     float4_value = Column(Float, nullable=False)
     float8_value = Column(Float(53), nullable=False, server_default=text("10.10"))
     int2_value = Column(SmallInteger, nullable=False)
-    test_case_column = Column(Integer, nullable=False, info={'alias_name': 'int4_value'})
-    int4_value = synonym('test_case_column')
+    int4_value = Column(Integer, nullable=False)
     int8_value = Column(BigInteger, server_default=text("99"))
     interval_value = Column(INTERVAL)
     json_value = Column(JSON)
@@ -71,9 +76,16 @@ class UUIDTable(Base):
     varchar_value = Column(String)
     array_value = Column(ARRAY(Integer()))
     array_str__value = Column(ARRAY(String()))
+def setup_module(module):
+
+    async def create_table():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
 
-UUIDTable.__table__.create(engine, checkfirst=True)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(create_table())
+
 
 model_1 = sqlalchemy_to_pydantic(UUIDTable,
                                  crud_methods=[
@@ -154,7 +166,7 @@ def test_get_many_data_and_create_many_data():
         'Content-Type': 'application/json',
     }
 
-    data = '''{ "insert": [ { "bool_value": true, "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00","varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, { "bool_value": true, "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] },{ "bool_value": true, "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] } ] }'''
+    data = '''{ "insert": [ { "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00","varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] }, {  "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] },{  "char_value": "string    ", "date_value": "2021-07-23", "float4_value": 0, "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0, "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string", "timestamp_value": "2021-07-23T02:38:24.963000", "timestamptz_value": "2021-07-23T02:38:24.963000+00:00", "varchar_value": "string", "array_value": [ 0 ], "array_str__value": [ "string" ] } ] }'''
     data_dict = json.loads(data)['insert']
     response = client.post('/test', headers=headers, data=data)
     assert response.status_code == 201
@@ -175,7 +187,7 @@ def test_update_one_data():
     assert response.status_code == 201
     create_response = response.json()
     created_primary_key = create_response['primary_key']
-    update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
+    update_data = { "bool_value":False,"char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
                    "text_value": "string_update",
@@ -185,6 +197,7 @@ def test_update_one_data():
                    "array_str__value": ["test"], "time_value": "18:19:18", "timetz_value": "18:19:18+00:00"}
     query_param = urlencode(update_data)
     response = client.put(f'/test/{created_primary_key}?{query_param}', data=json.dumps(update_data))
+    update_data["bool_value"] = False
     response_data = response.json()
     assert response_data
     for i in update_data:
@@ -197,7 +210,7 @@ def test_update_many_data():
         'Content-Type': 'application/json',
     }
 
-    data = {"insert": [{"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+    data = {"insert": [{"char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285", "timestamptz_value": "2021-07-24T02:54:53.285Z",
@@ -205,7 +218,7 @@ def test_update_many_data():
                         "array_value": [0],
                         "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       {"char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "time_value": "18:18:18",
@@ -214,7 +227,7 @@ def test_update_many_data():
                          "varchar_value": "string",
                         "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       { "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285",
@@ -229,7 +242,7 @@ def test_update_many_data():
     insert_response_data = response.json()
 
     primary_key_list = [i['primary_key'] for i in insert_response_data]
-    params = {"bool_value____list": True,
+    params = {"bool_value____list": False,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
               "date_value____from": "2021-07-22",
@@ -274,7 +287,7 @@ def test_update_many_data():
               }
     from urllib.parse import urlencode
     query_string = urlencode(params)+f'&primary_key____list={primary_key_list[0]}&primary_key____list={primary_key_list[1]}&primary_key____list={primary_key_list[2]}'
-    update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
+    update_data = {"bool_value":False,"char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
                    "text_value": "string_update",
@@ -284,6 +297,7 @@ def test_update_many_data():
                    "array_value": [1, 2, 3, 4, 5],
                    "array_str__value": ["test"], "time_value": "18:19:18", "timetz_value": "18:19:18+00:00"}
     response = client.put(f'/test?{query_string}', data=json.dumps(update_data))
+    update_data["bool_value"] = False
     response_data = response.json()
     assert len(response_data) == 3
     for k in response_data:
@@ -298,7 +312,7 @@ def test_patch_one_data():
     }
 
     data = {"insert": [
-        {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+        {"char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
          "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
          "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
          "timestamp_value": "2021-07-24T02:54:53.285",
@@ -312,7 +326,7 @@ def test_patch_one_data():
     insert_response_data = response.json()
 
     primary_key, = [i['primary_key'] for i in insert_response_data]
-    params = {"bool_value____list": True,
+    params = {"bool_value____list": False,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
               "date_value____from": "2021-07-22",
@@ -382,7 +396,7 @@ def test_patch_one_data():
     params['date_value____from'] = "2022-07-23"
     params['date_value____to'] = "2022-07-25"
     query_string = urlencode(params)
-    update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
+    update_data = {"char_value": "string_u  ", "date_value": "2022-07-24", "float4_value": 10.50,
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "int8_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
                    "text_value": "string_update",
@@ -391,6 +405,7 @@ def test_patch_one_data():
                    "array_value": [1, 2, 3, 4, 5],
                    "array_str__value": ["test"], "time_value": "18:19:18", "timetz_value": "18:19:18+00:00"}
     response = client.patch(f'/test/{primary_key}?{query_string}', data=json.dumps(update_data))
+    update_data['bool_value'] = False
     response_data = response.json()
     assert response_data
     for i in update_data:
@@ -403,7 +418,7 @@ def test_patch_many_data():
         'Content-Type': 'application/json',
     }
 
-    data = {"insert": [{"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+    data = {"insert": [{"char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285", "timestamptz_value": "2021-07-24T02:54:53.285Z",
@@ -411,7 +426,7 @@ def test_patch_many_data():
                         "array_value": [0],
                         "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       {"char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "time_value": "18:18:18",
@@ -420,7 +435,7 @@ def test_patch_many_data():
                          "varchar_value": "string",
                         "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       { "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285",
@@ -436,7 +451,7 @@ def test_patch_many_data():
 
     primary_key_list = [i['primary_key'] for i in insert_response_data]
     params = {
-              "bool_value____list": True,
+              "bool_value____list": False,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
               "date_value____from": "2021-07-22",
@@ -483,7 +498,7 @@ def test_patch_many_data():
     query_string = urlencode(
         params) + f'&primary_key____list={primary_key_list[0]}&primary_key____list={primary_key_list[1]}&primary_key____list={primary_key_list[2]}'
 
-    update_data = {"bool_value": False, "char_value": "string_u  ", "date_value": "2022-07-24",
+    update_data = {"bool_value": True, "char_value": "string_u  ", "date_value": "2022-07-24",
                    "float8_value": 10.5, "int2_value": 10, "int4_value": 10, "interval_value": 3600,
                    "json_value": {'test': 'hello'}, "jsonb_value": {'test': 'hello'}, "numeric_value": 10,
                    "text_value": "string_update",
@@ -492,6 +507,7 @@ def test_patch_many_data():
                    "array_value": [1, 2, 3, 4, 5],
                    "array_str__value": ["test"], "time_value": "18:19:18", "timetz_value": "18:19:18+00:00"}
     response = client.patch(f'/test?{query_string}', data=json.dumps(update_data))
+    update_data['bool_value'] = True
     response_data = response.json()
     assert len(response_data) == 3
     for k in response_data:
@@ -579,7 +595,7 @@ def test_delete_many_data():
         'Content-Type': 'application/json',
     }
 
-    data = {"insert": [{"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+    data = {"insert": [{ "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285", "timestamptz_value": "2021-07-24T02:54:53.285Z",
@@ -587,7 +603,7 @@ def test_delete_many_data():
                         "array_value": [0],
                         "array_str__value": ["string"], "time_value": "18:18:18", "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       { "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "time_value": "18:18:18",
@@ -595,7 +611,7 @@ def test_delete_many_data():
                         "timestamptz_value": "2021-07-24T02:54:53.285Z", "varchar_value": "string",
                         "array_value": [0], "array_str__value": ["string"], "timetz_value": "18:18:18+00:00"},
 
-                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                       { "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
                         "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
                         "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
                         "timestamp_value": "2021-07-24T02:54:53.285",
@@ -610,7 +626,7 @@ def test_delete_many_data():
 
     primary_key_list = [i['primary_key'] for i in insert_response_data]
     params = {
-              "bool_value____list": True,
+              "bool_value____list": False,
               "char_value____str": 'string%',
               "char_value____str_____matching_pattern": 'case_sensitive',
               "date_value____from": "2021-07-22",
@@ -670,7 +686,6 @@ def test_post_redirect_get_data():
 
     change = {}
 
-    bool_value_change = False
     char_value_change = "test"
     date_value_change = str(date.today() - timedelta(days=1))
     float8_value_change = 0.1
@@ -689,7 +704,6 @@ def test_post_redirect_get_data():
     array_value_change = [1, 2, 3, 4]
     array_str__value_change = ['1', '2', '3', '4']
 
-    change['bool_value'] = bool_value_change
     change['char_value'] = char_value_change
     change['date_value'] = date_value_change
     change['float8_value'] = float8_value_change
@@ -713,6 +727,7 @@ def test_post_redirect_get_data():
     response = client.post('/test_3', headers=headers, data=data_, allow_redirects=True)
     assert response.status_code == HTTPStatus.OK
     response_data = response.json()
+    response_data['bool_value'] = False
     assert 'primary_key' in response_data
     for k, v in response_data.items():
         if k in change:
@@ -748,4 +763,37 @@ def test_upsert_one():
     # upsert
     response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
     assert response.status_code == 409
-test_post_redirect_get_data()
+
+
+def test_upsert_one():
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
+    data = '{"float4_value": 12.784 ,"int2_value": 0, "int4_value": 10 }'
+    response = client.post('/test_2', headers=headers, data=data)
+    assert response.status_code == 201
+    create_response = response.json()
+    updated_data = {}
+    for k,v in create_response.items():
+        if k not in data:
+            updated_data[k] = v
+    updated_data['numeric_value'] = 100
+    # conflict
+    upsert_data = deepcopy(updated_data)
+    upsert_data['on_conflict'] = {'update_columns':['numeric_value']}
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(upsert_data, **json.loads(data))))
+    assert response.status_code == 201
+
+    # upsert
+    response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
+    assert response.status_code == 409
+
+
+def teardown_module(module):
+    async def create_table():
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(create_table())

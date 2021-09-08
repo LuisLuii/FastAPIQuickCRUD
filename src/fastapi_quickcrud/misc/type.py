@@ -2,6 +2,8 @@ from enum import Enum, auto
 
 from strenum import StrEnum
 
+from .exceptions import InvalidRequestMethod
+
 
 class Ordering(StrEnum):
     DESC = auto()
@@ -20,6 +22,17 @@ class CrudMethods(Enum):
     DELETE_ONE = "DELETE_ONE"
     DELETE_MANY = "DELETE_MANY"
     POST_REDIRECT_GET = "POST_REDIRECT_GET"
+
+    @staticmethod
+    def get_table_full_crud_method():
+        return [CrudMethods.FIND_MANY,CrudMethods.UPSERT_ONE,CrudMethods.UPDATE_MANY,CrudMethods.PATCH_MANY,
+                CrudMethods.DELETE_MANY]
+    @staticmethod
+    def get_declarative_model_full_crud_method():
+        return [CrudMethods.FIND_MANY,CrudMethods.FIND_ONE,
+                CrudMethods.UPDATE_MANY,CrudMethods.UPDATE_ONE,
+                CrudMethods.PATCH_MANY,CrudMethods.PATCH_ONE,CrudMethods.UPSERT_ONE,
+                CrudMethods.DELETE_MANY,CrudMethods.DELETE_ONE]
 
 
 class RequestMethods(Enum):
@@ -55,6 +68,8 @@ class CRUDRequestMapping(Enum):
     @classmethod
     def get_request_method_by_crud_method(cls, value):
         crud_methods = cls.__dict__
+        if value not in crud_methods:
+            raise InvalidRequestMethod(f'{value} is not an available request method, Please use CrudMethods to select available crud method')
         return crud_methods[value].value
 
 
@@ -115,3 +130,5 @@ class JSONBMatchingMode(str, Enum):
 class SessionObject(StrEnum):
     sqlalchemy = auto()
     databases = auto()
+
+

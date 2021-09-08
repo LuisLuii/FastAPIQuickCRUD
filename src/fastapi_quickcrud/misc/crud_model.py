@@ -1,14 +1,18 @@
-from typing import Optional, Dict, List
+from typing import (Optional,
+                    Dict,
+                    List)
 
 from pydantic import BaseModel
 from pydantic.main import ModelMetaclass
 
-from .exceptions import RequestMissing, InvalidRequestMethod
+from .exceptions import (RequestMissing,
+                         InvalidRequestMethod)
 from .type import CrudMethods
 
 
 class RequestResponseModel(BaseModel):
     requestUrlParamModel: Optional[ModelMetaclass]
+    requestRelationshipUrlParamField: Optional[List[str]]
     requestQueryModel: Optional[ModelMetaclass]
     requestBodyModel: Optional[ModelMetaclass]
     responseModel: Optional[ModelMetaclass]
