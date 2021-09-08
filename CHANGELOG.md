@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.0.1a16] - 2021-09-08
+ 
+### Added
+relationship with get api
+
+### Changed
+
+disable alias
+
+usage is more easy and quick build up
+
+### Fixed
+
+
 ## [0.0.1a13] - 2021-08-23
  
 ### Added
