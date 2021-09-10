@@ -798,7 +798,7 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
         # else:
-        response_model = _add_orm_model_config_into_pydantic_model(response_model)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return None, request_body_model, response_model
 
     def upsert_many(self) -> Tuple:
@@ -858,6 +858,7 @@ class ApiParameterSchemaBuilder():
         # if self.alias_mapper and response_item_model:
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
+        response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model, config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseListModel',

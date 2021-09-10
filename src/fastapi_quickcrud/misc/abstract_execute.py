@@ -31,14 +31,30 @@ class SQLALchemyExecuteService(object):
         return execute_and_expire_result
 
     @staticmethod
+    async def async_add(session, model) -> Any:
+        await session.add(model)
+        session.flush()
+
+    @staticmethod
+    def add(session, model) -> Any:
+        session.add(model)
+        session.flush()
+
+    @staticmethod
+    async def async_flush(session) -> Any:
+        await session.flush()
+
+    @staticmethod
+    def flush(session) -> Any:
+        session.flush()
+
+    @staticmethod
     async def async_execute(session, stmt: BinaryExpression) -> Any:
         return await session.execute(stmt)
 
     @staticmethod
     def execute(session, stmt: BinaryExpression) -> Any:
         return session.execute(stmt)
-
-
 
 
 class DatabasesExecuteService:
