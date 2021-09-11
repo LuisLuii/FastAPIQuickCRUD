@@ -253,11 +253,9 @@ class SQLAlchemyPostgreQueryService(object):
                delete_args,
                primary_key=None,
                ) -> BinaryExpression:
-        delete_args = delete_args.__dict__
         filter_list: List[BinaryExpression] = find_query_builder(param=delete_args,
                                                                  model=self.model_columns)
         if primary_key:
-            primary_key = primary_key.__dict__
             filter_list += find_query_builder(param=primary_key,
                                               model=self.model_columns)
 

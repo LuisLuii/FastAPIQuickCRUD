@@ -402,8 +402,7 @@ class SQLALChemyBaseRouteSource(object):
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
                 stmt = query_service.delete(primary_key=request_url_param_model.__dict__,
-                                            delete_args=query.__dict__,
-                                            session=session)
+                                            delete_args=query.__dict__)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
                                                               sql_execute_result=query_result,
@@ -417,8 +416,7 @@ class SQLALChemyBaseRouteSource(object):
                                           request_url_param_model=Depends(request_url_model),
                                           session=Depends(db_session)):
                 stmt = query_service.delete(primary_key=request_url_param_model.__dict__,
-                                            delete_args=query.__dict__,
-                                            session=session)
+                                            delete_args=query.__dict__)
                 query_result = execute_service.execute_and_expire(session, stmt)
 
                 return parsing_service.delete_one(response_model=response_model,
@@ -443,8 +441,7 @@ class SQLALChemyBaseRouteSource(object):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query.__dict__,
-                                            session=session)
+                stmt = query_service.delete(delete_args=query.__dict__)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_many(response_model=response_model,
                                                                sql_execute_result=query_result,
@@ -457,8 +454,7 @@ class SQLALChemyBaseRouteSource(object):
                                      request: Request,
                                      query=Depends(request_query_model),
                                      session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query.__dict__,
-                                            session=session)
+                stmt = query_service.delete(delete_args=query.__dict__)
                 query_result = execute_service.execute_and_expire(session, stmt)
                 return parsing_service.delete_many(response_model=response_model,
                                                    sql_execute_result=query_result,
