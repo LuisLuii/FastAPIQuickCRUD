@@ -92,13 +92,12 @@ def crud_router_builder(
         memory_sql_connection.create_memory_table(db_model)
         sql_type = 'sqllite'
 
+    if sql_type is not 'postgresql' and isinstance(db_model, Table):
+        raise Exception('Table object of SQLAlchemy is only support postgresql type')
+
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
 
-    if dependencies is None:
-        dependencies = []
-
-    crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
     if isinstance(db_model, Table):
         if not crud_methods:
             crud_methods = CrudMethods.get_table_full_crud_method()
@@ -108,31 +107,23 @@ def crud_router_builder(
             crud_methods = CrudMethods.get_declarative_model_full_crud_method()
         result_parser_builder = SQLAlchemyResultParse
 
-    if sql_type is not 'postgresql' and isinstance(db_model, Table):
-        raise Exception('Table object of SQLAlchemy not support postgreSQL')
-
-
-    api = APIRouter(**router_kwargs)
-    dependencies = [Depends(dep) for dep in dependencies]
-    if sql_type is not 'postgresql':
-        routes_source = SQLALChemyBaseRFullSQLouteSource
-        result_parser_builder = SQLAlchemyGneralSQLeResultParse
-    else:
-        routes_source = SQLALChemyBaseRouteSource
     if not crud_models:
+        crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
         crud_models: CRUDModel = crud_models_builder(db_model=db_model,
                                                      crud_methods=crud_methods,
                                                      exclude_columns=exclude_columns)
+
+    if sql_type is not 'postgresql':
+        routes_source = SQLALChemyBaseRFullSQLouteSource
+        result_parser_builder = SQLAlchemyGneralSQLeResultParse
+        crud_service = SQLAlchemyGeneralSQLQueryService(model=db_model, async_mode=async_mode)
+    else:
+        routes_source = SQLALChemyBaseRouteSource
+        crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
+
     result_parser = result_parser_builder(async_model=async_mode,
                                           crud_models=crud_models,
                                           autocommit=autocommit)
-    if sql_type is 'postgresql':
-        crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
-        execute_service = SQLALchemyExecuteService()
-
-    else:
-        crud_service = SQLAlchemyGeneralSQLQueryService(model=db_model, async_mode=async_mode)
-    execute_service = SQLALchemyExecuteService()
     methods_dependencies = crud_models.get_available_request_method()
     primary_name = crud_models.PRIMARY_KEY_NAME
     if primary_name:
@@ -140,6 +131,8 @@ def crud_router_builder(
     else:
         path = ""
     unique_list: List[str] = crud_models.UNIQUE_LIST
+
+    execute_service = SQLALchemyExecuteService()
 
     def find_one_api(request_response_model: dict, dependencies):
         _request_query_model = request_response_model.get('requestQueryModel', None)
@@ -332,6 +325,11 @@ def crud_router_builder(
         CrudMethods.UPDATE_ONE.value: put_one_api,
         CrudMethods.UPDATE_MANY.value: put_many_api
     }
+    api = APIRouter(**router_kwargs)
+
+    if dependencies is None:
+        dependencies = []
+    dependencies = [Depends(dep) for dep in dependencies]
     for request_method in methods_dependencies:
         value_of_dict_crud_model = crud_models.get_model_by_request_method(request_method)
         crud_model_of_this_request_methods = value_of_dict_crud_model.keys()

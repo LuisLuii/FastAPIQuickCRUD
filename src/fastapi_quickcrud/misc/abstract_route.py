@@ -179,8 +179,8 @@ class SQLALChemyBaseRouteSource(object):
                                        session=Depends(db_session)):
 
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
+                stmt = query_service.get_one(filter_args=query.__dict__,
+                                             extra_args=url_param.__dict__,
                                              join_mode=join)
                 query_result = execute_service.execute(session, stmt)
                 response_result = parsing_service.find_one(response_model=response_model,
@@ -198,8 +198,8 @@ class SQLALChemyBaseRouteSource(object):
                                                    session=Depends(db_session)):
 
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
+                stmt = query_service.get_one(filter_args=query.__dict__,
+                                             extra_args=url_param.__dict__,
                                              join_mode=join)
                 query_result = await execute_service.async_execute(session, stmt)
 
@@ -401,8 +401,9 @@ class SQLALChemyBaseRouteSource(object):
                                                       query=Depends(request_query_model),
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
-                stmt = query_service.delete(primary_key=request_url_param_model,
-                                            delete_args=query)
+                stmt = query_service.delete(primary_key=request_url_param_model.__dict__,
+                                            delete_args=query.__dict__,
+                                            session=session)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_one(response_model=response_model,
                                                               sql_execute_result=query_result,
@@ -415,8 +416,9 @@ class SQLALChemyBaseRouteSource(object):
                                           query=Depends(request_query_model),
                                           request_url_param_model=Depends(request_url_model),
                                           session=Depends(db_session)):
-                stmt = query_service.delete(primary_key=request_url_param_model,
-                                            delete_args=query)
+                stmt = query_service.delete(primary_key=request_url_param_model.__dict__,
+                                            delete_args=query.__dict__,
+                                            session=session)
                 query_result = execute_service.execute_and_expire(session, stmt)
 
                 return parsing_service.delete_one(response_model=response_model,
@@ -441,7 +443,8 @@ class SQLALChemyBaseRouteSource(object):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query)
+                stmt = query_service.delete(delete_args=query.__dict__,
+                                            session=session)
                 query_result = await execute_service.async_execute_and_expire(session, stmt)
                 return await parsing_service.async_delete_many(response_model=response_model,
                                                                sql_execute_result=query_result,
@@ -454,7 +457,8 @@ class SQLALChemyBaseRouteSource(object):
                                      request: Request,
                                      query=Depends(request_query_model),
                                      session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query)
+                stmt = query_service.delete(delete_args=query.__dict__,
+                                            session=session)
                 query_result = execute_service.execute_and_expire(session, stmt)
                 return parsing_service.delete_many(response_model=response_model,
                                                    sql_execute_result=query_result,
@@ -771,10 +775,10 @@ class SQLALChemyBaseRouteSource(object):
 
 
 class SQLALChemyBaseRFullSQLouteSource(object):
-
     '''
     This route will support the SQL SQLAlchemy dialects
     '''
+
     @classmethod
     def find_one(cls, api,
                  *,
@@ -798,13 +802,12 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                        session=Depends(db_session)):
 
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
-                                             join_mode=join,
-                                             session = session)
-                query_result = execute_service.execute(session, stmt)
+                data_instance_list = query_service.get_one(filter_args=query.__dict__,
+                                                           extra_args=url_param.__dict__,
+                                                           join_mode=join,
+                                                           session=session).all()
                 response_result = parsing_service.find_one(response_model=response_model,
-                                                           sql_execute_result=query_result,
+                                                           sql_execute_result=data_instance_list,
                                                            fastapi_response=response,
                                                            session=session,
                                                            join_mode=join)
@@ -818,13 +821,11 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                                    session=Depends(db_session)):
 
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_one(filter_args=query,
-                                             extra_args=url_param,
-                                             join_mode=join)
-                query_result = await execute_service.async_execute(session, stmt)
-
+                data_instance_list = await query_service.get_one(filter_args=query.__dict__,
+                                                                 extra_args=url_param.__dict__,
+                                                                 join_mode=join).all()
                 response_result = await parsing_service.async_find_one(response_model=response_model,
-                                                                       sql_execute_result=query_result,
+                                                                       sql_execute_result=data_instance_list,
                                                                        fastapi_response=response,
                                                                        session=session,
                                                                        join_mode=join)
@@ -851,12 +852,9 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                          db_session)
                                      ):
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(query=query, join_mode=join)
-
-                query_result = await execute_service.async_execute(session, stmt)
-
+                data_instance_list = await query_service.get_many(query=query, join_mode=join).all()
                 parsed_response = await parsing_service.async_find_many(response_model=response_model,
-                                                                        sql_execute_result=query_result,
+                                                                        sql_execute_result=data_instance_list,
                                                                         fastapi_response=response,
                                                                         join_mode=join,
                                                                         session=session)
@@ -870,10 +868,11 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                              db_session)
                          ):
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(query=query, join_mode=join, session = session)
-                query_result = execute_service.execute(session, stmt)
+                data_instance_list = query_service.get_many(query=query,
+                                                            join_mode=join,
+                                                            session=session).all()
                 parsed_response = parsing_service.find_many(response_model=response_model,
-                                                            sql_execute_result=query_result,
+                                                            sql_execute_result=data_instance_list,
                                                             fastapi_response=response,
                                                             join_mode=join,
                                                             session=session)
@@ -892,7 +891,6 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                    db_session,
                    unique_list):
         if async_mode:
-
             @api.post(path, status_code=201, response_model=response_model, dependencies=dependencies)
             async def async_insert_one_and_support_upsert(
                     response: Response,
@@ -907,7 +905,7 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     query_result = await execute_service.async_flush(session, stmt)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
@@ -926,14 +924,14 @@ class SQLALChemyBaseRFullSQLouteSource(object):
             ):
 
                 new_inserted_data = query_service.upsert(insert_arg=query,
-                                            unique_fields=unique_list)
+                                                         unique_fields=unique_list)
                 try:
 
                     for i in new_inserted_data:
                         execute_service.add(session, i)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
@@ -964,8 +962,8 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     session=Depends(db_session)
             ):
                 inserted_data = query_service.upsert(insert_arg=query,
-                                            unique_fields=unique_list,
-                                            upsert_one=False)
+                                                     unique_fields=unique_list,
+                                                     upsert_one=False)
                 try:
                     await execute_service.async_flush(session)
                 except IntegrityError as e:
@@ -988,8 +986,8 @@ class SQLALChemyBaseRFullSQLouteSource(object):
             ):
 
                 inserted_data = query_service.upsert(insert_arg=query,
-                                            unique_fields=unique_list,
-                                            upsert_one=False)
+                                                     unique_fields=unique_list,
+                                                     upsert_one=False)
                 try:
                     for i in inserted_data:
                         execute_service.add(session, i)
@@ -1024,13 +1022,15 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                                       query=Depends(request_query_model),
                                                       request_url_param_model=Depends(request_url_model),
                                                       session=Depends(db_session)):
-                stmt = query_service.delete(primary_key=request_url_param_model,
-                                            delete_args=query)
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
-                return await parsing_service.async_delete_one(response_model=response_model,
-                                                              sql_execute_result=query_result,
+                delete_instance = await query_service.model_query(filter_args=request_url_param_model.__dict__,
+                                                                  extra_args=query.__dict__,
+                                                                  session=session).one_or_none()
+
+                return await parsing_service.await_delete_one(response_model=response_model,
+                                                              sql_execute_result=delete_instance,
                                                               fastapi_response=response,
                                                               session=session)
+
         else:
             @api.delete(path, status_code=200, response_model=response_model, dependencies=dependencies)
             def delete_one_by_primary_key(response: Response,
@@ -1038,12 +1038,12 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                           query=Depends(request_query_model),
                                           request_url_param_model=Depends(request_url_model),
                                           session=Depends(db_session)):
-                stmt = query_service.delete(primary_key=request_url_param_model,
-                                            delete_args=query)
-                query_result = execute_service.execute_and_expire(session, stmt)
+                delete_instance = query_service.model_query(filter_args=request_url_param_model.__dict__,
+                                                            extra_args=query.__dict__,
+                                                            session=session).one_or_none()
 
                 return parsing_service.delete_one(response_model=response_model,
-                                                  sql_execute_result=query_result,
+                                                  sql_execute_result=delete_instance,
                                                   fastapi_response=response,
                                                   session=session)
 
@@ -1064,10 +1064,11 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                                  request: Request,
                                                  query=Depends(request_query_model),
                                                  session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query)
-                query_result = await execute_service.async_execute_and_expire(session, stmt)
-                return await parsing_service.async_delete_many(response_model=response_model,
-                                                               sql_execute_result=query_result,
+                delete_instance = await query_service.model_query(filter_args=query.__dict__,
+                                                                  session=session).all()
+
+                return await parsing_service.await_delete_many(response_model=response_model,
+                                                               sql_execute_results=delete_instance,
                                                                fastapi_response=response,
                                                                session=session)
         else:
@@ -1077,10 +1078,11 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                                      request: Request,
                                      query=Depends(request_query_model),
                                      session=Depends(db_session)):
-                stmt = query_service.delete(delete_args=query)
-                query_result = execute_service.execute_and_expire(session, stmt)
+                delete_instance = query_service.model_query(filter_args=query.__dict__,
+                                                            session=session).all()
+
                 return parsing_service.delete_many(response_model=response_model,
-                                                   sql_execute_result=query_result,
+                                                   sql_execute_results=delete_instance,
                                                    fastapi_response=response,
                                                    session=session)
 
@@ -1164,9 +1166,10 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(primary_key=primary_key,
-                                           update_args=patch_data,
-                                           extra_query=extra_query)
+                stmt = crud_service.update(primary_key=primary_key.__dict__,
+                                           update_args=patch_data.__dict__,
+                                           extra_query=extra_query.__dict__,
+                                           session=session).one_or_none()
                 try:
                     query_result = await execute_service.async_execute_and_expire(session, stmt)
                 except IntegrityError as e:
@@ -1191,21 +1194,24 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(primary_key=primary_key,
-                                           update_args=patch_data,
-                                           extra_query=extra_query)
+                update_instance = crud_service.model_query(filter_args=primary_key.__dict__,
+                                                           extra_args=extra_query.__dict__,
+                                                           session=session).one_or_none()
+                # stmt = crud_service.update(primary_key=primary_key,
+                #                            update_args=patch_data,
+                #                            extra_query=extra_query)
                 try:
-                    query_result = execute_service.execute_and_expire(session, stmt)
+                    return result_parser.update_one(response_model=response_model,
+                                                    sql_execute_result=update_instance,
+                                                    update_args=patch_data.__dict__,
+                                                    fastapi_response=response,
+                                                    session=session)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'duplicate key value violates unique constraint' not in err_msg:
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.update_one(response_model=response_model,
-                                                sql_execute_result=query_result,
-                                                fastapi_response=response,
-                                                session=session)
 
     @classmethod
     def patch_many(cls, api, *,
@@ -1230,20 +1236,22 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session)
             ):
-                stmt = crud_service.update(update_args=patch_data,
-                                           extra_query=extra_query)
+                data_instance = await crud_service.model_query(filter_args=extra_query.__dict__,
+                                                               session=session).all()
+
                 try:
-                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                    return await result_parser.update(response_model=response_model,
+                                                      sql_execute_result=data_instance,
+                                                      fastapi_response=response,
+                                                      update_args=patch_data.__dict__,
+                                                      session=session,
+                                                      update_one=False)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return await result_parser.async_patch_many(response_model=response_model,
-                                                            sql_execute_result=query_result,
-                                                            fastapi_response=response,
-                                                            session=session)
         else:
             @api.patch(path,
                        status_code=200,
@@ -1255,21 +1263,22 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session)
             ):
-                stmt = crud_service.update(update_args=patch_data,
-                                           extra_query=extra_query)
+                data_instance = crud_service.model_query(filter_args=extra_query.__dict__,
+                                                         session=session).all()
 
                 try:
-                    query_result = execute_service.execute_and_expire(session, stmt)
+                    return result_parser.update(response_model=response_model,
+                                                sql_execute_result=data_instance,
+                                                fastapi_response=response,
+                                                update_args=patch_data.__dict__,
+                                                session=session,
+                                                update_one=False)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.patch_many(response_model=response_model,
-                                                sql_execute_result=query_result,
-                                                fastapi_response=response,
-                                                session=session)
 
     @classmethod
     def put_one(cls, api, *,
@@ -1293,22 +1302,23 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(primary_key=primary_key,
-                                           update_args=update_data,
-                                           extra_query=extra_query)
+                data_instance = await crud_service.model_query(filter_args=primary_key.__dict__,
+                                                               extra_args=extra_query.__dict__,
+                                                               session=session).one_or_none()
 
                 try:
-                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                    return await result_parser.update(response_model=response_model,
+                                                      sql_execute_result=data_instance,
+                                                      fastapi_response=response,
+                                                      update_args=update_data.__dict__,
+                                                      session=session,
+                                                      update_one=True)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return await result_parser.async_update_one(response_model=response_model,
-                                                            sql_execute_result=query_result,
-                                                            fastapi_response=response,
-                                                            session=session)
         else:
             @api.put(path, status_code=200, response_model=response_model, dependencies=dependencies)
             def entire_update_by_primary_key(
@@ -1318,21 +1328,23 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(primary_key=primary_key,
-                                           update_args=update_data,
-                                           extra_query=extra_query)
+                data_instance = crud_service.model_query(filter_args=primary_key.__dict__,
+                                                         extra_args=extra_query.__dict__,
+                                                         session=session).one_or_none()
+
                 try:
-                    query_result = execute_service.execute_and_expire(session, stmt)
+                    return result_parser.update(response_model=response_model,
+                                                sql_execute_result=data_instance,
+                                                fastapi_response=response,
+                                                update_args=update_data.__dict__,
+                                                session=session,
+                                                update_one=True)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.update_one(response_model=response_model,
-                                                sql_execute_result=query_result,
-                                                fastapi_response=response,
-                                                session=session)
 
     @classmethod
     def put_many(cls, api, *,
@@ -1354,20 +1366,21 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(update_args=update_data,
-                                           extra_query=extra_query)
+                data_instance = await crud_service.model_query(filter_args=extra_query.__dict__,
+                                                               session=session).all()
                 try:
-                    query_result = await execute_service.async_execute_and_expire(session, stmt)
+                    return await result_parser.async_update(response_model=response_model,
+                                                            sql_execute_result=data_instance,
+                                                            fastapi_response=response,
+                                                            update_args=update_data.__dict__,
+                                                            session=session)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return await result_parser.async_update_many(response_model=response_model,
-                                                             sql_execute_result=query_result,
-                                                             fastapi_response=response,
-                                                             session=session)
+
         else:
             @api.put(path, status_code=200, response_model=response_model, dependencies=dependencies)
             def entire_update_many_by_query(
@@ -1376,18 +1389,22 @@ class SQLALChemyBaseRFullSQLouteSource(object):
                     extra_query: request_query_model = Depends(),
                     session=Depends(db_session),
             ):
-                stmt = crud_service.update(update_args=update_data,
-                                           extra_query=extra_query)
+                data_instance = crud_service.model_query(filter_args=extra_query.__dict__,
+                                                         session=session).all()
                 try:
-
-                    query_result = execute_service.execute_and_expire(session, stmt)
+                    return result_parser.update(response_model=response_model,
+                                                sql_execute_result=data_instance,
+                                                fastapi_response=response,
+                                                update_args=update_data.__dict__,
+                                                session=session)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
-                    if 'duplicate key value violates unique constraint' not in err_msg:
+                    if 'unique constraint' not in err_msg.lower():
                         raise e
                     result = Response(status_code=HTTPStatus.CONFLICT)
                     return result
-                return result_parser.update_many(response_model=response_model,
-                                                 sql_execute_result=query_result,
-                                                 fastapi_response=response,
-                                                 session=session)
+
+                # return result_parser.update_many(response_model=response_model,
+                #                                  sql_execute_result=query_result,
+                #                                  fastapi_response=response,
+                #                                  session=session)

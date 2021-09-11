@@ -130,7 +130,7 @@ def _filter_none(request_or_response_object):
                 delattr(request_or_response_object, name)
 
 
-class ApiParameterSchemaBuilder():
+class ApiParameterSchemaBuilder:
     unsupported_data_types = ["BLOB"]
     partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
@@ -1026,7 +1026,7 @@ class ApiParameterSchemaBuilder():
                                                                                   response_validation]}
                                         )
         response_model = _model_from_dataclass(response_model)
-        response_model = _add_orm_model_config_into_pydantic_model(response_model)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
     def delete_many(self) -> Tuple:
@@ -1073,6 +1073,8 @@ class ApiParameterSchemaBuilder():
                                                                                   response_validation]}
                                         )
         response_model = _model_from_dataclass(response_model)
+
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseListModel',
@@ -1197,6 +1199,7 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
 
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
 
     def update_many(self) -> Tuple:
@@ -1261,10 +1264,12 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
+        response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return None, request_query_model, request_body_model, response_model
 
@@ -1334,10 +1339,13 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
+        response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
 
         return None, request_query_model, request_body_model, response_model
 
