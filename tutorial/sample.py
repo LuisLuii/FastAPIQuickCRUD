@@ -3,7 +3,7 @@ from enum import auto
 import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
-    Table, ForeignKey
+    Table, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from strenum import StrEnum
 
@@ -59,6 +59,7 @@ async def startup_event():
 class Parent(Base):
     __tablename__ = 'parent_o2o'
     id = Column(Integer, primary_key=True,comment='test-test-test')
+    name = Column(Boolean, default = True)
 
     # one-to-many collection
     children = relationship("Child", back_populates="parent")
@@ -88,4 +89,4 @@ crud_route_child = crud_router_builder(
 
 [app.include_router(i) for i in [crud_route_parent, crud_route_child]]
 
-uvicorn.run(app, host="0.0.0.0", port=8001, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)

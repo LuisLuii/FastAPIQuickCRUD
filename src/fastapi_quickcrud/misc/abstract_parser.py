@@ -640,8 +640,6 @@ class SQLAlchemyTableResultParse(object):
                                 )
 
 
-
-
 class SQLAlchemyGneralSQLeResultParse(object):
 
     def __init__(self, async_model, crud_models, autocommit):
@@ -665,6 +663,19 @@ class SQLAlchemyGneralSQLeResultParse(object):
         if self.autocommit:
             session.commit()
 
+    async def async_delete(self, session, data):
+        if self.autocommit:
+            await session.delete(data)
+
+    def delete(self, session, data):
+        if self.autocommit:
+            session.delete(data)
+
+    def update_data_model(self, data, update_args):
+        for update_arg_name, update_arg_value in update_args.items():
+            setattr(data, update_arg_name, update_arg_value)
+        return data
+
     @staticmethod
     async def async_rollback(session):
         await session.rollback()
@@ -674,45 +685,64 @@ class SQLAlchemyGneralSQLeResultParse(object):
         session.rollback()
 
     @staticmethod
-    def update_many_sub_func(sql_execute_result, fastapi_response, response_model):
-        query_result = sql_execute_result.__iter__()
-        result_list = []
-        for result in query_result:
-            result_list.append(result)
-        if not result_list:
-            return Response(status_code=HTTPStatus.NO_CONTENT)
-        fastapi_response.headers["x-total-count"] = str(len(result_list))
-        return parse_obj_as(response_model, result_list)
+    def _response_builder(sql_execute_result, fastapi_response, response_model):
+        result = parse_obj_as(response_model, sql_execute_result)
+        fastapi_response.headers["x-total-count"] = str(len(sql_execute_result) if isinstance(sql_execute_result, list)
+                                                        else '1')
+        return result
 
     async def async_update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_many_sub_func(sql_execute_result, fastapi_response, response_model)
+        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
         await self.async_commit(kwargs.get('session'))
         return result
 
     async def async_patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_many_sub_func(sql_execute_result, fastapi_response, response_model)
+        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
         await self.async_commit(kwargs.get('session'))
         return result
 
     def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_many_sub_func(sql_execute_result, fastapi_response, response_model)
+        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
         self.commit(kwargs.get('session'))
         return result
 
-    def update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_many_sub_func(sql_execute_result, fastapi_response, response_model)
-        self.commit(kwargs.get('session'))
+    def update_func(self, response_model, sql_execute_result, fastapi_response, update_args, update_one):
+        if not isinstance(sql_execute_result, list):
+            sql_execute_result = [sql_execute_result]
+        if not sql_execute_result:
+            return Response(status_code=HTTPStatus.NOT_FOUND)
+        tmp = []
+        for i in sql_execute_result:
+            tmp.append(self.update_data_model(i, update_args=update_args))
+
+        if not update_one:
+            sql_execute_result = tmp
+        else:
+            sql_execute_result, = tmp
+        return self._response_builder(response_model=response_model,
+                                      sql_execute_result=sql_execute_result,
+                                      fastapi_response=fastapi_response)
+
+    def update(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+        session = kwargs.get('session')
+        update_one = kwargs.get('update_one')
+        result = self.update_func(response_model, sql_execute_result, fastapi_response, update_args, update_one)
+        self.commit(session)
+        return result
+
+    async def async_update(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+        session = kwargs.get('session')
+        result = self.update_func(response_model, sql_execute_result, fastapi_response, update_args, session)
+        await self.commit(session)
         return result
 
     @staticmethod
     def find_one_sub_func(sql_execute_result, response_model, fastapi_response, **kwargs):
         join = kwargs.get('join_mode', None)
-        one_row_data = sql_execute_result.fetchall()
-        if not one_row_data:
+        if not sql_execute_result:
             return Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
-        # row, = one_row_data
         response = []
-        for i in one_row_data:
+        for i in sql_execute_result:
             i = dict(i)
             result__ = copy.deepcopy(i)
             tmp = {}
@@ -726,17 +756,6 @@ class SQLAlchemyGneralSQLeResultParse(object):
                 else:
                     tmp[key_] = value_
             response.append(tmp)
-        # result = {}
-        # for key_, value_ in result__.items():
-        #     if '_____' in key_:
-        #         key, foreign_column = key_.split('_____')
-        #         if key not in result:
-        #             result[key] = {foreign_column: value_}
-        #         else:
-        #             result[key][foreign_column] = value_
-        #     else:
-        #         result[key_] = value_
-
         if join:
             response = group_find_many_join(response)
         if isinstance(response, list):
@@ -756,13 +775,8 @@ class SQLAlchemyGneralSQLeResultParse(object):
 
     @staticmethod
     def find_many_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs):
-        # result_list = [i for i in sql_execute_result.scalars()]
-        # for table in sql_execute_result:
-        #     print(dir(table))
-        #     print(table._asdict())
-        # FIXME handle NO_CONTENT
         join = kwargs.get('join_mode', None)
-        result = sql_execute_result.fetchall()
+        result = sql_execute_result
         if not result:
             return Response(status_code=HTTPStatus.NO_CONTENT)
         response = []
@@ -799,23 +813,26 @@ class SQLAlchemyGneralSQLeResultParse(object):
 
     @staticmethod
     def update_one_sub_func(response_model, sql_execute_result, fastapi_response):
-        query_result = sql_execute_result.__iter__()
-        try:
-            query_result = next(query_result)
-        except StopIteration:
-            return Response(status_code=HTTPStatus.NOT_FOUND)
+        result = parse_obj_as(response_model, sql_execute_result)
         fastapi_response.headers["x-total-count"] = str(1)
-        result = parse_obj_as(response_model, query_result)
         return result
 
-    async def async_update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        await self.async_commit(kwargs.get('session'))
+    async def async_update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+        session = kwargs.get('session')
+        if not sql_execute_result:
+            return Response(status_code=HTTPStatus.NOT_FOUND)
+        data = self.update_data_model(sql_execute_result, update_args=update_args)
+        result = self.update_one_sub_func(response_model, data, fastapi_response)
+        await self.commit(session)
         return result
 
-    def update_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        self.commit(kwargs.get('session'))
+    def update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+        session = kwargs.get('session')
+        if not sql_execute_result:
+            return Response(status_code=HTTPStatus.NOT_FOUND)
+        data = self.update_data_model(sql_execute_result, update_args=update_args)
+        result = self.update_one_sub_func(response_model, data, fastapi_response)
+        self.commit(session)
         return result
 
     # async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
@@ -861,43 +878,53 @@ class SQLAlchemyGneralSQLeResultParse(object):
         self.commit(kwargs.get('session'))
         return result
 
-    def delete_one_sub_func(self, response_model, sql_execute_result, fastapi_response):
-        if sql_execute_result.rowcount:
-            deleted_row = dict(sql_execute_result.fetchone())
-            result = parse_obj_as(response_model, deleted_row)
-            fastapi_response.headers["x-total-count"] = str(1)
-        else:
-            result = Response(status_code=HTTPStatus.NOT_FOUND)
+    def delete_one_sub_func(self, response_model, sql_execute_result, fastapi_response, **kwargs):
+        if not sql_execute_result:
+            return Response(status_code=HTTPStatus.NOT_FOUND)
+        result = parse_obj_as(response_model, sql_execute_result)
+        fastapi_response.headers["x-total-count"] = str(1)
         return result
 
     def delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.delete_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        self.commit(kwargs.get('session'))
+        session = kwargs.get('session')
+        if sql_execute_result:
+            self.delete(session, sql_execute_result)
+        result = self.delete_one_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs)
+        self.commit(session)
         return result
 
     async def async_delete_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.delete_one_sub_func(response_model, sql_execute_result, fastapi_response)
-        await self.async_commit(kwargs.get('session'))
+        session = kwargs.get('session')
+        if sql_execute_result:
+            self.delete(session, sql_execute_result)
+        result = self.delete_one_sub_func(response_model, sql_execute_result, fastapi_response, **kwargs)
+        await self.commit(session)
         return result
 
     def delete_many_sub_func(self, response_model, sql_execute_result, fastapi_response):
-        if not sql_execute_result.rowcount:
+        if not sql_execute_result:
             return Response(status_code=HTTPStatus.NO_CONTENT)
-
-        deleted_rows = sql_execute_result.fetchall()
-        deleted_rows_dict = [dict(deleted_row) for deleted_row in deleted_rows]
-        result = parse_obj_as(response_model, deleted_rows_dict)
-        fastapi_response.headers["x-total-count"] = str(len(deleted_rows_dict))
+        deleted_rows = sql_execute_result
+        result = parse_obj_as(response_model, deleted_rows)
+        fastapi_response.headers["x-total-count"] = str(len(deleted_rows))
         return result
 
-    def delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.delete_many_sub_func(response_model, sql_execute_result, fastapi_response)
-        self.commit(kwargs.get('session'))
+    def delete_many(self, *, response_model, sql_execute_results, fastapi_response, **kwargs):
+        session = kwargs.get('session')
+        if sql_execute_results:
+            for sql_execute_result in sql_execute_results:
+                self.delete(session, sql_execute_result)
+        result = self.delete_many_sub_func(response_model, sql_execute_results, fastapi_response)
+        self.commit(session)
         return result
 
-    async def async_delete_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self.delete_many_sub_func(response_model, sql_execute_result, fastapi_response)
-        await self.async_commit(kwargs.get('session'))
+    async def async_delete_many(self, *, response_model, sql_execute_results, fastapi_response, **kwargs):
+        session = kwargs.get('session')
+        if sql_execute_results:
+            for sql_execute_result in sql_execute_results:
+                await self.async_delete(session, sql_execute_result)
+        result = self.delete_many_sub_func(response_model, sql_execute_results, fastapi_response)
+        self.commit(session)
         return result
 
     def has_end_point(self, fastapi_request) -> bool:
@@ -949,4 +976,3 @@ class SQLAlchemyGneralSQLeResultParse(object):
         return RedirectResponse(redirect_url,
                                 status_code=HTTPStatus.SEE_OTHER
                                 )
-
