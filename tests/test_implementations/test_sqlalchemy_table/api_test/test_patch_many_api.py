@@ -9,272 +9,61 @@ from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_one_model = api_model[CrudMethods.UPSERT_ONE].__dict__
-# assert create_one_model['requestModel'] or create_one_model['responseModel']
-# create_one_request_model = deepcopy(create_one_model['requestModel'].__dict__['__fields__'])
-# create_one_response_model = deepcopy(create_one_model['responseModel'].__dict__['__fields__'])
-# Request Test
-# assert create_one_request_model.pop('on_conflict', False)
-# for k, v in create_one_request_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
 
-# Response Test
-# for k, v in create_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
+                                      crud_methods=[
+                                          CrudMethods.UPSERT_ONE
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                       prefix="/test_creation_one",
                                       tags=["test"]
                                       )
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_MANY,
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_many_model = api_model[CrudMethods.UPSERT_MANY].__dict__
-# assert create_many_model['requestModel'] or create_many_model['responseModel']
-# create_many_request_model = deepcopy(create_many_model['requestModel'].__dict__['__fields__'])
-# create_many_response_model = deepcopy(create_many_model['responseModel'].__dict__['__fields__'])
-#
-# # Request Model Test
-# assert create_many_request_model.pop('on_conflict', None)
-# insert_many_model = create_many_request_model['insert'].sub_fields[0].outer_type_.__dict__['__fields__']
-# for k, v in insert_many_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-#
-# # Response Model Test
-# for k, v in create_many_response_model.items():
-#     create_many_response_model_item = v.type_.__dict__['__fields__']
-#     for k, v in create_many_response_model_item.items():
-#         sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#         if sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif sql_schema.nullable:
-#             assert not v.required
-#         elif not sql_schema.nullable:
-#             assert v.required
-#         elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#             assert v.required
-#         else:
-#             print(f"{v.name=}")
-#             print(f"{v.required=}")
-#             print(f"{v.default=}")
+
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                        prefix="/test_creation_many",
                                        tags=["test"]
                                        )
 
-# Response Mode Test
-# response_many = create_many_response_model['__root__'].sub_fields[0].outer_type_.__dict__['__fields__']
-# for k, v in response_many.items():
-#     assert not v.required
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.POST_REDIRECT_GET
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# post_redirect_get_model = api_model[CrudMethods.POST_REDIRECT_GET].__dict__
-# assert post_redirect_get_model['requestModel'] or post_redirect_get_model['responseModel']
-# post_redirect_get_request_model = deepcopy(post_redirect_get_model['requestModel'].__dict__['__fields__'])
-# post_redirect_get_response_model = deepcopy(post_redirect_get_model['responseModel'].__dict__['__fields__'])
 
-# Request Model Test
 
-# for k, v in post_redirect_get_request_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-
-# Response Model Test
-# for k, v in post_redirect_get_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-
-# for k, v in post_redirect_get_response_model.items():
-#     assert v.required
 
 test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
                                                  db_model=UntitledTable256,
-                                                 crud_models=UntitledTable256Model,
+                                                 crud_methods=[
+                                                     CrudMethods.POST_REDIRECT_GET
+                                                 ],
+                                                 exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                                  prefix="/test_post_direct_get",
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # # Model Test
-# api_model = UntitledTable256Model.__dict__['GET']
-# assert api_model
-# get_one_model = api_model[CrudMethods.FIND_ONE].__dict__
-# assert get_one_model['requestModel'] or get_one_model['responseModel']
-# get_one_request_model = deepcopy(get_one_model['requestModel'].__dict__['__fields__'])
-# get_one_response_model = deepcopy(get_one_model['responseModel'].__dict__['__fields__'])
-# primary_key_of_get_sql_schema = get_one_request_model[UntitledTable256.__dict__['primary_key_of_table']]
-# assert not primary_key_of_get_sql_schema.required
-# get_one_request_model.pop(UntitledTable256.__dict__['primary_key_of_table'], None)
-# for k, v in get_one_request_model.items():
-#     assert not v.required
-# # FIXME some thing may not require
-# for k, v in get_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
+
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
-                                    crud_models=UntitledTable256Model,
+                                    crud_methods=[
+                                        CrudMethods.FIND_ONE
+                                    ],
+                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                     prefix="/test",
                                     tags=["test"]
                                     )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.PATCH_MANY
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # # Model Test
-# api_model = UntitledTable256Model.__dict__['GET']
-# assert api_model
-# get_one_model = api_model[CrudMethods.FIND_ONE].__dict__
-# assert get_one_model['requestModel'] or get_one_model['responseModel']
-# get_one_request_model = deepcopy(get_one_model['requestModel'].__dict__['__fields__'])
-# get_one_response_model = deepcopy(get_one_model['responseModel'].__dict__['__fields__'])
-# primary_key_of_get_sql_schema = get_one_request_model[UntitledTable256.__dict__['primary_key_of_table']]
-# assert not primary_key_of_get_sql_schema.required
-# get_one_request_model.pop(UntitledTable256.__dict__['primary_key_of_table'], None)
-# for k, v in get_one_request_model.items():
-#     assert not v.required
-# # FIXME some thing may not require
-# for k, v in get_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
+
 test_patch_data = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
+                                      crud_methods=[
+                                          CrudMethods.PATCH_MANY
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                       prefix="/test_patch_many",
                                       tags=["test"]
                                       )

@@ -200,3 +200,5 @@ def test_create_but_not_found_get_api():
 
     response = client.post('/test_post_direct_get_without_get', headers=headers, data=data, allow_redirects=True)
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+test_create_but_not_found_get_api()

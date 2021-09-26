@@ -11,55 +11,45 @@ from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit, Unkn
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
                                       prefix="/test_creation_one",
-                                      tags=["test"]
+                                      tags=["test"],
+                                      crud_methods=[
+                                          CrudMethods.UPSERT_ONE
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue']
                                       )
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
                                        prefix="/test_creation_many",
-                                       tags=["test"]
+                                       tags=["test"],
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue']
                                        )
-
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.POST_REDIRECT_GET
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
                                                  db_model=UntitledTable256,
-                                                 crud_models=UntitledTable256Model,
+                                                 crud_methods=[
+                                                     CrudMethods.POST_REDIRECT_GET
+                                                 ],
+                                                 exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                                  prefix="/test_post_direct_get",
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.FIND_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
-                                    crud_models=UntitledTable256Model,
                                     prefix="/test",
-                                    tags=["test"]
+                                    tags=["test"],
+                                    crud_methods=[
+                                        CrudMethods.FIND_ONE
+                                    ],
+                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue']
                                     )
 [app.include_router(i) for i in [test_post_and_redirect_get, test_create_one, test_create_many, test_get_data]]
 
@@ -177,7 +167,7 @@ def test_update_specific_columns_when_conflict():
         response = client.get(f'/test/{sample_data[primary_key_name]}', headers=headers)
         assert response.status_code == 200
         response_data = response.json()
-        # upsert the data
+        # create the data
         update_column_on_conflict = {
             "update_columns": [
                 "int8_value",
@@ -265,7 +255,7 @@ def test_update_specific_columns_when_conflict():
         response = client.get(f'/test/{sample_data[primary_key_name]}', headers=headers)
         assert response.status_code == 200
         response_data = response.json()
-        # upsert the data
+        # create the data
         update_column_on_conflict = {
             "update_columns": [
                 "varchar_value",
@@ -331,7 +321,6 @@ def test_update_specific_columns_when_conflict():
 
     update_all_fields()
     update_partial_fields()
-
 
 
 def test_try_input_with_conflict_but_missing_update_columns():

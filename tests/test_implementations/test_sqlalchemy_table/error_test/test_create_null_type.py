@@ -1,8 +1,12 @@
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, text, PrimaryKeyConstraint, Table, UniqueConstraint
-from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, synonym
+import os
 
+from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
+    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, text, PrimaryKeyConstraint, Table, UniqueConstraint, \
+    create_engine
+from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
+from sqlalchemy.orm import declarative_base, synonym, sessionmaker
+
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods
 from src.fastapi_quickcrud.misc.exceptions import SchemaException, ColumnTypeNotSupportedException, PrimaryMissing
 
@@ -38,14 +42,33 @@ UntitledTable256 = Table(
 
 )
 
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
+engine = create_engine(TEST_DATABASE_URL, future=True, echo=True,
+                       pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def get_transaction_session():
+    try:
+        db = session()
+        yield db
+    finally:
+        db.close()
 
 try:
-    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                   crud_methods=[
-                                                       CrudMethods.PATCH_ONE,
-                                                   ],
-                                                   exclude_columns=['xml_value', 'box_valaue'])
-except ColumnTypeNotSupportedException as e:
-    print(str(e))
-    assert 'The type of column array_str__value (NULL) not supported yet' in str(e)
 
+    crud_route_child = crud_router_builder(db_session=get_transaction_session,
+                                           db_model=UntitledTable256,
+                                           crud_methods=[
+                                               CrudMethods.PATCH_ONE,
+                                           ],
+                                           exclude_columns=['xml_value', 'box_valaue'],
+                                           prefix="/child",
+                                           tags=["child"]
+                                           )
+except BaseException as e:
+    assert 'not supported yet' in str(e)
+# except BaseException as e:
+#     print(str(e))

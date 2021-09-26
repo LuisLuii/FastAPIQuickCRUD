@@ -1,9 +1,18 @@
 from enum import Enum, auto
+from itertools import chain
 
 from strenum import StrEnum
 
 from .exceptions import InvalidRequestMethod
 
+
+class SqlType(StrEnum):
+    postgresql = auto()
+    mysql = auto()
+    mariadb = auto()
+    sqlite = auto()
+    oracle = auto()
+    mssql = auto()
 
 class Ordering(StrEnum):
     DESC = auto()
@@ -19,20 +28,23 @@ class CrudMethods(Enum):
     PATCH_MANY = "PATCH_MANY"
     UPSERT_ONE = "UPSERT_ONE"
     UPSERT_MANY = "UPSERT_MANY"
+    CREATE_ONE = "CREATE_ONE"
+    CREATE_MANY = "CREATE_MANY"
     DELETE_ONE = "DELETE_ONE"
     DELETE_MANY = "DELETE_MANY"
     POST_REDIRECT_GET = "POST_REDIRECT_GET"
 
     @staticmethod
     def get_table_full_crud_method():
-        return [CrudMethods.FIND_MANY,CrudMethods.UPSERT_ONE,CrudMethods.UPDATE_MANY,CrudMethods.PATCH_MANY,
+        return [CrudMethods.FIND_MANY, CrudMethods.CREATE_MANY, CrudMethods.UPDATE_MANY, CrudMethods.PATCH_MANY,
                 CrudMethods.DELETE_MANY]
+
     @staticmethod
     def get_declarative_model_full_crud_method():
-        return [CrudMethods.FIND_MANY,CrudMethods.FIND_ONE,
-                CrudMethods.UPDATE_MANY,CrudMethods.UPDATE_ONE,
-                CrudMethods.PATCH_MANY,CrudMethods.PATCH_ONE,CrudMethods.UPSERT_ONE,
-                CrudMethods.DELETE_MANY,CrudMethods.DELETE_ONE]
+        return [CrudMethods.FIND_MANY, CrudMethods.FIND_ONE,
+                CrudMethods.UPDATE_MANY, CrudMethods.UPDATE_ONE,
+                CrudMethods.PATCH_MANY, CrudMethods.PATCH_ONE, CrudMethods.CREATE_MANY,
+                CrudMethods.DELETE_MANY, CrudMethods.DELETE_ONE]
 
 
 class RequestMethods(Enum):
@@ -69,7 +81,8 @@ class CRUDRequestMapping(Enum):
     def get_request_method_by_crud_method(cls, value):
         crud_methods = cls.__dict__
         if value not in crud_methods:
-            raise InvalidRequestMethod(f'{value} is not an available request method, Please use CrudMethods to select available crud method')
+            raise InvalidRequestMethod(
+                f'{value} is not an available request method, Please use CrudMethods to select available crud method')
         return crud_methods[value].value
 
 
@@ -102,17 +115,25 @@ class ItemComparisonOperators(StrEnum):
     Not_in = auto()
 
 
-class MatchingPatternInString(StrEnum):
-    match_regex_with_case_sensitive = auto()
-    match_regex_with_case_insensitive = auto()
-    does_not_match_regex_with_case_sensitive = auto()
-    does_not_match_regex_with_case_insensitive = auto()
+class MatchingPatternInStringBase(StrEnum):
     case_insensitive = auto()
     case_sensitive = auto()
     not_case_insensitive = auto()
     not_case_sensitive = auto()
+
+
+class PGSQLMatchingPattern(StrEnum):
+    match_regex_with_case_sensitive = auto()
+    match_regex_with_case_insensitive = auto()
+    does_not_match_regex_with_case_sensitive = auto()
+    does_not_match_regex_with_case_insensitive = auto()
     similar_to = auto()
     not_similar_to = auto()
+
+
+PGSQLMatchingPatternInString = StrEnum('PGSQLMatchingPatternInString',
+                                       {Pattern: auto() for Pattern in
+                                        chain(MatchingPatternInStringBase, PGSQLMatchingPattern)})
 
 
 class JSONMatchingMode(str, Enum):
@@ -130,5 +151,3 @@ class JSONBMatchingMode(str, Enum):
 class SessionObject(StrEnum):
     sqlalchemy = auto()
     databases = auto()
-
-
