@@ -119,7 +119,14 @@ def crud_router_builder(
 
         db_connection.create_memory_table(db_model)
 
-    sql_type = db_session().__next__().bind.name
+
+    if async_mode is None:
+        async_mode = inspect.isasyncgen(db_session())
+
+    if async_mode:
+        sql_type = db_session().__next__().bind.name
+    else:
+        sql_type = await db_session().__anext__().bind.name
 
     if not crud_methods and  NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
@@ -134,8 +141,6 @@ def crud_router_builder(
         routes_source = SQLAlchemyPGSQLRouteSource
         query_service = SQLAlchemyPGSQLQueryService
 
-    if async_mode is None:
-        async_mode = inspect.isasyncgen(db_session())
     if not crud_models:
         crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
         crud_models: CRUDModel = crud_models_builder(db_model=db_model,
