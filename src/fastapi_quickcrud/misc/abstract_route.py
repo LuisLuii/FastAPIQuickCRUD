@@ -1126,3 +1126,37 @@ class SQLAlchemyMSSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     execute_service):
         raise NotImplementedError
 
+class SQLAlchemyNotSupportRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
+    '''
+    This route will support the SQL SQLAlchemy dialects
+    '''
+
+    @classmethod
+    def upsert_one(cls, api, *,
+                   path,
+                   query_service,
+                   parsing_service,
+                   execute_service,
+                   async_mode,
+                   response_model,
+                   request_body_model,
+                   dependencies,
+                   db_session,
+                   unique_list):
+
+        raise NotImplementedError
+
+    @classmethod
+    def upsert_many(cls, api, *,
+                    query_service,
+                    parsing_service,
+                    async_mode,
+                    path,
+                    response_model,
+                    dependencies,
+                    request_body_model,
+                    db_session,
+                    unique_list,
+                    execute_service):
+        raise NotImplementedError
+

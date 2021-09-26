@@ -356,3 +356,24 @@ class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
                upsert_one=True,
                ) -> BinaryExpression:
         raise NotImplemented('upsert only support PostgreSQL')
+
+
+class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
+
+    def __init__(self, *, model, async_mode):
+        """
+        :param model: declarative_base model
+        :param async_mode: bool
+        """
+        super().__init__(model=model,
+                         async_mode=async_mode)
+        self.model = model
+        self.model_columns = model
+        self.async_mode = async_mode
+
+    def upsert(self, *,
+               insert_arg,
+               unique_fields: List[str],
+               upsert_one=True,
+               ) -> BinaryExpression:
+        raise NotImplemented('upsert only support PostgreSQL')
