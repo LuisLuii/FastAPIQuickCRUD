@@ -18,8 +18,9 @@ from . import sqlalchemy_to_pydantic
 from .misc.abstract_execute import SQLALchemyExecuteService
 from .misc.abstract_parser import SQLAlchemyGeneralSQLeResultParse
 from .misc.abstract_query import SQLAlchemyGeneralSQLQueryService, SQLAlchemyPGSQLQueryService, \
-    SQLAlchemySQLITEQueryService
-from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRouteSource
+    SQLAlchemySQLITEQueryService, SQLAlchemyNotSupportQueryService
+from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRouteSource, \
+    SQLAlchemyNotSupportRouteSource
 from .misc.crud_model import CRUDModel
 from .misc.memory_sql import  async_memory_db, sync_memory_db
 from .misc.type import CrudMethods, SqlType
@@ -142,6 +143,9 @@ def crud_router_builder(
     elif sql_type == SqlType.postgresql:
         routes_source = SQLAlchemyPGSQLRouteSource
         query_service = SQLAlchemyPGSQLQueryService
+    else:
+        routes_source = SQLAlchemyNotSupportRouteSource
+        query_service = SQLAlchemyNotSupportQueryService
 
     if not crud_models:
         crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
