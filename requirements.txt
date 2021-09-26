@@ -11,3 +11,4 @@ requests
 coverage
 coveralls
 starlette
+aiosqlite

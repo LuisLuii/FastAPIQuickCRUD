@@ -23,7 +23,7 @@ async def get_transaction_session() -> AsyncSession:
 
 
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, ForeignKey, Index, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text, PrimaryKeyConstraint
+    JSON, LargeBinary, Numeric, SmallInteger, String, Table, Text, Time, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import NullType
@@ -238,8 +238,8 @@ t_list_of_critical_fault = Table(
     Column('device_name', String),
     Column('severity', String(16)),
     Column('equipment_type', String(64)),
-    Column('impact', JSONB(astext_type=Text())),
-    Column('fault_issue', JSONB(astext_type=Text()))
+    # Column('impact', JSONB(astext_type=Text())),
+    # Column('fault_issue', JSONB(astext_type=Text()))
 )
 
 
@@ -1161,14 +1161,16 @@ class WidgetLayout(Base):
     user = relationship('User')
     widget_data = relationship('WidgetInfo')
 
+
 class UntitledTable256(Base):
     __tablename__ = 'untitled_table_256'
     __table_args__ = (
         UniqueConstraint('id', 'int4_value', 'float4_value'),
     )
 
-    id = Column(Integer, primary_key=True, nullable=False, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-    bool_value = Column(Boolean,nullable=False, server_default=text("false"))
+    id = Column(Integer, primary_key=True, nullable=False,
+                server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
+    bool_value = Column(Boolean, nullable=False, server_default=text("false"))
     bytea_value = Column(LargeBinary)
     char_value = Column(CHAR(10))
     date_value = Column(Date, server_default=text("now()"))
@@ -1197,11 +1199,76 @@ class UntitledTable256(Base):
         print('ok')
 
 
+association_table = Table('test_association', Base.metadata,
+                          Column('left_id', ForeignKey('test_left.id')),
+                          Column('right_id', ForeignKey('test_right.id'))
+                          )
 
-crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   db_model=UntitledTable256,
-                                   exclude_columns=['bytea_value','xml_value','box_valaue'],
-                                   prefix="/friend",
-                                   )
-app.include_router(crud_route_2)
-uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
+association_table_second = Table('test_association_second', Base.metadata,
+                                 Column('left_id_second', ForeignKey('test_left.id')),
+                                 Column('right_id_second', ForeignKey('test_right_second.id'))
+                                 )
+
+
+class Child(Base):
+    __tablename__ = 'test_right'
+    id = Column(Integer, primary_key=True)
+
+
+class Parent(Base):
+    __tablename__ = 'test_left'
+    id = Column(Integer, primary_key=True)
+    children = relationship("Child",
+                            secondary=association_table)
+    children_second = relationship("ChildSecond",
+                                   secondary=association_table_second)
+
+
+class ChildSecond(Base):
+    __tablename__ = 'test_right_second'
+    id = Column(Integer, primary_key=True)
+
+
+crud_route_child = crud_router_builder(db_session=get_transaction_session,
+                                       db_model=Child,
+                                       prefix="/child",
+                                       tags=["child"]
+                                       )
+
+crud_route_association_table_second = crud_router_builder(db_session=get_transaction_session,
+                                                          db_model=association_table_second,
+                                                          prefix="/association_table_second",
+                                                          tags=["association_table_second"]
+                                                          )
+
+crud_route_child_second = crud_router_builder(db_session=get_transaction_session,
+                                              db_model=Child,
+                                              prefix="/child_second",
+                                              tags=["child_second"]
+                                              )
+
+crud_route_parent = crud_router_builder(db_session=get_transaction_session,
+                                        db_model=Parent,
+                                        prefix="/parent",
+                                        tags=["parent"]
+                                        )
+crud_route_association = crud_router_builder(db_session=get_transaction_session,
+                                             db_model=association_table,
+                                             prefix="/association",
+                                             tags=["association"]
+                                             )
+
+[app.include_router(i) for i in
+ [crud_route_association_table_second, crud_route_child_second, crud_route_parent, crud_route_child,
+  crud_route_association]]
+
+# crud_route_2 = crud_router_builder(db_session=get_transaction_session,
+#                                    db_model=UntitledTable256,
+#                                    crud_methods=[
+#                                        CrudMethods.UPSERT_MANY,
+#                                    ],
+#                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
+#                                    prefix="/friend",
+#                                    )
+# app.include_router(crud_route_2)
+uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)

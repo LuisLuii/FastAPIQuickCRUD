@@ -9,28 +9,24 @@ from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy.api_test import get_transaction_session, app, UntitledTable256
 
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.UPSERT_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
+                                      crud_methods=[
+                                          CrudMethods.UPSERT_ONE
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                       prefix="/test",
                                       tags=["test"]
                                       )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                               crud_methods=[
-                                                   CrudMethods.FIND_ONE
-                                               ],
-                                               exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
-                                    crud_models=UntitledTable256Model,
+                                    crud_methods=[
+                                        CrudMethods.FIND_ONE
+                                    ],
+                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                     prefix="/test",
                                     tags=["test"]
                                     )
@@ -822,5 +818,3 @@ def test_get_by_primary_key_with_false_timestamptz_range_query_param():
     response = client.get(f'/test/{sample_primary_key}?timestamptz_value____from=2021-07-26T02%3A17%3A46.847Z&timestamptz_value____to=2021-07-26T02%3A17%3A46.946Z&timestamptz_value____from_____comparison_operator=Greater_than_or_equal_to&timestamptz_value____to_____comparison_operator=Less_than_or_equal_to', headers=headers)
     assert response.status_code == 404
 
-
-test_get_by_primary_key_with_false_timestamp_range_query_param()

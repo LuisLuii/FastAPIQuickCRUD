@@ -70,51 +70,45 @@ def setup_module(module):
     UUIDTable.create(engine, checkfirst=True)
 
 
-model_1 = sqlalchemy_to_pydantic(UUIDTable,
-                                       crud_methods=[
-                                           CrudMethods.FIND_ONE,
-                                           CrudMethods.FIND_MANY,
-                                           CrudMethods.UPSERT_MANY,
-                                           CrudMethods.UPDATE_ONE,
-                                           CrudMethods.UPDATE_MANY,
-                                           CrudMethods.PATCH_MANY,
-                                           CrudMethods.PATCH_ONE,
-                                           CrudMethods.DELETE_MANY,
-                                           CrudMethods.DELETE_ONE,
-                                       ],
-                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 route_1 = crud_router_builder(db_session=get_transaction_session,
                               db_model=UUIDTable,
-                              crud_models=model_1,
+                              crud_methods=[
+                                  CrudMethods.FIND_ONE,
+                                  CrudMethods.FIND_MANY,
+                                  CrudMethods.UPSERT_MANY,
+                                  CrudMethods.UPDATE_ONE,
+                                  CrudMethods.UPDATE_MANY,
+                                  CrudMethods.PATCH_MANY,
+                                  CrudMethods.PATCH_ONE,
+                                  CrudMethods.DELETE_MANY,
+                                  CrudMethods.DELETE_ONE,
+                              ],
+                              exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                               prefix="/test",
                               tags=["test"]
                               )
 
-model_2 = sqlalchemy_to_pydantic(UUIDTable,
-                                       crud_methods=[
-                                           CrudMethods.UPSERT_ONE,
-                                           CrudMethods.POST_REDIRECT_GET,
-                                       ],
-                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 route_2 = crud_router_builder(db_session=get_transaction_session,
                               db_model=UUIDTable,
-                              crud_models=model_2,
+                              crud_methods=[
+                                  CrudMethods.UPSERT_ONE,
+                                  CrudMethods.POST_REDIRECT_GET,
+                              ],
+                              exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                               prefix="/test_2",
                               tags=["test"]
                               )
 
-model_3 = sqlalchemy_to_pydantic(UUIDTable,
-                                       crud_methods=[
-                                           CrudMethods.FIND_ONE,
-                                           CrudMethods.POST_REDIRECT_GET,
-                                       ],
-                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 route_3 = crud_router_builder(db_session=get_transaction_session,
                               db_model=UUIDTable,
-                              crud_models=model_3,
+                              crud_methods=[
+                                  CrudMethods.FIND_ONE,
+                                  CrudMethods.POST_REDIRECT_GET,
+                              ],
+                              exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                               prefix="/test_3",
                               tags=["test"]
                               )
@@ -740,6 +734,6 @@ def test_upsert_one():
     response = client.post('/test_2', headers=headers, data=json.dumps(dict(upsert_data, **json.loads(data))))
     assert response.status_code == 201
 
-    # upsert
+    # create
     response = client.post('/test_2', headers=headers, data=json.dumps(dict(updated_data, **json.loads(data))))
     assert response.status_code == 409
