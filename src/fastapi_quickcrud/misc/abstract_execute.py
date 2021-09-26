@@ -23,7 +23,6 @@ class SQLALchemyExecuteService(object):
     @staticmethod
     def add(session, model) -> Any:
         session.add(model)
-        session.flush()
 
     @staticmethod
     def add_all(session, model) -> Any:

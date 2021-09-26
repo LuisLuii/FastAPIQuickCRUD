@@ -637,7 +637,7 @@ class ApiParameterSchemaBuilder:
         return default
 
     def _assign_str_matching_pattern(self, field_of_param: dict, result_: List[dict]) -> List[dict]:
-        if self.sql_type == SqlType.PostgreSQL:
+        if self.sql_type == SqlType.postgresql:
             operator = List[PGSQLMatchingPatternInString]
         else:
             operator = List[MatchingPatternInStringBase]

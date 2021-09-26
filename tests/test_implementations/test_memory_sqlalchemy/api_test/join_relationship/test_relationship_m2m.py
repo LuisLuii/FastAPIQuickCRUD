@@ -61,34 +61,34 @@ crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
                                        prefix="/child",
                                        tags=["child"],
-                                       sql_type=SqlType.SQLite
+                                       
                                        )
 
 crud_route_association_table_second = crud_router_builder(db_session=get_transaction_session,
                                                           db_model=association_table_second,
                                                           prefix="/association_table_second",
                                                           tags=["association_table_second"],
-                                                          sql_type=SqlType.SQLite
+                                                          
                                                           )
 
 crud_route_child_second = crud_router_builder(db_session=get_transaction_session,
                                               db_model=Child,
                                               prefix="/child_second",
                                               tags=["child_second"],
-                                              sql_type=SqlType.SQLite
+                                              
                                               )
 
 crud_route_parent = crud_router_builder(db_session=get_transaction_session,
                                         db_model=Parent,
                                         prefix="/parent",
                                         tags=["parent"],
-                                        sql_type=SqlType.SQLite
+                                        
                                         )
 crud_route_association = crud_router_builder(db_session=get_transaction_session,
                                              db_model=association_table,
                                              prefix="/association",
                                              tags=["association"],
-                                             sql_type=SqlType.SQLite
+                                             
                                              )
 from starlette.testclient import TestClient
 
