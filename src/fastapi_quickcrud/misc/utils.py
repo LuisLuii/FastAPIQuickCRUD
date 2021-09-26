@@ -197,6 +197,7 @@ def sqlalchemy_to_pydantic(
                                               exclude_column=exclude_columns,
                                               sql_type=sql_type,
                                               exclude_primary_key=exclude_primary_key)
+
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
                                        CrudMethods.FIND_ONE.value,
                                        CrudMethods.PATCH_ONE.value,

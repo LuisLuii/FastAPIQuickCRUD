@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 from functools import partial
 from typing import \
@@ -107,26 +108,27 @@ def crud_router_builder(
             table_dict[str(i.key)] = _
         tmp = type(f'{db_name}DeclarativeBaseClass', (Base,), table_dict)
         db_model = tmp
-    constraints = db_model.__table__.constraints
-    if db_session is None:
 
+    constraints = db_model.__table__.constraints
+
+    if db_session is None:
         if async_mode:
             db_connection = async_memory_db
             db_session: Callable = db_connection.async_get_memory_db_session
         else:
             db_connection = sync_memory_db
             db_session: Callable = db_connection.get_memory_db_session
-
         db_connection.create_memory_table(db_model)
-
 
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
-
     if async_mode:
-        sql_type = db_session().__next__().bind.name
+        async def async_runner(f):
+            return [i.bind.name async for i in f()]
+        sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
     else:
-        sql_type = await db_session().__anext__().bind.name
+        sql_type, = [i.bind.name for i in db_session()]
+
 
     if not crud_methods and  NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
