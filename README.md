@@ -55,7 +55,9 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
   - [x] **Support SQLAlchemy 1.4** - Allow you build a fully asynchronous python service, also supports synchronization.
   
-  - [x] **Support Pagination** - Get many API support `order by` `offset` `limit` field in API
+  - [x] **Full SQL Support** - Support different SQL for SQLAlchemy
+    
+  - [x] **Support Pagination** - `Get many` API support `order by` `offset` `limit` field in API
 
   - [x] **Rich FastAPI CRUD router generation** - Many operations of CRUD are implemented to complete the development and coverage of all aspects of basic CRUD.
 
@@ -68,7 +70,6 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 ## Constraint
    
   - ❌ Alias is not support yet
-  - ❌ Only support PostgreSQL, since using RETURNING clause (still think about how to deal with different SQL in general instead of RETURNING)
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
   - ❌ **Composite primary key** is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
@@ -76,21 +77,7 @@ I believe that everyone who's working with FastApi and building some RESTful of 
     - `FIND ONE`
     - `PATCH ONE` 
     - `DELETE ONE` 
-  - ❌ Some types of columns are not supported as query parameter
-    - INTERVAL
-    - JSON
-    - JSONB
-    - H-STORE
-    - ARRAY
-    - BYTE
-    - Geography
-    - box
-    - line
-    - point
-    - lseg
-    - polygon
-    - inet
-    - macaddr
+  
 
 # Getting started
 

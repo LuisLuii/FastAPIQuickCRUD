@@ -10,19 +10,18 @@ from fastapi import \
     Depends, APIRouter
 from pydantic import \
     BaseModel
-from sqlalchemy import Integer
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql.schema import Table, Column
+from sqlalchemy.sql.schema import Table
 
 from . import sqlalchemy_to_pydantic
 from .misc.abstract_execute import SQLALchemyExecuteService
 from .misc.abstract_parser import SQLAlchemyGeneralSQLeResultParse
-from .misc.abstract_query import SQLAlchemyGeneralSQLQueryService, SQLAlchemyPGSQLQueryService, \
+from .misc.abstract_query import SQLAlchemyPGSQLQueryService, \
     SQLAlchemySQLITEQueryService, SQLAlchemyNotSupportQueryService
 from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRouteSource, \
     SQLAlchemyNotSupportRouteSource
 from .misc.crud_model import CRUDModel
-from .misc.memory_sql import  async_memory_db, sync_memory_db
+from .misc.memory_sql import async_memory_db, sync_memory_db
 from .misc.type import CrudMethods, SqlType
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
@@ -93,21 +92,19 @@ def crud_router_builder(
     """
     NO_PRIMARY_KEY = False
 
-
     if isinstance(db_model, Table):
         db_name = str(db_model.fullname)
-        Base = declarative_base()
-        if not db_model.primary_key:
-            db_model.append_column(Column('__id',Integer, primary_key=True, autoincrement=True))
-            if not exclude_columns: exclude_columns = []
-            exclude_columns.append('__id')
-            NO_PRIMARY_KEY = True
         table_dict = {'__table__': db_model,
                       '__tablename__': db_name}
+        if not db_model.primary_key:
+            table_dict['__mapper_args__'] = {
+                "primary_key": [i for i in db_model._columns]
+            }
+            NO_PRIMARY_KEY = True
         for i in db_model.c:
             _, = i.expression.base_columns
             table_dict[str(i.key)] = _
-        tmp = type(f'{db_name}DeclarativeBaseClass', (Base,), table_dict)
+        tmp = type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict)
         db_model = tmp
 
     constraints = db_model.__table__.constraints
@@ -126,12 +123,12 @@ def crud_router_builder(
     if async_mode:
         async def async_runner(f):
             return [i.bind.name async for i in f()]
+
         sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
     else:
         sql_type, = [i.bind.name for i in db_session()]
 
-
-    if not crud_methods and  NO_PRIMARY_KEY == False:
+    if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
     if not crud_methods and NO_PRIMARY_KEY == True:
         crud_methods = CrudMethods.get_table_full_crud_method()
@@ -150,11 +147,11 @@ def crud_router_builder(
     if not crud_models:
         crud_models_builder: CRUDModel = sqlalchemy_to_pydantic
         crud_models: CRUDModel = crud_models_builder(db_model=db_model,
-                                                     constraints = constraints,
+                                                     constraints=constraints,
                                                      crud_methods=crud_methods,
                                                      exclude_columns=exclude_columns,
                                                      sql_type=sql_type,
-                                                     exclude_primary_key = NO_PRIMARY_KEY)
+                                                     exclude_primary_key=NO_PRIMARY_KEY)
 
     crud_service = query_service(model=db_model, async_mode=async_mode)
     # else:
