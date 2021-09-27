@@ -13,7 +13,6 @@ class MemorySql():
     def __init__(self, async_mode=False):
         self.async_mode = async_mode
         SQLALCHEMY_DATABASE_URL = f"sqlite{'+aiosqlite' if async_mode else ''}://"
-        print(SQLALCHEMY_DATABASE_URL)
         if not async_mode:
             self.engine = create_engine(SQLALCHEMY_DATABASE_URL,
                                         future=True,
