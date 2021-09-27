@@ -143,6 +143,7 @@ app.include_router(crud_route_2)
 
 **crud_router_builder args**
 - db_session [Require] `execute session generator` 
+    - default using in-memory db with create table automatically
     - example:
         - sync SQLALchemy:
       ```python
