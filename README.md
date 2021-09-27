@@ -35,7 +35,7 @@
 
 I believe that everyone who's working with FastApi and building some RESTful of CRUD services, wastes the time to writing similar code for simple CRUD every time
 
-`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema of PostgreSQL Database. 
+`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema 
 
 - Get one
 - Get many
@@ -137,7 +137,7 @@ app.include_router(crud_route_2)
 #### Generate CRUD router
 
 **crud_router_builder args**
-- db_session [Require] `execute session generator` 
+- db_session [Optional] `execute session generator` 
     - default using in-memory db with create table automatically
     - example:
         - sync SQLALchemy:
