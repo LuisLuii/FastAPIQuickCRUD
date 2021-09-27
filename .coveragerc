@@ -4,6 +4,8 @@ show_missing = True
 omit =
     venv/*
     tests/*
+    src/fastapi_quickcrud/misc/abstract_execute.py
+    src/fastapi_quickcrud/misc/abstract_query.py
 # Regexes for lines to exclude from consideration
 exclude_lines =
     raise NotImplementedError
@@ -35,3 +37,5 @@ exclude_lines =
     raise InvalidRequestMethod.*?f'{value} is not an available request method, Please use CrudMethods
     delattr(received_insert, received_insert_item)
     delattr(request_or_response_object, name)
+    routes_source = SQLAlchemyNotSupportRouteSource
+    query_service = SQLAlchemyNotSupportQueryService

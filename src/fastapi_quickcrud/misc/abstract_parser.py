@@ -59,20 +59,20 @@ class SQLAlchemyGeneralSQLeResultParse(object):
                                                         else '1')
         return result
 
-    async def async_update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
-        await self.async_commit(kwargs.get('session'))
-        return result
-
-    async def async_patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
-        await self.async_commit(kwargs.get('session'))
-        return result
-
-    def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
-        result = self._response_builder(sql_execute_result, fastapi_response, response_model)
-        self.commit(kwargs.get('session'))
-        return result
+    # async def async_update_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self._response_builder(sql_execute_result, fastapi_response, response_model)
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # async def async_patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self._response_builder(sql_execute_result, fastapi_response, response_model)
+    #     await self.async_commit(kwargs.get('session'))
+    #     return result
+    #
+    # def patch_many(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
+    #     result = self._response_builder(sql_execute_result, fastapi_response, response_model)
+    #     self.commit(kwargs.get('session'))
+    #     return result
 
     def update_func(self, response_model, sql_execute_result, fastapi_response, update_args, update_one):
         if not isinstance(sql_execute_result, list):
@@ -180,29 +180,29 @@ class SQLAlchemyGeneralSQLeResultParse(object):
         self.commit(kwargs.get('session'))
         return result
 
-    @staticmethod
-    def update_one_sub_func(response_model, sql_execute_result, fastapi_response):
-        result = parse_obj_as(response_model, sql_execute_result)
-        fastapi_response.headers["x-total-count"] = str(1)
-        return result
-
-    async def async_update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
-        session = kwargs.get('session')
-        if not sql_execute_result:
-            return Response(status_code=HTTPStatus.NOT_FOUND)
-        data = self.update_data_model(sql_execute_result, update_args=update_args)
-        result = self.update_one_sub_func(response_model, data, fastapi_response)
-        await self.commit(session)
-        return result
-
-    def update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
-        session = kwargs.get('session')
-        if not sql_execute_result:
-            return Response(status_code=HTTPStatus.NOT_FOUND)
-        data = self.update_data_model(sql_execute_result, update_args=update_args)
-        result = self.update_one_sub_func(response_model, data, fastapi_response)
-        self.commit(session)
-        return result
+    # @staticmethod
+    # def update_one_sub_func(response_model, sql_execute_result, fastapi_response):
+    #     result = parse_obj_as(response_model, sql_execute_result)
+    #     fastapi_response.headers["x-total-count"] = str(1)
+    #     return result
+    #
+    # async def async_update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+    #     session = kwargs.get('session')
+    #     if not sql_execute_result:
+    #         return Response(status_code=HTTPStatus.NOT_FOUND)
+    #     data = self.update_data_model(sql_execute_result, update_args=update_args)
+    #     result = self.update_one_sub_func(response_model, data, fastapi_response)
+    #     await self.commit(session)
+    #     return result
+    #
+    # def update_one(self, *, response_model, sql_execute_result, fastapi_response, update_args, **kwargs):
+    #     session = kwargs.get('session')
+    #     if not sql_execute_result:
+    #         return Response(status_code=HTTPStatus.NOT_FOUND)
+    #     data = self.update_data_model(sql_execute_result, update_args=update_args)
+    #     result = self.update_one_sub_func(response_model, data, fastapi_response)
+    #     self.commit(session)
+    #     return result
 
     # async def async_patch_one(self, *, response_model, sql_execute_result, fastapi_response, **kwargs):
     #     result = self.update_one_sub_func(response_model, sql_execute_result, fastapi_response)
