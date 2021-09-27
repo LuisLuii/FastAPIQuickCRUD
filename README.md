@@ -75,7 +75,6 @@ I believe that everyone who's working with FastApi and building some RESTful of 
     
 ## Constraint
    
-  - ❌ Alias is not support yet
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
   - ❌ **Composite primary key** is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 

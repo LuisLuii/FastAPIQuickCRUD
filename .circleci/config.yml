@@ -1,9 +1,7 @@
 version: 2.1
 jobs:
   build:
-
     # Primary container image where all commands run
-
     docker:
       - image: circleci/python:3.7.3
         auth:
