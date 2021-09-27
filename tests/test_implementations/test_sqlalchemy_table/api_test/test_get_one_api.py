@@ -7,28 +7,24 @@ from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
+                                      crud_methods=[
+                                          CrudMethods.UPSERT_ONE
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                       prefix="/test",
                                       tags=["test"]
                                       )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.FIND_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
-                                    crud_models=UntitledTable256Model,
+                                    crud_methods=[
+                                        CrudMethods.FIND_ONE
+                                    ],
+                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                     prefix="/test",
                                     tags=["test"]
                                     )
@@ -1010,5 +1006,3 @@ def test_get_by_primary_key_with_false_timestamptz_range_query_param():
         headers=headers)
     assert response.status_code == 404
 
-
-test_get_by_primary_key_with_false_timestamp_range_query_param()

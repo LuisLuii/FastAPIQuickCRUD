@@ -1794,19 +1794,19 @@ def test_get_many_with_ordering_unknown_column():
 def test_get_many_with_ordering_with_default_order():
     response = client.get(f'/test_get_many?order_by_columns=primary_key&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] >= init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_ASC():
     response = client.get(f'/test_get_many?order_by_columns=primary_key:ASC&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] >= init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_DESC():
@@ -1833,5 +1833,6 @@ def test_get_many_with_ordering_with_empty_input_list():
     except Exception as e:
         assert False
     assert True
+
 
 

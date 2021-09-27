@@ -461,3 +461,5 @@ def test_create_one_and_update_one_but_not_found():
     # assert response_data
     # for i in update_data:
     #     assert response_data[i] == update_data[i]
+
+test_create_one_and_update_one_but_not_found()

@@ -11,29 +11,25 @@ from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, \
     UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 # #
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                        prefix="/test_creation_many",
                                        async_mode=True,
                                        tags=["test"]
                                        )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.FIND_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_find_many = crud_router_builder(db_session=get_transaction_session,
                                      db_model=UntitledTable256,
-                                     crud_models=UntitledTable256Model,
+                                     crud_methods=[
+                                         CrudMethods.FIND_MANY,
+                                     ],
+                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                      async_mode=True,
                                      prefix="/test_get_many",
                                      tags=["test"]
@@ -1741,19 +1737,19 @@ def test_get_many_with_ordering_unknown_column():
 def test_get_many_with_ordering_with_default_order():
     response = client.get(f'/test_get_many?order_by_columns=primary_key&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] > init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_ASC():
     response = client.get(f'/test_get_many?order_by_columns=primary_key:ASC&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] > init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_DESC():

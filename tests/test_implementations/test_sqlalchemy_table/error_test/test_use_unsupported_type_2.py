@@ -1,8 +1,12 @@
+import os
+
 from sqlalchemy import ARRAY, BigInteger, Table, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text, PrimaryKeyConstraint
+    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text, PrimaryKeyConstraint, \
+    create_engine
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
+from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods, sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import SchemaException, MultipleSingleUniqueNotSupportedException, \
     ColumnTypeNotSupportedException
@@ -38,8 +42,27 @@ UntitledTable256 = Table(
 
 )
 
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+
+engine = create_engine(TEST_DATABASE_URL, future=True, echo=True,
+                       pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def get_transaction_session():
+    try:
+        db = session()
+        yield db
+    finally:
+        db.close()
+
 try:
-    UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
+
+    crud_route_child = crud_router_builder(db_session=get_transaction_session,
+                                           db_model=UntitledTable256,
+                                           prefix="/child",
+                                           tags=["child"],
                                                        crud_methods=[
                                                            CrudMethods.UPSERT_MANY,
                                                        ],

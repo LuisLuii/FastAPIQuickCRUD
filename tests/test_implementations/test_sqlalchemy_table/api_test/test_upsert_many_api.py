@@ -10,17 +10,17 @@ from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import ConflictColumnsCannotHit
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 # Create Many API Test
 
+
+
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
                                        prefix="/test_creation_many",
                                        tags=["test"]
                                        )
@@ -150,7 +150,7 @@ def test_update_specific_columns_when_conflict():
         }
         response_data = create_example_data()
 
-        # upsert the data
+        # create the data
         update_column_on_conflict = {
             "update_columns": [
                 "int8_value",
@@ -237,7 +237,7 @@ def test_update_specific_columns_when_conflict():
         }
         response_data = create_example_data()
 
-        # upsert the data
+        # create the data
         update_column_on_conflict = {
             "update_columns": [
                 "int8_value",
@@ -301,7 +301,7 @@ def test_update_specific_columns_when_conflict():
         }
         response_data = create_example_data()
 
-        # upsert the data
+        # create the data
         update_column_on_conflict = {
             "update_columns": [
 
@@ -353,4 +353,3 @@ def test_update_specific_columns_when_conflict():
     update_all_fields()
     update_partial_fields_1()
     update_partial_fields_2()
-

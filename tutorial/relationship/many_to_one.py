@@ -10,7 +10,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
-from fastapi_quickcrud import sqlalchemy_table_to_pydantic
 from fastapi_quickcrud import sqlalchemy_to_pydantic
 
 app = FastAPI()
