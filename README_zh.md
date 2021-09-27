@@ -30,7 +30,8 @@
 
 我相信很多人會使用FastAPI寫一些簡單CRUD服務，浪費時間去為每個table 寫高度相似的代碼
 
-如果你是使用PostgreSQL,你便可以選擇`FastAPI Quick CRUD` 助你自動對每個table 生成以下的Routers
+如果你使用SQLAlchemy , 你可以通過`FastAPI Quick CRUD` 去生成CRUD API
+
 - Get one
 - Get many
 - Update one
@@ -43,13 +44,15 @@
 - Delete Many
 - Post Redirect Get
 
-`FastAPI Quick CRUD`是基於SQLAlchemy `1.4.23` 版本進行開發，同時支持同步及異步
+`FastAPI Quick CRUD`是基於SQLAlchemy `1.4` 版本進行開發，同時支持同步及異步
 
 ## 好處
 
   - [x] **支持 SQLAlchemy 1.41版本** - 允許你建立異步或同步的api 服務
   
   - [x] **支持分頁** - Get many API 支持 order by offset limit 
+
+  - [x] **支持全部SQL DBAPI ** - 支持所有SQLAlchemy 支持的SQL DB dialect
 
   - [x] **CRUD路由自動生成n** - 豐富的CRUD路由生成選擇 - 多種CRUD操作可供選擇
 
@@ -59,7 +62,6 @@
     
 ## 限制
    
-  - ❌ 只支持 PostgreSQL yet 
   - ❌ 請使用**composite unique constraints** 代替多個**unique constraints**
   - ❌ table 只能有一個主鍵
   - ❌ 以下API 不支持**Path Parameter** 如果沒有主鍵
@@ -84,205 +86,140 @@
     - inet
     - macaddr
 
-# 使用
+# Getting started
 
-## 安裝
+## Installation
 
 ```bash
 pip install fastapi-quickcrud
 ```
 
-使用 PostgreSQL :
-```bash
-docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=1234 postgres
-```
 
-#### 例子 (到 `./example` 取得更多例子)
+#### Simple Code (到 `./example` 取得更多例子)
 
 ```python
-from datetime import datetime, timezone
-
-import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-from fastapi_quickcrud import CrudMethods
+    String, Table, ForeignKey, orm
 from fastapi_quickcrud import crud_router_builder
-from fastapi_quickcrud import sqlalchemy_table_to_pydantic
-from fastapi_quickcrud import sqlalchemy_to_pydantic
 
-app = FastAPI()
-
-Base = declarative_base()
-metadata = Base.metadata
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
-                             pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(bind=engine, class_=AsyncSession)
-
-
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
+Base = orm.declarative_base()
 
 
 class User(Base):
-    __tablename__ = 'users'
-
+    __tablename__ = 'test_users'
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False, default=datetime.now(timezone.utc).strftime('%H:%M:%S%z'))
+    email = Column(String, nullable=False)
 
 
 friend = Table(
-    'friend', metadata,
-    Column('id', ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
+    'test_friend', Base.metadata,
+    Column('id', ForeignKey('test_users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
     Column('friend_name', String, nullable=False)
 )
 
-user_model_set = sqlalchemy_to_pydantic(db_model=User,
-                                        crud_methods=[
-                                            CrudMethods.FIND_MANY,
-                                            CrudMethods.FIND_ONE,
-                                            CrudMethods.UPSERT_ONE,
-                                            CrudMethods.UPDATE_MANY,
-                                            CrudMethods.UPDATE_ONE,
-                                            CrudMethods.DELETE_ONE,
-                                            CrudMethods.DELETE_MANY,
-                                            CrudMethods.PATCH_MANY,
-
-                                        ],
-                                        exclude_columns=[])
-
-friend_model_set = sqlalchemy_table_to_pydantic(db_model=friend,
-                                                crud_methods=[
-                                                    CrudMethods.FIND_MANY,
-                                                    CrudMethods.UPSERT_MANY,
-                                                    CrudMethods.UPDATE_MANY,
-                                                    CrudMethods.DELETE_MANY,
-                                                    CrudMethods.PATCH_MANY,
-
-                                                ],
-                                                exclude_columns=[])
-
-
-crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=user_model_set,
-                                   db_model=User,
+crud_route_1 = crud_router_builder(db_model=User,
                                    prefix="/user",
-                                   dependencies=[],
-                                   async_mode=True,
-                                   tags=["User"]
+                                   tags=["User"],
+                                   async_mode=True
                                    )
-crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=friend_model_set,
-                                   db_model=friend,
-                                   async_mode=True,
+crud_route_2 = crud_router_builder(db_model=friend,
                                    prefix="/friend",
-                                   dependencies=[],
-                                   tags=["Friend"]
+                                   tags=["friend"],
+                                   async_mode=True
                                    )
 
-
+app = FastAPI()
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
-uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 ```
 
-### 主要模組
 
-#### SQLAlchemy 的轉換
+### Main module
 
+#### Generate CRUD router
 
-使用 **sqlalchemy_to_pydantic** 如果 SQLAlchemy model 是 Declarative Base Class
+**crud_router_builder args**
+- db_session [Optional] `execute session generator` 
+    - 默認使用In-memory DB, 或如以下例子自定義你的數據庫連接
+    - example:
+        - 同步 SQLALchemy:
+      ```python
+        from sqlalchemy.orm import sessionmaker
+        def get_transaction_session():
+            try:
+                db = sessionmaker(...)
+                yield db
+            except Exception as e:
+                db.rollback()
+                raise e
+            finally:
+                db.close()
+        ```
+        - 異步 SQLALchemy
+        ```python
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession
+        async_session = sessionmaker(autocommit=False,
+                             autoflush=False,
+                             bind=engine,
+                             class_=AsyncSession)
 
-使用 **sqlalchemy_table_to_pydantic** 如果 SQLAlchemy model 是 Table
+        async def get_transaction_session() -> AsyncSession:
+            async with async_session() as session:
+                async with session.begin():
+                    yield session
+        ```
+- db_model [Require] `SQLALchemy Declarative Base Class or Table`
+    
+    >  **Note**: db_model 會有一些限制，例如數據庫獨特的數據類型
+    
+- async_mode  [Optional (會通過你的db_session自動判斷)] `bool`: 你的數據庫連接是不是異步
+    
+    >  **Note**: 如果你的數據庫連接是異步，請設置True
+    
+- autocommit [Optional (default True)] `bool`: 自動幫你commit每一個 CRUD
+    
+    >  **Note**: 如果你在你的db_session 自已handle 了commit, 請設置False
+  
+- dependencies [Optional]: FastAPI 的依赖注入 
+        
+    >  **Note**:  `./example` 有相關使用例子        
 
-
-- 參數:
-  - db_model: ```SQLALchemy Declarative Base Class or Table```
-  - crud_methods: ```CrudMethods```
+- crud_methods [Optional]: ```CrudMethods``` 目前支持的CRUD， 如不設置便會自動設置
     > - CrudMethods.FIND_ONE
     > - CrudMethods.FIND_MANY
     > - CrudMethods.UPDATE_ONE
     > - CrudMethods.UPDATE_MANY
     > - CrudMethods.PATCH_ONE
     > - CrudMethods.PATCH_MANY
-    > - CrudMethods.UPSERT_ONE
-    > - CrudMethods.UPSERT_MANY
+    > - CrudMethods.UPSERT_ONE (only support postgresql yet)
+    > - CrudMethods.UPSERT_MANY (only support postgresql yet)
+    > - CrudMethods.CREATE_ONE
+    > - CrudMethods.CREATE_MANY
     > - CrudMethods.DELETE_ONE
     > - CrudMethods.DELETE_MANY
     > - CrudMethods.POST_REDIRECT_GET
 
-  - exclude_columns: `list` 
-    > 設置哪些column不想通過API 操作，如果你要進行插入或更新，請注意該column一定要nullable 或有default value 以壓保不會出錯
-    
-----
+- exclude_columns: `list`1 
+  > 怱略column，不會生成該怱略column的API請求列
 
-#### 生成 CRUD 路由 模組
-
-**crud_router_builder**
-- db_session: `execute session generator` 
-    - example:
-        - sync SQLALchemy:
-```python
-def get_transaction_session():
-    try:
-        db = sessionmaker(...)
-        yield db
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise e
-    finally:
-        db.close()
-```
-
-- Async SQLALchemy
-```python
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
-```
-- db_model `SQLALchemy Declarative Base Class or Table`
-    
-    >  **Note**: 參考以上限制
-    
-- async_mode`bool`: if your db session is async
-    
-    >  **Note**: 如果connection 是async 請設定True
-    
-- autocommit`bool`: if you don't need to commit by your self    
-    
-    >  **Note**: require handle the commit in your async session generator if False
-    
-- dependencies: API dependency injection of fastapi
-        
-    >  **Note**: Get the example usage in `./example`        
-
-- crud_models `sqlalchemy_to_pydantic` 
-
-- dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
+- dynamic argument (prefix, tags): 用作FastApi APIRouter() 的參數
 
 
 
 # Design
 
-In `PUT` `DELETE` `PATCH`, user can use Path Parameters and Query Parameters to limit the scope of the data affected by the operation, and the Query Parameters is same with `FIND` API
+In `PUT` `DELETE` `PATCH`, 用戶可以通過 Path Parameters and Query Parameters 去限制受影響的數據 ，當中的Query Parameter 跟 `FIND` API一樣
 
 ## Path Parameter
 
-In the design of this tool, **Path Parameters** should be a primary key of table, that why limited primary key can only be one.
+在這個工具的設計中，**Path Parameters** 應該是表的一個主鍵，所以有限的主鍵只能是一個。
 
 ## Query Parameter
 
-- Query Operation will look like that when python type of column is 
+- 當列的 python 類型為時，查詢操作將如下所示
   <details>
     <summary>string</summary>
   
@@ -316,7 +253,7 @@ In the design of this tool, **Path Parameters** should be a primary key of table
   </details>
 
 
-- EXTRA query parameter for `GET_MANY`: 
+- `GET_MANY` 的額外查詢參數：
   <details>
     <summary>Pagination</summary>
   
@@ -402,53 +339,186 @@ In the design of this tool, **Path Parameters** should be a primary key of table
   </details>
   
 
-- Also support your custom dependency for each api(there is a example in `./example`)
+- 還支持您對每個 api 的自定義依賴項(there is a example in `./example`)
 
+### 請求正文
 
-### Request Body
+在這個工具的設計中，表格的列將被用作請求正文的字段。
 
-In the design of this tool, the columns of the table will be used as the fields of request body.
+在此工俱生成的 api 中的基本請求正文中，某些字段是可選的，如果：
 
-In the basic request body in the api generated by this tool, some fields are optional if :
-
-* [x] it is primary key with `autoincrement` is True or the `server_default` or `default` is True
-* [x] it is not a primary key, but the `server_default` or `default` is True
-* [x] The field is nullable
+* [x] 它是主鍵，`autoincrement` 為 True 或 `server_default` 或 `default` 為 True
+* [x] 它不是主鍵，但 `server_default` 或 `default` 為 True
+* [x] 該字段可以為空
 
 ## Upsert
+** Upsert 目前僅支持 PosgreSQL
 
-POST API will perform the data insertion action with using the basic [Request Body](#request-body),
-In addition, it also supports upsert(insert on conflict do)
+POST API 將使用基本的 [Request Body](#request-body) 執行數據插入操作，
+此外，它還支持upsert（在衝突時插入）
 
-The operation will use upsert instead if the unique column in the inserted row that is being inserted already exists in the table 
+如果要插入的插入行中的唯一列已存在於表中，則該操作將使用 upsert
 
-The tool uses `unique columns` in the table as a parameter of on conflict , and you can define which column will be updated 
-
+該工具使用表中的“唯一列”作為衝突時的參數，您可以定義將更新哪一列
 ![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
 
+## Add description into docs
 
-## Alias
+你可以為`sqlalchemy.Column`聲明`comment`參數來配置列的描述
 
-Alias is supported already
-
-usage:
-
-```python
-id = Column('primary_key',Integer, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-```
-
-you can use info argument to set the alias name of column, 
-and use synonym to map the column between alias column and original column
+例子：
 
 ```python
-id = Column(Integer, info={'alias_name': 'primary_key'}, primary_key=True, server_default=text("nextval('untitled_table_256_id_seq'::regclass)"))
-primary_key = synonym('id')
+
+class Parent(Base):
+    __tablename__ = 'parent_o2o'
+    id = Column(Integer, primary_key=True,comment='parent_test')
+
+    # one-to-many collection
+    children = relationship("Child", back_populates="parent")
+
+class Child(Base):
+    __tablename__ = 'child_o2o'
+    id = Column(Integer, primary_key=True,comment='child_pk_test')
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
+
+    # many-to-one scalar
+    parent = relationship("Parent", back_populates="children")
 ```
+
+
+## Relationship
+
+現在，`FIND_ONE` 和 `FIND_MANY` 支持 relationship
+```python
+
+class Parent(Base):
+    __tablename__ = 'parent_o2o'
+    id = Column(Integer, primary_key=True)
+    children = relationship("Child", back_populates="parent")
+
+class Child(Base):
+    __tablename__ = 'child_o2o'
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'))
+    parent = relationship("Parent", back_populates="children")
+```
+父表和子表之間使用back_populates有關係，`Child`中的`parent_id`將引用`Parent`中的`id`列。
+
+`FastApi Quick CRUD`會生成一個帶有`join_foreign_table`字段的api，get api會響應你在`join_foreign_table`字段中選擇對應表的引用數據行，
+![join_1](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_preview_1.png?raw=true)
+
+![join_2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_preview_2.png?raw=true)
+
+* Try Request
+
+現在這兩個表中有一些數據
+  
+![parent](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_parent.png?raw=true)
+
+![child](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/join_child.png?raw=true)
+
+當我請求時
+* Case One
+    ```commandline
+    curl -X 'GET' \
+    'http://0.0.0.0:8000/parent?join_foreign_table=child_o2o' \
+    -H 'accept: application/json'
+    ```
+    Response data
+    ```json
+    [
+      {
+        "id_foreign": [
+          {
+            "id": 1,
+            "parent_id": 1
+          },
+          {
+            "id": 2,
+            "parent_id": 1
+          }
+        ],
+        "id": 1
+      },
+      {
+        "id_foreign": [
+          {
+            "id": 3,
+            "parent_id": 2
+          },
+          {
+            "id": 4,
+            "parent_id": 2
+          }
+        ],
+        "id": 2
+      }
+    ]
+    ```
+    Response headers
+    ```text
+     x-total-count: 4 
+    ```
+    
+    這有響應四個數據，響應數據將按父行分組，如果子引用相同的父行
+    
+* Case Two
+    ```commandline
+    curl -X 'GET' \
+    'http://0.0.0.0:8000/child?join_foreign_table=parent_o2o' \
+    -H 'accept: application/json'
+    ```
+    Response data
+    ```json
+    [
+      {
+        "parent_id_foreign": [
+          {
+            "id": 1
+          }
+        ],
+        "id": 1,
+        "parent_id": 1
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 1
+          }
+        ],
+        "id": 2,
+        "parent_id": 1
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 2
+          }
+        ],
+        "id": 3,
+        "parent_id": 2
+      },
+      {
+        "parent_id_foreign": [
+          {
+            "id": 2
+          }
+        ],
+        "id": 4,
+        "parent_id": 2
+      }
+    ]
+    ```
+    Response Header
+    ```text
+    x-total-count: 4 
+    ```
 
 #### FastAPI_quickcrud Response Status Code standard 
 
 
-When you ask for a specific resource, say a user or with query param, and the user doesn't exist
+當您請求特定資源時，例如一個用戶或帶有查詢參數，而該用戶不存在
 
  ```GET: get one : https://0.0.0.0:8080/api/:userid?xx=xx```
 
@@ -459,11 +529,11 @@ When you ask for a specific resource, say a user or with query param, and the us
  ```DELETE: delete one : https://0.0.0.0:8080/api/:userid?xx=xx```
 
  
-then fastapi-qucikcrud should return 404. In this case, the client requested a resource that doesn't exist.
+那麼 fastapi-qucikcrud 應該返回 404。在這種情況下，客戶端請求了一個不存在的資源。
 
 ----
 
-In the other case, you have an api that operate data on batch in the system using the following url:
+在另一種情況下，您有一個 api，它使用以下 url 在系統中批量操作數據：
 
  ```GET: get many : https://0.0.0.0:8080/api/user?xx=xx```
 
@@ -473,10 +543,10 @@ In the other case, you have an api that operate data on batch in the system usin
 
  ```PATCH: patch many : https://0.0.0.0:8080/api/user?xx=xx```
 
-If there are no users in the system, then, in this case, you should return 204.
-
+如果系統中沒有用戶，那麼在這種情況下，您應該返回 204。
 
 ### TODO
 
-- handle relationship
-- support MYSQL , MSSQL cfand Sqllite
+- 每個 SQL 的 Upsert 操作
+    
+
