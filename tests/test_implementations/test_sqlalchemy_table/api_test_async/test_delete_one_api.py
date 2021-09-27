@@ -9,142 +9,57 @@ from src.fastapi_quickcrud.misc.type import CrudMethods
 from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, \
     UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_one_model = api_model[CrudMethods.UPSERT_ONE].__dict__
-# assert create_one_model['requestModel'] or create_one_model['responseModel']
-# create_one_request_model = deepcopy(create_one_model['requestModel'].__dict__['__fields__'])
-# create_one_response_model = deepcopy(create_one_model['responseModel'].__dict__['__fields__'])
-# Request Test
-# assert create_one_request_model.pop('on_conflict', False)
-# for k, v in create_one_request_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-
-# Response Test
-# for k, v in create_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
-                                      crud_models=UntitledTable256Model,
+                                      crud_methods=[
+                                          CrudMethods.UPSERT_ONE
+                                      ],
+                                      exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                       async_mode=True,
                                       prefix="/test_creation_one",
                                       tags=["test"]
                                       )
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                        async_mode=True,
                                        prefix="/test_creation_many",
                                        tags=["test"]
                                        )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.POST_REDIRECT_GET
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
                                                  db_model=UntitledTable256,
-                                                 crud_models=UntitledTable256Model,
+                                                 crud_methods=[
+                                                     CrudMethods.POST_REDIRECT_GET
+                                                 ],
+                                                 exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                                  async_mode=True,
                                                  prefix="/test_post_direct_get",
                                                  tags=["test"]
                                                  )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.FIND_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 test_get_data = crud_router_builder(db_session=get_transaction_session,
                                     db_model=UntitledTable256,
-                                    crud_models=UntitledTable256Model,
+                                    crud_methods=[
+                                        CrudMethods.FIND_ONE
+                                    ],
+                                    exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                     async_mode=True,
                                     prefix="/test",
                                     tags=["test"]
                                     )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.DELETE_ONE
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # # Model Test
-# api_model = UntitledTable256Model.__dict__['GET']
-# assert api_model
-# get_one_model = api_model[CrudMethods.FIND_ONE].__dict__
-# assert get_one_model['requestModel'] or get_one_model['responseModel']
-# get_one_request_model = deepcopy(get_one_model['requestModel'].__dict__['__fields__'])
-# get_one_response_model = deepcopy(get_one_model['responseModel'].__dict__['__fields__'])
-# primary_key_of_get_sql_schema = get_one_request_model[UntitledTable256.__dict__['primary_key_of_table']]
-# assert not primary_key_of_get_sql_schema.required
-# get_one_request_model.pop(UntitledTable256.__dict__['primary_key_of_table'], None)
-# for k, v in get_one_request_model.items():
-#     assert not v.required
-# # FIXME some thing may not require
-# for k, v in get_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
 test_delete_data = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       crud_methods=[
+                                           CrudMethods.DELETE_ONE
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                        async_mode=True,
                                        prefix="/test_delete_one",
                                        tags=["test"]

@@ -10,79 +10,24 @@ from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud.misc.utils import sqlalchemy_to_pydantic
 from tests.test_implementations.test_sqlalchemy_table.api_test import get_transaction_session, app, UntitledTable256
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.UPSERT_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_many_model = api_model[CrudMethods.UPSERT_MANY].__dict__
-# assert create_many_model['requestModel'] or create_many_model['responseModel']
-# create_many_request_model = deepcopy(create_many_model['requestModel'].__dict__['__fields__'])
-# create_many_response_model = deepcopy(create_many_model['responseModel'].__dict__['__fields__'])
-#
-# # Request Model Test
-# assert create_many_request_model.pop('on_conflict', None)
-# insert_many_model = create_many_request_model['insert'].sub_fields[0].outer_type_.__dict__['__fields__']
-# for k, v in insert_many_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-#
-# # Response Model Test
-# for k, v in create_many_response_model.items():
-#     create_many_response_model_item = v.type_.__dict__['__fields__']
-#     for k, v in create_many_response_model_item.items():
-#         sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#         if sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif sql_schema.nullable:
-#             assert not v.required
-#         elif not sql_schema.nullable:
-#             assert v.required
-#         elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#             assert v.required
-#         else:
-#             print(f"{v.name=}")
-#             print(f"{v.required=}")
-#             print(f"{v.default=}")
-
-# Create Many API Test
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,
-                                       crud_models=UntitledTable256Model,
+                                       crud_methods=[
+                                           CrudMethods.UPSERT_MANY,
+                                       ],
+                                       exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                        prefix="/test_creation_many",
                                        tags=["test"]
                                        )
 
-UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
-                                                     crud_methods=[
-                                                         CrudMethods.FIND_MANY,
-                                                     ],
-                                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
 test_find_many = crud_router_builder(db_session=get_transaction_session,
                                      db_model=UntitledTable256,
-                                     crud_models=UntitledTable256Model,
+                                     crud_methods=[
+                                         CrudMethods.FIND_MANY,
+                                     ],
+                                     exclude_columns=['bytea_value', 'xml_value', 'box_valaue'],
                                      prefix="/test_get_many",
                                      tags=["test"]
                                      )
@@ -1789,19 +1734,19 @@ def test_get_many_with_ordering_unknown_column():
 def test_get_many_with_ordering_with_default_order():
     response = client.get(f'/test_get_many?order_by_columns=primary_key&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] > init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_ASC():
     response = client.get(f'/test_get_many?order_by_columns=primary_key:ASC&limit=10&offset=0')
     a = response.json()
-    init = 1
+    init = 0
     for i in a:
-        assert i['primary_key'] == init
-        init += 1
+        assert i['primary_key'] > init
+        init = i['primary_key']
 
 
 def test_get_many_with_ordering_with_DESC():
