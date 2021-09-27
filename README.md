@@ -8,6 +8,7 @@
 [![PyPidownload](https://img.shields.io/pypi/dm/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
+[![PyPI version](https://badge.fury.io/py/fastapi-quickcrud.svg)](https://badge.fury.io/py/fastapi-quickcrud)
 
 
 ---
