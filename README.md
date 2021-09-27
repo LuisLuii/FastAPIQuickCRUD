@@ -89,11 +89,6 @@ pip install fastapi-quickcrud
 
 ## Usage
 
-Start PostgreSQL using:
-```bash
-docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=1234 postgres
-```
-
 #### Simple Code (get more example from `./example`)
 
 ```python
