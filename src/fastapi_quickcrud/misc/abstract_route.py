@@ -171,7 +171,7 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
 
                 new_inserted_data = query_service.create(insert_arg=query.__dict__)
 
-                execute_service.add_all(session,new_inserted_data)
+                execute_service.add_all(session, new_inserted_data)
                 try:
                     await execute_service.async_flush(session)
                 except IntegrityError as e:
@@ -393,7 +393,7 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
             ):
                 new_inserted_data = crud_service.insert_one(insert_args=insert_args.__dict__)
 
-                execute_service.add(session,new_inserted_data)
+                execute_service.add(session, new_inserted_data)
                 try:
                     await execute_service.async_flush(session)
                 except IntegrityError as e:
@@ -416,7 +416,7 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
 
                 new_inserted_data = crud_service.insert_one(insert_args=insert_args.__dict__)
 
-                execute_service.add(session,new_inserted_data)
+                execute_service.add(session, new_inserted_data)
                 try:
                     execute_service.flush(session)
                 except IntegrityError as e:
@@ -496,12 +496,12 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
                 update_instance = session.execute(filter_stmt).scalar()
 
                 try:
-                    return result_parser.update_one(response_model=response_model,
-                                                    sql_execute_result=update_instance,
-                                                    update_args=patch_data.__dict__,
-                                                    fastapi_response=response,
-                                                    session=session,
-                                                    update_one=True)
+                    return result_parser.update(response_model=response_model,
+                                                sql_execute_result=update_instance,
+                                                update_args=patch_data.__dict__,
+                                                fastapi_response=response,
+                                                session=session,
+                                                update_one=True)
                 except IntegrityError as e:
                     err_msg, = e.orig.args
                     if 'unique constraint' not in err_msg.lower():
@@ -864,6 +864,7 @@ class SQLAlchemyPGSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                                                    fastapi_response=response,
                                                    session=session)
 
+
 class SQLAlchemySQLLiteRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
     This route will support the SQL SQLAlchemy dialects
@@ -991,6 +992,7 @@ class SQLAlchemySQLLiteRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                                                    fastapi_response=response,
                                                    session=session)
 
+
 class SQLAlchemyMySQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
     This route will support the SQL SQLAlchemy dialects
@@ -1022,8 +1024,8 @@ class SQLAlchemyMySQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     db_session,
                     unique_list,
                     execute_service):
-
         raise NotImplementedError
+
 
 class SQLAlchemyMariadbRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
@@ -1058,6 +1060,7 @@ class SQLAlchemyMariadbRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     execute_service):
         raise NotImplementedError
 
+
 class SQLAlchemyOracleRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
     This route will support the SQL SQLAlchemy dialects
@@ -1089,8 +1092,8 @@ class SQLAlchemyOracleRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     db_session,
                     unique_list,
                     execute_service):
-
         raise NotImplementedError
+
 
 class SQLAlchemyMSSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
@@ -1109,7 +1112,6 @@ class SQLAlchemyMSSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                    dependencies,
                    db_session,
                    unique_list):
-
         raise NotImplementedError
 
     @classmethod
@@ -1125,6 +1127,7 @@ class SQLAlchemyMSSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     unique_list,
                     execute_service):
         raise NotImplementedError
+
 
 class SQLAlchemyNotSupportRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''
@@ -1143,7 +1146,6 @@ class SQLAlchemyNotSupportRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                    dependencies,
                    db_session,
                    unique_list):
-
         raise NotImplementedError
 
     @classmethod
@@ -1159,4 +1161,3 @@ class SQLAlchemyNotSupportRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
                     unique_list,
                     execute_service):
         raise NotImplementedError
-
