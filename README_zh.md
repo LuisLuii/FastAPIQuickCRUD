@@ -1,5 +1,8 @@
 #  FastAPI Quick CRUD
 
+
+![Imgur](https://i.imgur.com/LsLKQHd.png)
+
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb?style=flat-square)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=main)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=main)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main)
@@ -7,10 +10,10 @@
 [![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 
+
 ---
 
 
-![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
 
 - [Introduction](#introduction)
@@ -45,6 +48,8 @@
 - Post Redirect Get
 
 `FastAPI Quick CRUD`是基於SQLAlchemy `1.4` 版本進行開發，同時支持同步及異步
+![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
+
 
 ## 好處
 
@@ -64,27 +69,13 @@
    
   - ❌ 請使用**composite unique constraints** 代替多個**unique constraints**
   - ❌ table 只能有一個主鍵
-  - ❌ 以下API 不支持**Path Parameter** 如果沒有主鍵
+  - ❌ 以下API 不支持*Path Parameter* 如果沒有主鍵
     - `UPDATE ONE`
     - `FIND ONE`
     - `PATCH ONE` 
     - `DELETE ONE` 
   - ❌ [Alias](#alias) 只支持Declarative Base Model
-  - ❌ 以下的類型未全面支持
-    - INTERVAL
-    - JSON
-    - JSONB
-    - H-STORE
-    - ARRAY
-    - BYTE
-    - Geography
-    - box
-    - line
-    - point
-    - lseg
-    - polygon
-    - inet
-    - macaddr
+  
 
 # Getting started
 
