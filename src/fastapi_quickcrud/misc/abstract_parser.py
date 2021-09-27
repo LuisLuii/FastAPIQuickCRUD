@@ -327,7 +327,7 @@ class SQLAlchemyGeneralSQLeResultParse(object):
             for sql_execute_result in sql_execute_results:
                 await self.async_delete(session, sql_execute_result)
         result = self.delete_many_sub_func(response_model, sql_execute_results, fastapi_response)
-        self.commit(session)
+        await self.async_commit(session)
         return result
 
     def has_end_point(self, fastapi_request) -> bool:
