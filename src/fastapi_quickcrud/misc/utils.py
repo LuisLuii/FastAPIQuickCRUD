@@ -2,6 +2,7 @@ from itertools import groupby
 from typing import Type, List, Union, TypeVar
 
 from pydantic import BaseModel, BaseConfig
+from sqlalchemy import Column, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.elements import \
     or_, \
@@ -13,12 +14,12 @@ from .schema_builder import ApiParameterSchemaBuilder
 from .type import \
     CrudMethods, \
     CRUDRequestMapping, \
-    MatchingPatternInString, \
+    MatchingPatternInStringBase, \
     ExtraFieldType, \
     RangeFromComparisonOperators, \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
-    ItemComparisonOperators
+    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType
 
 Base = TypeVar("Base", bound=declarative_base)
 
@@ -116,11 +117,11 @@ class OrmConfig(BaseConfig):
 #         if crud_method.value == CrudMethods.UPSERT_ONE.value:
 #             request_query_model, \
 #             request_body_model, \
-#             response_model = model_builder.upsert_one()
+#             response_model = model_builder.create_one()
 #         elif crud_method.value == CrudMethods.UPSERT_MANY.value:
 #             request_query_model, \
 #             request_body_model, \
-#             response_model = model_builder.upsert_many()
+#             response_model = model_builder.create_many()
 #         elif crud_method.value == CrudMethods.DELETE_ONE.value:
 #             request_url_param_model, \
 #             request_query_model, \
@@ -180,13 +181,23 @@ class OrmConfig(BaseConfig):
 #               "UNIQUE_LIST": model_builder.unique_fields}})
 
 
+
 def sqlalchemy_to_pydantic(
-        db_model: Type, *, crud_methods: List[CrudMethods], exclude_columns: List[str] = None) -> CRUDModel:
+        db_model: Type, *,
+        crud_methods: List[CrudMethods],
+        sql_type: str = SqlType.postgresql,
+        exclude_columns: List[str] = None,
+        constraints = None,
+        exclude_primary_key=False) -> CRUDModel:
     if exclude_columns is None:
         exclude_columns = []
     request_response_mode_set = {}
     model_builder = ApiParameterSchemaBuilder(db_model,
-                                              exclude_column=exclude_columns)
+                                              constraints = constraints,
+                                              exclude_column=exclude_columns,
+                                              sql_type=sql_type,
+                                              exclude_primary_key=exclude_primary_key)
+
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
                                        CrudMethods.FIND_ONE.value,
                                        CrudMethods.PATCH_ONE.value,
@@ -208,6 +219,14 @@ def sqlalchemy_to_pydantic(
             request_query_model, \
             request_body_model, \
             response_model = model_builder.upsert_many()
+        elif crud_method.value == CrudMethods.CREATE_ONE.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.create_one()
+        elif crud_method.value == CrudMethods.CREATE_MANY.value:
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.create_many()
         elif crud_method.value == CrudMethods.DELETE_ONE.value:
             request_url_param_model, \
             request_query_model, \
@@ -320,37 +339,50 @@ process_map = {
     ItemComparisonOperators.Not_in:
         lambda field, values: or_(field.notin_(values)),
 
-    MatchingPatternInString.match_regex_with_case_sensitive:
-        lambda field, values: or_(field.op("~")(value) for value in values),
-
-    MatchingPatternInString.match_regex_with_case_insensitive:
-        lambda field, values: or_(field.op("~*")(value) for value in values),
-
-    MatchingPatternInString.does_not_match_regex_with_case_sensitive:
-        lambda field, values: or_(field.op("!~")(value) for value in values),
-
-    MatchingPatternInString.does_not_match_regex_with_case_insensitive:
-        lambda field, values: or_(field.op("!~*")(value) for value in values),
-
-    MatchingPatternInString.case_insensitive:
+    MatchingPatternInStringBase.case_insensitive:
         lambda field, values: or_(field.ilike(value) for value in values),
 
-    MatchingPatternInString.case_sensitive:
+    MatchingPatternInStringBase.case_sensitive:
         lambda field, values: or_(field.like(value) for value in values),
 
-    MatchingPatternInString.not_case_insensitive:
+    MatchingPatternInStringBase.not_case_insensitive:
         lambda field, values: or_(field.not_ilike(value) for value in values),
 
-    MatchingPatternInString.not_case_sensitive:
+    MatchingPatternInStringBase.not_case_sensitive:
         lambda field, values: or_(field.not_like(value) for value in values),
 
-    MatchingPatternInString.similar_to:
+    PGSQLMatchingPatternInString.similar_to:
         lambda field, values: or_(field.op("SIMILAR TO")(value) for value in values),
 
-    MatchingPatternInString.not_similar_to:
+    PGSQLMatchingPatternInString.not_similar_to:
         lambda field, values: or_(field.op("NOT SIMILAR TO")(value) for value in values),
+
+    PGSQLMatchingPatternInString.match_regex_with_case_sensitive:
+        lambda field, values: or_(field.op("~")(value) for value in values),
+
+    PGSQLMatchingPatternInString.match_regex_with_case_insensitive:
+        lambda field, values: or_(field.op("~*")(value) for value in values),
+
+    PGSQLMatchingPatternInString.does_not_match_regex_with_case_sensitive:
+        lambda field, values: or_(field.op("!~")(value) for value in values),
+
+    PGSQLMatchingPatternInString.does_not_match_regex_with_case_insensitive:
+        lambda field, values: or_(field.op("!~*")(value) for value in values)
 }
 
+def table_to_declarative_base(db_model):
+    db_name = str(db_model.fullname)
+    Base = declarative_base()
+    if not db_model.primary_key:
+        db_model.append_column(Column('__id', Integer, primary_key=True, autoincrement=True))
+    table_dict = {'__tablename__': db_name}
+    for i in db_model.c:
+        _, = i.expression.base_columns
+        _.table = None
+        table_dict[str(i.key)] = _
+    tmp = type(f'{db_name}', (Base,), table_dict)
+    tmp.__table__ = db_model
+    return tmp
 
 def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
     def group_by_foreign_key(item):

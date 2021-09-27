@@ -25,6 +25,10 @@
   - [Query Parameter](#query-parameter)
   - [Request Body](#request-body)
   - [Upsert](#upsert)
+  - [Add description into docs](#add-description-into-docs)
+  - [Relationship](#relationship)
+  - [FastAPI_quickcrud Response Status Code standard](#fastapi_quickcrud-response-status-code-standard)
+    
 
 
 # Introduction
@@ -51,7 +55,9 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
   - [x] **Support SQLAlchemy 1.4** - Allow you build a fully asynchronous python service, also supports synchronization.
   
-  - [x] **Support Pagination** - Get many API support `order by` `offset` `limit` field in API
+  - [x] **Full SQL Support** - Support different SQL for SQLAlchemy
+    
+  - [x] **Support Pagination** - `Get many` API support `order by` `offset` `limit` field in API
 
   - [x] **Rich FastAPI CRUD router generation** - Many operations of CRUD are implemented to complete the development and coverage of all aspects of basic CRUD.
 
@@ -64,7 +70,6 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 ## Constraint
    
   - ❌ Alias is not support yet
-  - ❌ Only support PostgreSQL, since using RETURNING clause (still think about how to deal with different SQL in general instead of RETURNING)
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
   - ❌ **Composite primary key** is not support
   - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
@@ -72,21 +77,7 @@ I believe that everyone who's working with FastApi and building some RESTful of 
     - `FIND ONE`
     - `PATCH ONE` 
     - `DELETE ONE` 
-  - ❌ Some types of columns are not supported as query parameter
-    - INTERVAL
-    - JSON
-    - JSONB
-    - H-STORE
-    - ARRAY
-    - BYTE
-    - Geography
-    - box
-    - line
-    - point
-    - lseg
-    - polygon
-    - inet
-    - macaddr
+  
 
 # Getting started
 
@@ -106,62 +97,39 @@ docker run -d -p 5432:5432 --name mypostgres --restart always -v postgresql-data
 #### Simple Code (get more example from `./example`)
 
 ```python
-from datetime import datetime, timezone
-
-import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker
+    String, Table, ForeignKey, orm
 from fastapi_quickcrud import crud_router_builder
 
-app = FastAPI()
-
-Base = declarative_base()
-metadata = Base.metadata
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
-                             pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(bind=engine, class_=AsyncSession)
-
-
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
+Base = orm.declarative_base()
 
 
 class User(Base):
     __tablename__ = 'test_users'
-
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
 
 
 friend = Table(
-    'test_friend', metadata,
+    'test_friend', Base.metadata,
     Column('id', ForeignKey('test_users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False),
     Column('friend_name', String, nullable=False)
 )
-@app.on_event("startup")
-async def startup_event():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
-crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-                                   db_model=User,
+crud_route_1 = crud_router_builder(db_model=User,
                                    prefix="/user",
-                                   tags=["User"]
+                                   tags=["User"],
+                                   async_mode=True
                                    )
-crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   db_model=friend,
+crud_route_2 = crud_router_builder(db_model=friend,
                                    prefix="/friend",
-                                   tags=["friend"]
+                                   tags=["friend"],
+                                   async_mode=True
                                    )
 
+app = FastAPI()
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
 ```
@@ -175,14 +143,15 @@ app.include_router(crud_route_2)
 
 **crud_router_builder args**
 - db_session [Require] `execute session generator` 
+    - default using in-memory db with create table automatically
     - example:
         - sync SQLALchemy:
       ```python
+        from sqlalchemy.orm import sessionmaker
         def get_transaction_session():
             try:
                 db = sessionmaker(...)
                 yield db
-                db.commit()
             except Exception as e:
                 db.rollback()
                 raise e
@@ -191,6 +160,13 @@ app.include_router(crud_route_2)
         ```
         - Async SQLALchemy
         ```python
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession
+        async_session = sessionmaker(autocommit=False,
+                             autoflush=False,
+                             bind=engine,
+                             class_=AsyncSession)
+
         async def get_transaction_session() -> AsyncSession:
             async with async_session() as session:
                 async with session.begin():
@@ -219,8 +195,10 @@ app.include_router(crud_route_2)
     > - CrudMethods.UPDATE_MANY
     > - CrudMethods.PATCH_ONE
     > - CrudMethods.PATCH_MANY
-    > - CrudMethods.UPSERT_ONE
-    > - CrudMethods.UPSERT_MANY
+    > - CrudMethods.UPSERT_ONE (only support postgresql yet)
+    > - CrudMethods.UPSERT_MANY (only support postgresql yet)
+    > - CrudMethods.CREATE_ONE
+    > - CrudMethods.CREATE_MANY
     > - CrudMethods.DELETE_ONE
     > - CrudMethods.DELETE_MANY
     > - CrudMethods.POST_REDIRECT_GET
@@ -377,6 +355,8 @@ In the basic request body in the api generated by this tool, some fields are opt
 
 ## Upsert
 
+** Upsert supports PosgreSQL only yet
+
 POST API will perform the data insertion action with using the basic [Request Body](#request-body),
 In addition, it also supports upsert(insert on conflict do)
 
@@ -385,6 +365,31 @@ The operation will use upsert instead if the unique column in the inserted row t
 The tool uses `unique columns` in the table as a parameter of on conflict , and you can define which column will be updated 
 
 ![upsert](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/upsert_preview.png?raw=true)
+
+## Add description into docs
+
+You can declare `comment` argument for `sqlalchemy.Column` to configure the description of column
+
+example:
+
+```python
+
+class Parent(Base):
+    __tablename__ = 'parent_o2o'
+    id = Column(Integer, primary_key=True,comment='parent_test')
+
+    # one-to-many collection
+    children = relationship("Child", back_populates="parent")
+
+class Child(Base):
+    __tablename__ = 'child_o2o'
+    id = Column(Integer, primary_key=True,comment='child_pk_test')
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'),info=({'description':'child_parent_id_test'}))
+
+    # many-to-one scalar
+    parent = relationship("Parent", back_populates="children")
+```
+
 
 ## Relationship
 
@@ -547,6 +552,6 @@ If there are no users in the system, then, in this case, you should return 204.
 
 ### TODO
 
-- handle relationship
-- support MYSQL , MSSQL and Sql-lite
+- Upsert operation for each SQL
     
+
