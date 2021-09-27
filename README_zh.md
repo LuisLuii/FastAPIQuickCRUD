@@ -75,7 +75,6 @@
     - `FIND ONE`
     - `PATCH ONE` 
     - `DELETE ONE` 
-  - ❌ [Alias](#alias) 只支持Declarative Base Model
   
 
 # Getting started

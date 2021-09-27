@@ -24,7 +24,6 @@ class MemorySql():
             self.sync_session = sessionmaker(bind=self.engine,
                                              autocommit=False, )
         else:
-
             self.engine = create_async_engine(SQLALCHEMY_DATABASE_URL,
                                               future=True,
                                               echo=True,
