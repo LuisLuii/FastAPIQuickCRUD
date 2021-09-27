@@ -1,11 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
-    String, Table, ForeignKey
-from sqlalchemy.orm import declarative_base
+    String, Table, ForeignKey, orm
 from fastapi_quickcrud import crud_router_builder
 
-Base = declarative_base()
+Base = orm.declarative_base()
 
 
 class User(Base):
