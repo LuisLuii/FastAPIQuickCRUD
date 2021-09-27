@@ -75,7 +75,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(ExampleTable,
 upsert_many_router = crud_router_builder(db_session=get_transaction_session,
                                          db_model=ExampleTable,
                                          crud_models=UntitledTable256Model,
-                                         prefix="/upsert_many",
+                                         prefix="/create_many",
                                          async_mode=True,
                                          tags=["test"]
                                          )

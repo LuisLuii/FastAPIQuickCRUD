@@ -21,7 +21,7 @@ from pydantic import (BaseModel,
                       create_model,
                       BaseConfig)
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from sqlalchemy import UniqueConstraint, Table
+from sqlalchemy import UniqueConstraint, Table, Column
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import declarative_base
@@ -29,13 +29,13 @@ from strenum import StrEnum
 
 from .exceptions import (SchemaException,
                          ColumnTypeNotSupportedException)
-from .type import (MatchingPatternInString,
+from .type import (MatchingPatternInStringBase,
                    RangeFromComparisonOperators,
                    Ordering,
                    RangeToComparisonOperators,
                    ExtraFieldTypePrefix,
                    ExtraFieldType,
-                   ItemComparisonOperators)
+                   ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType)
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 DataClassT = TypeVar('DataClassT', bound=Any)
@@ -130,22 +130,23 @@ def _filter_none(request_or_response_object):
                 delattr(request_or_response_object, name)
 
 
-class ApiParameterSchemaBuilder():
+class ApiParameterSchemaBuilder:
     unsupported_data_types = ["BLOB"]
     partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
-    def __init__(self, db_model: Type, exclude_column=None):
+    def __init__(self, db_model: Type, sql_type, exclude_column=None ,constraints = None,exclude_primary_key = False):
+        self.constraints = constraints
+        self.exclude_primary_key = exclude_primary_key
         if exclude_column is None:
             self._exclude_column = []
         else:
             self._exclude_column = exclude_column
         self.alias_mapper: Dict[str, str] = {}  # Table not support alias
-
-        if isinstance(db_model, Table):
-            self.__db_model: Table = db_model
-            self.__db_model_table: Table = db_model
-            self.__columns = db_model.c
-            self.db_name: str = str(db_model.__str__())
+        if self.exclude_primary_key:
+            self.__db_model: Table = db_model.__table__
+            self.__db_model_table: Table = db_model.__table__
+            self.__columns = db_model.__table__.c
+            self.db_name: str = db_model.__tablename__
         else:
             self.__db_model: DeclarativeClassT = db_model
             self.__db_model_table: Table = db_model.__table__
@@ -166,9 +167,10 @@ class ApiParameterSchemaBuilder():
         self.foreign_table_response_model_sets: Dict[TableNameT, ResponseModelT] = {}
         self.table_of_foreign: Dict[ForeignKeyName, dict] = self.extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
+        self.sql_type = sql_type
 
     def extra_foreign_table(self) -> Dict[ForeignKeyName, dict]:
-        if isinstance(self.__db_model, Table):
+        if self.exclude_primary_key:
             return self._extra_foreign_table_from_table()
         else:
             return self._extra_foreign_table_from_declarative_base()
@@ -185,8 +187,9 @@ class ApiParameterSchemaBuilder():
         #       can not use composite unique constraint and single unique at same time
         #
         unique_constraint = None
-        constraints = self.__db_model_table.constraints
-        for constraint in constraints:
+        if not self.constraints:
+            return []
+        for constraint in self.constraints:
             if isinstance(constraint, UniqueConstraint):
                 if unique_constraint:
                     raise SchemaException(
@@ -203,6 +206,12 @@ class ApiParameterSchemaBuilder():
         else:
             return []
 
+    @staticmethod
+    def _get_field_description(column: Column) -> str:
+        if not hasattr(column, 'comment'):
+            return ""
+        return column.comment
+
     def _extract_primary(self) -> Union[tuple, Tuple[Union[str, Any],
                                                      DataClassT,
                                                      Tuple[Union[str, Any],
@@ -210,7 +219,7 @@ class ApiParameterSchemaBuilder():
                                                            Optional[Any]]]]:
 
         primary_list = self.__db_model_table.primary_key.columns.values()
-        if not primary_list:
+        if not primary_list or self.exclude_primary_key:
             return (None, None, None)
         if len(primary_list) > 1:
             raise SchemaException(
@@ -249,6 +258,7 @@ class ApiParameterSchemaBuilder():
                 f'The type of column {primary_key_column.key} ({column_type}) not supported yet')
 
         default = self._extra_default_value(primary_key_column)
+        description = self._get_field_description(primary_key_column)
         if default is ...:
             warnings.warn(
                 f'The column of {primary_key_column.key} has not default value '
@@ -260,7 +270,8 @@ class ApiParameterSchemaBuilder():
         primary_columns_model: DataClassT = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PrimaryKeyModel',
                                                            [(primary_field_definitions[0],
                                                              primary_field_definitions[1],
-                                                             Query(primary_field_definitions[2]))],
+                                                             Query(primary_field_definitions[2],
+                                                                   description=description))],
                                                            namespace={
                                                                '__post_init__': lambda
                                                                    self_object: self._value_of_list_to_str(
@@ -284,6 +295,7 @@ class ApiParameterSchemaBuilder():
             if column_name in self._exclude_column:
                 continue
             column_type = str(column.type)
+            description = self._get_field_description(column)
             try:
                 python_type = column.type.python_type
                 if column_type in self.unsupported_data_types:
@@ -293,7 +305,6 @@ class ApiParameterSchemaBuilder():
                     warnings.warn(
                         f'The type of column {column_name} ({column_type}) '
                         f'is not support data query (as a query parameters )')
-
             except NotImplementedError:
                 if column_type == "UUID":
                     python_type = uuid.UUID
@@ -301,6 +312,7 @@ class ApiParameterSchemaBuilder():
                     raise ColumnTypeNotSupportedException(
                         f'The type of column {column_name} ({column_type}) not supported yet')
                     # string filter
+
             if python_type.__name__ in ['str']:
                 self.str_type_columns.append(column_name)
             # uuid filter
@@ -329,7 +341,8 @@ class ApiParameterSchemaBuilder():
                     item_type = base_column_detail.type.item_type.python_type
                     fields.append({'column_name': column_name,
                                    'column_type': List[item_type],
-                                   'column_default': default})
+                                   'column_default': default,
+                                   'column_description': description})
                     continue
             else:
                 raise ColumnTypeNotSupportedException(
@@ -338,11 +351,13 @@ class ApiParameterSchemaBuilder():
             if column_type == "JSONB":
                 fields.append({'column_name': column_name,
                                'column_type': Union[python_type, list],
-                               'column_default': default})
+                               'column_default': default,
+                               'column_description': description})
             else:
                 fields.append({'column_name': column_name,
                                'column_type': python_type,
-                               'column_default': default})
+                               'column_default': default,
+                               'column_description': description})
 
         return fields
 
@@ -621,15 +636,21 @@ class ApiParameterSchemaBuilder():
                 default = None
         return default
 
-    @staticmethod
-    def _assign_str_matching_pattern(field_of_param: dict, result_: List[dict]) -> List[dict]:
+    def _assign_str_matching_pattern(self, field_of_param: dict, result_: List[dict]) -> List[dict]:
+        if self.sql_type == SqlType.postgresql:
+            operator = List[PGSQLMatchingPatternInString]
+        else:
+            operator = List[MatchingPatternInStringBase]
+
         for i in [
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.Str + ExtraFieldType.Matching_pattern,
-             'column_type': Optional[List[MatchingPatternInString]],
-             'column_default': [MatchingPatternInString.case_sensitive]},
+             'column_type': Optional[operator],
+             'column_default': [MatchingPatternInStringBase.case_sensitive],
+             'column_description': ""},
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.Str,
              'column_type': Optional[List[field_of_param['column_type']]],
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
         ]:
             result_.append(i)
         return result_
@@ -641,10 +662,12 @@ class ApiParameterSchemaBuilder():
                 'column_name': field_of_param[
                                    'column_name'] + f'{ExtraFieldTypePrefix.List}{ExtraFieldType.Comparison_operator}',
                 'column_type': Optional[ItemComparisonOperators],
-                'column_default': ItemComparisonOperators.In},
+                'column_default': ItemComparisonOperators.In,
+                'column_description': ""},
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.List,
              'column_type': Optional[List[field_of_param['column_type']]],
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
 
         ]:
             result_.append(i)
@@ -656,24 +679,27 @@ class ApiParameterSchemaBuilder():
             {'column_name': field_of_param[
                                 'column_name'] + f'{ExtraFieldTypePrefix.From}{ExtraFieldType.Comparison_operator}',
              'column_type': Optional[RangeFromComparisonOperators],
-             'column_default': RangeFromComparisonOperators.Greater_than_or_equal_to},
+             'column_default': RangeFromComparisonOperators.Greater_than_or_equal_to,
+             'column_description': ""},
 
             {'column_name': field_of_param[
                                 'column_name'] + f'{ExtraFieldTypePrefix.To}{ExtraFieldType.Comparison_operator}',
              'column_type': Optional[RangeToComparisonOperators],
-             'column_default': RangeToComparisonOperators.Less_than.Less_than_or_equal_to},
+             'column_default': RangeToComparisonOperators.Less_than.Less_than_or_equal_to,
+             'column_description': ""},
         ]:
             result_.append(i)
 
         for i in [
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.From,
              'column_type': Optional[NewType(ExtraFieldTypePrefix.From, field_of_param['column_type'])],
-             'column_default': None},
+             'column_default': None,
+             'column_description': field_of_param['column_description']},
 
             {'column_name': field_of_param['column_name'] + ExtraFieldTypePrefix.To,
              'column_type': Optional[NewType(ExtraFieldTypePrefix.To, field_of_param['column_type'])],
-
-             'column_default': None}
+             'column_default': None,
+             'column_description': field_of_param['column_description']}
         ]:
             result_.append(i)
         return result_
@@ -754,10 +780,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Body(i['column_default'])))
+                                   Body(i['column_default'], description=i['column_description'])))
             response_fields.append((i['column_name'],
                                     i['column_type'],
-                                    Body(i['column_default'])))
+                                    Body(i['column_default'], description=i['column_description'])))
 
         # Ready the uuid to str validator
         if self.uuid_type_columns:
@@ -780,7 +806,7 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
         # else:
-        response_model = _add_orm_model_config_into_pydantic_model(response_model)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return None, request_body_model, response_model
 
     def upsert_many(self) -> Tuple:
@@ -805,10 +831,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             insert_fields.append((i['column_name'],
                                   i['column_type'],
-                                  field(default=Body(i['column_default']))))
+                                  field(default=Body(i['column_default'], description=i['column_description']))))
             response_fields.append((i['column_name'],
                                     i['column_type'],
-                                    Body(i['column_default'])))
+                                    Body(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
 
@@ -840,6 +866,106 @@ class ApiParameterSchemaBuilder():
         # if self.alias_mapper and response_item_model:
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
+        response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model, config=OrmConfig)
+
+        response_model = create_model(
+            f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
+            **{'__root__': (List[response_item_model], None)}
+        )
+
+        return None, request_body_model, response_model
+
+    def create_one(self) -> Tuple:
+        request_validation = [lambda self_object: _filter_none(self_object)]
+        request_fields = []
+        response_fields = []
+
+        # Create on_conflict Model
+        all_column_ = [i['column_name'] for i in self.all_field]
+
+
+        # Create Request and Response Model
+        all_field = deepcopy(self.all_field)
+        for i in all_field:
+            request_fields.append((i['column_name'],
+                                   i['column_type'],
+                                   Body(i['column_default'], description=i['column_description'])))
+            response_fields.append((i['column_name'],
+                                    i['column_type'],
+                                    Body(i['column_default'], description=i['column_description'])))
+
+        # Ready the uuid to str validator
+        if self.uuid_type_columns:
+            request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
+                                                                                     self.uuid_type_columns))
+        #
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Create_one_request_model',
+                                            request_fields ,
+                                            namespace={
+                                                '__post_init__': lambda self_object: [i(self_object)
+                                                                                      for i in request_validation]
+                                            })
+
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_Create_one_response_model',
+                                                  response_fields)
+        response_model_pydantic = _model_from_dataclass(response_model_dataclass)
+
+        response_model = _to_require_but_default(response_model_pydantic)
+        # if self.alias_mapper and response_model:
+        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
+        #     response_model = _add_validators(response_model, {"root_validator": validator_function})
+        # else:
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+        return None, request_body_model, response_model
+
+    def create_many(self) -> Tuple:
+        insert_fields = []
+        response_fields = []
+
+        # Create on_conflict Model
+        all_column_ = [i['column_name'] for i in self.all_field]
+
+        # Ready the Request and Response Model
+        all_field = deepcopy(self.all_field)
+        for i in all_field:
+            insert_fields.append((i['column_name'],
+                                  i['column_type'],
+                                  field(default=Body(i['column_default'], description=i['column_description']))))
+            response_fields.append((i['column_name'],
+                                    i['column_type'],
+                                    Body(i['column_default'], description=i['column_description'])))
+
+        request_validation = [lambda self_object: _filter_none(self_object)]
+
+        if self.uuid_type_columns:
+            request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
+                                                                                     self.uuid_type_columns))
+
+        insert_item_field_model_pydantic = make_dataclass(
+            f'{self.db_name + str(uuid.uuid4())}_CreateManyInsertItemRequestModel',
+            insert_fields
+        )
+
+        # Create List Model with contains item
+        insert_list_field = [('insert', List[insert_item_field_model_pydantic], Body(...))]
+        request_body_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_CreateManyRequestBody',
+                                            insert_list_field
+                                            ,
+                                            namespace={
+                                                '__post_init__': lambda self_object: [validator_(self_object)
+                                                                                      for validator_ in
+                                                                                      request_validation]}
+                                            )
+
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseItemModel',
+                                                  response_fields)
+        response_model_pydantic = _model_from_dataclass(response_model_dataclass)
+
+        response_item_model = _to_require_but_default(response_model_pydantic)
+        # if self.alias_mapper and response_item_model:
+        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
+        #     response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
+        response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model, config=OrmConfig)
 
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_UpsertManyResponseListModel',
@@ -872,7 +998,7 @@ class ApiParameterSchemaBuilder():
             if isinstance(i, dict):
                 request_fields.append((i['column_name'],
                                        i['column_type'],
-                                       Query(i['column_default'])))
+                                       Query(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.table_of_foreign:
@@ -914,7 +1040,6 @@ class ApiParameterSchemaBuilder():
         response_fields = []
         all_field = deepcopy(self.all_field)
 
-
         for i in self.reference_mapper:
             response_fields.append((f"{i}_foreign",
                                     self.foreign_table_response_model_sets[self.reference_mapper[i]],
@@ -933,7 +1058,7 @@ class ApiParameterSchemaBuilder():
             else:
                 request_fields.append((i['column_name'],
                                        i['column_type'],
-                                       Query(i['column_default'])))
+                                       Query(i['column_default'], description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -985,7 +1110,7 @@ class ApiParameterSchemaBuilder():
             assert isinstance(i, dict)
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Query(i['column_default'])))
+                                   Query(i['column_default'], description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -1008,7 +1133,7 @@ class ApiParameterSchemaBuilder():
                                                                                   response_validation]}
                                         )
         response_model = _model_from_dataclass(response_model)
-        response_model = _add_orm_model_config_into_pydantic_model(response_model)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, None, response_model
 
     def delete_many(self) -> Tuple:
@@ -1025,7 +1150,7 @@ class ApiParameterSchemaBuilder():
             assert isinstance(i, dict)
             request_fields.append((i['column_name'],
                                    i['column_type'],
-                                   Query(i['column_default'])))
+                                   Query(i['column_default'], description=i['column_description'])))
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
             request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
@@ -1056,6 +1181,8 @@ class ApiParameterSchemaBuilder():
                                         )
         response_model = _model_from_dataclass(response_model)
 
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseListModel',
             **{'__root__': (List[response_model], None)}
@@ -1077,14 +1204,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] != self.primary_key_str:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(None)))
+                                            Body(None, description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1119,6 +1246,7 @@ class ApiParameterSchemaBuilder():
         # if self.alias_mapper and response_model:
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
 
@@ -1133,19 +1261,17 @@ class ApiParameterSchemaBuilder():
             response_fields.append((i['column_name'],
                                     i['column_type'],
                                     Body(i['column_default'])))
-            a = i['column_name']
-            b = self.primary_key_str
             if i['column_name'] != self.primary_key_str:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(...)))
+                                            Body(..., description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1181,6 +1307,7 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
 
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
 
     def update_many(self) -> Tuple:
@@ -1206,14 +1333,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] not in [self.primary_key_str]:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(...)))
+                                            Body(..., description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1245,10 +1372,12 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
+        response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return None, request_query_model, request_body_model, response_model
 
@@ -1275,14 +1404,14 @@ class ApiParameterSchemaBuilder():
             if i['column_name'] not in [self.primary_key_str]:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(None)))
+                                            Body(None, description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
             assert isinstance(i, dict)
             request_query_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Query(i['column_default'])))
+                                         Query(i['column_default'], description=i['column_description'])))
 
         request_validation = [lambda self_object: _filter_none(self_object)]
         if self.uuid_type_columns:
@@ -1318,10 +1447,13 @@ class ApiParameterSchemaBuilder():
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
 
+        response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseListModel',
             **{'__root__': (List[response_model_pydantic], None)}
         )
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
 
         return None, request_query_model, request_body_model, response_model
 
@@ -1335,10 +1467,10 @@ class ApiParameterSchemaBuilder():
         for i in all_field:
             request_body_fields.append((i['column_name'],
                                         i['column_type'],
-                                        Body(i['column_default'])))
+                                        Body(i['column_default'], description=i['column_description'])))
             response_body_fields.append((i['column_name'],
                                          i['column_type'],
-                                         Body(i['column_default'])))
+                                         Body(i['column_default'], description=i['column_description'])))
 
         # Ready the uuid to str validator
         if self.uuid_type_columns:
@@ -1359,5 +1491,6 @@ class ApiParameterSchemaBuilder():
         # if self.alias_mapper and response_model:
         #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
         #     response_model = _add_validators(response_model, {"root_validator": validator_function})
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return None, request_body_model, response_model

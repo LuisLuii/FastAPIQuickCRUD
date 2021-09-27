@@ -3,6 +3,7 @@ from sqlalchemy import ARRAY, BigInteger, Table, Boolean, CHAR, Column, Date, Da
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, synonym
 
+from src.fastapi_quickcrud.misc.utils import table_to_declarative_base
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods, sqlalchemy_to_pydantic
 from src.fastapi_quickcrud.misc.exceptions import SchemaException, MultipleSingleUniqueNotSupportedException, \
     ColumnTypeNotSupportedException
@@ -37,7 +38,7 @@ UntitledTable256 = Table(
     Column('array_str__value', ARRAY(String())),
 
 )
-
+UntitledTable256 = table_to_declarative_base(UntitledTable256)
 try:
     UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                        crud_methods=[
