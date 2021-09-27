@@ -1,4 +1,6 @@
 import asyncio
+import string
+import random
 from typing import Generator
 
 from sqlalchemy import create_engine
@@ -10,7 +12,13 @@ from sqlalchemy.pool import StaticPool
 class MemorySql():
     def __init__(self, async_mode=False):
         self.async_mode = async_mode
-        SQLALCHEMY_DATABASE_URL = f"sqlite{'+aiosqlite' if async_mode else ''}://"
+        sqlite_shared_name = "test_db_{}".format(
+            'fastapi_quick_crud'
+            # ''.join(random.sample(string.ascii_letters, k=4))
+        )
+        a = ''.join(random.sample(string.ascii_letters, k=4))
+        SQLALCHEMY_DATABASE_URL = f"sqlite{'+aiosqlite' if async_mode else ''}:///file:{sqlite_shared_name}?mode=memory&cache=shared&uri=true"
+        print(SQLALCHEMY_DATABASE_URL)
         if not async_mode:
             self.engine = create_engine(SQLALCHEMY_DATABASE_URL,
                                         future=True,
