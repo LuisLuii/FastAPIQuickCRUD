@@ -17,7 +17,7 @@ if __name__ == '__main__':
     setup(
         name='fastapi_quickcrud',
         version=VERSION,
-        install_requires=["fastapi==0.68.1","pydantic==1.8.2","SQLAlchemy>=1.4","StrEnum==0.4.6","psycopg2==2.9.1","asyncpg==0.24.0","aiosqlite","uvicorn"],
+        install_requires=["fastapi==0.68.1","starlette==0.14.2","pydantic","SQLAlchemy>=1.4","StrEnum","psycopg2","asyncpg","aiosqlite","uvicorn"],
         python_requires=">=3.7",
         description="A comprehensive FastaAPI's CRUD router generator for SQLALchemy.",
         long_description=open("README.md",'r',encoding="utf-8").read(),
