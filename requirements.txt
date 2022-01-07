@@ -2,7 +2,7 @@ asyncpg==0.24.0
 fastapi==0.68.1
 psycopg2==2.9.1
 pydantic==1.8.2
-SQLAlchemy==1.4.25
+SQLAlchemy
 StrEnum==0.4.6
 pytest==6.2.5
 guid==0.2.1
