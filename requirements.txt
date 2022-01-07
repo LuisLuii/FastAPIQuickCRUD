@@ -3,10 +3,10 @@ fastapi
 psycopg2
 pydantic
 SQLAlchemy
-StrEnum==0.4.6
-pytest==6.2.5
-guid==0.2.1
-uvicorn==0.15.0
+StrEnum
+pytest
+guid
+uvicorn
 requests
 coverage
 coveralls
