@@ -11,5 +11,5 @@ requests
 coverage
 coveralls
 starlette
-aiosqlite
+aiosqlite==0.17.0
 greenlet
