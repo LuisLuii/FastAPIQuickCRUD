@@ -1,3 +1,5 @@
 /htmlcov/
 .coverage
 tests/htmlcov
+/poetry.lock
+/pyproject.toml

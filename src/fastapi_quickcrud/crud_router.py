@@ -413,5 +413,5 @@ def crud_router_builder(
     return api
 
 
-pgsql_crud_router_builder = partial(crud_router_builder, sql_type='postgresql')
-generic_sql_crud_router_builder = partial(crud_router_builder, sql_type='')
+pgsql_crud_router_builder = partial(crud_router_builder)
+generic_sql_crud_router_builder = partial(crud_router_builder)

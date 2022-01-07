@@ -12,3 +12,4 @@ coverage
 coveralls
 starlette
 aiosqlite
+greenlet
