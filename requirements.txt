@@ -10,6 +10,6 @@ uvicorn
 requests
 coverage
 coveralls
-starlette==0.14.2
+starlette
 aiosqlite
 greenlet
