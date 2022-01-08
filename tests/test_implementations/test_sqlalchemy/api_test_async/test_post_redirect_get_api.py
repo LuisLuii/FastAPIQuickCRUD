@@ -15,14 +15,38 @@ from tests.test_implementations.test_sqlalchemy.api_test_async import app, Untit
 
 TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
                                    'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
-engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
 
-async_session = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
+
+async def get_session() -> AsyncSession:
+    engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+    async_session = sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session() as session:
+        yield session
+
+
+engine1 = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+async_session1 = sessionmaker(
+    engine1, class_=AsyncSession, expire_on_commit=False
 )
 
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
+async def get_session1() -> AsyncSession:
+    async with async_session1() as session:
+        yield session
+
+
+
+engine2 = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+async_session2 = sessionmaker(
+    engine2, class_=AsyncSession, expire_on_commit=False
+)
+
+async def get_session2() -> AsyncSession:
+    async with async_session2() as session:
         yield session
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
@@ -31,7 +55,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
-test_post_and_redirect_get = crud_router_builder(db_session=get_transaction_session,
+test_post_and_redirect_get = crud_router_builder(
                                                  db_model=UntitledTable256,
                                                  crud_models=UntitledTable256Model,
                                                  prefix="/test_post_direct_get",
@@ -45,7 +69,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
 
-test_post_and_redirect_get_without_get = crud_router_builder(db_session=get_transaction_session,
+test_post_and_redirect_get_without_get = crud_router_builder(
                                                              db_model=UntitledTable256,
                                                              crud_models=UntitledTable256Model,
                                                              prefix="/test_post_direct_get_without_get",
@@ -58,7 +82,7 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                    CrudMethods.FIND_ONE
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-test_get_data = crud_router_builder(db_session=get_transaction_session,
+test_get_data = crud_router_builder(
                                     db_model=UntitledTable256,
                                     crud_models=UntitledTable256Model,
                                     prefix="/test_post_direct_get",
@@ -215,5 +239,3 @@ def test_create_but_not_found_get_api():
 
     response = client.post('/test_post_direct_get_without_get', headers=headers, data=data, allow_redirects=True)
     assert response.status_code == HTTPStatus.NOT_FOUND
-
-test_create_but_not_found_get_api()
