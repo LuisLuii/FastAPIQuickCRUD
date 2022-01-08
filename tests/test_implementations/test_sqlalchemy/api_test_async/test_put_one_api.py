@@ -1,12 +1,27 @@
 import json
+import os
 from collections import OrderedDict
 
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import CrudMethods
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test_async import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy.api_test_async import  app, UntitledTable256
+
+
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
 
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
@@ -14,51 +29,6 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                    CrudMethods.UPSERT_ONE
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_one_model = api_model[CrudMethods.UPSERT_ONE].__dict__
-# assert create_one_model['requestModel'] or create_one_model['responseModel']
-# create_one_request_model = deepcopy(create_one_model['requestModel'].__dict__['__fields__'])
-# create_one_response_model = deepcopy(create_one_model['responseModel'].__dict__['__fields__'])
-# Request Test
-# assert create_one_request_model.pop('on_conflict', False)
-# for k, v in create_one_request_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-
-# Response Test
-# for k, v in create_one_response_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
 
 test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       db_model=UntitledTable256,
@@ -72,55 +42,6 @@ UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                    CrudMethods.UPSERT_MANY,
                                                ],
                                                exclude_columns=['bytea_value', 'xml_value', 'box_valaue'])
-# # Model Test
-# api_model = UntitledTable256Model.__dict__['POST']
-# assert api_model
-# create_many_model = api_model[CrudMethods.UPSERT_MANY].__dict__
-# assert create_many_model['requestModel'] or create_many_model['responseModel']
-# create_many_request_model = deepcopy(create_many_model['requestModel'].__dict__['__fields__'])
-# create_many_response_model = deepcopy(create_many_model['responseModel'].__dict__['__fields__'])
-#
-# # Request Model Test
-# assert create_many_request_model.pop('on_conflict', None)
-# insert_many_model = create_many_request_model['insert'].sub_fields[0].outer_type_.__dict__['__fields__']
-# for k, v in insert_many_model.items():
-#     sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#     if sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#         assert not v.required
-#     elif sql_schema.nullable:
-#         assert not v.required
-#     elif not sql_schema.nullable:
-#         assert v.required
-#     elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#         assert v.required
-#     else:
-#         print(f"{v.name=}")
-#         print(f"{v.required=}")
-#         print(f"{v.default=}")
-#
-# # Response Model Test
-# for k, v in create_many_response_model.items():
-#     create_many_response_model_item = v.type_.__dict__['__fields__']
-#     for k, v in create_many_response_model_item.items():
-#         sql_schema = UntitledTable256.__dict__[v.name].comparator
-#
-#         if sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif not sql_schema.nullable and sql_schema.server_default or sql_schema.default:
-#             assert not v.required
-#         elif sql_schema.nullable:
-#             assert not v.required
-#         elif not sql_schema.nullable:
-#             assert v.required
-#         elif not sql_schema.nullable and not sql_schema.server_default or not sql_schema.default:
-#             assert v.required
-#         else:
-#             print(f"{v.name=}")
-#             print(f"{v.required=}")
-#             print(f"{v.default=}")
 
 test_create_many = crud_router_builder(db_session=get_transaction_session,
                                        db_model=UntitledTable256,

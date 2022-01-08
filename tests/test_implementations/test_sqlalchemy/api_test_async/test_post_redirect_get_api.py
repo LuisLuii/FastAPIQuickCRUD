@@ -1,14 +1,29 @@
 import json
+import os
 import uuid
 from datetime import date, timedelta, datetime, timezone
 from http import HTTPStatus
 
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 from src.fastapi_quickcrud import CrudMethods
 from src.fastapi_quickcrud import crud_router_builder
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy.api_test_async import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy.api_test_async import app, UntitledTable256
+
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+
+async def get_transaction_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
 
 UntitledTable256Model = sqlalchemy_to_pydantic(UntitledTable256,
                                                crud_methods=[
