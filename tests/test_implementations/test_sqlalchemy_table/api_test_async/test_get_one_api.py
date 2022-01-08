@@ -1,16 +1,31 @@
 import json
+import os
 
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 from src.fastapi_quickcrud.misc.type import CrudMethods
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic
-from tests.test_implementations.test_sqlalchemy_table.api_test_async import get_transaction_session, app, UntitledTable256
+from tests.test_implementations.test_sqlalchemy_table.api_test_async import app, UntitledTable256
 
 
 
-test_create_one = crud_router_builder(db_session=get_transaction_session,
+TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
+                                   'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
+
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+async def get_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+
+
+test_create_one = crud_router_builder(db_session=get_session,
                                       db_model=UntitledTable256,
                                       crud_methods=[
                                           CrudMethods.UPSERT_ONE
@@ -22,7 +37,7 @@ test_create_one = crud_router_builder(db_session=get_transaction_session,
                                       )
 
 
-test_get_data = crud_router_builder(db_session=get_transaction_session,
+test_get_data = crud_router_builder(db_session=get_session,
                                     db_model=UntitledTable256,
                                     crud_methods=[
                                         CrudMethods.FIND_ONE
