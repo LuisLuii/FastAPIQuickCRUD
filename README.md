@@ -14,7 +14,6 @@
 ---
 
 
-![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example_test.gif)
 
 
 
