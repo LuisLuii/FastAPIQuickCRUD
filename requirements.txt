@@ -1,6 +1,6 @@
 asyncpg
 fastapi
-psycopg2
+psycopg2-binary
 pydantic
 SQLAlchemy
 StrEnum
