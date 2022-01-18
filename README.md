@@ -93,6 +93,12 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 pip install fastapi-quickcrud
 ```
 
+I suggest the following library if you try to connect to PostgreSQL 
+```bash
+pip install psycopg2
+pip install asyncpg
+```
+
 ## Usage
 
 #### Simple Code (get more example from `./example`)
