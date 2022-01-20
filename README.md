@@ -87,6 +87,16 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
 # Getting started
 
+##
+Welcome if you can accept the dependency version
+I will take the time to update the version dependencies as soon as possible to ensure that the core dependencies of this project have the highest version
+```bash
+fastapi<=0.68.2
+pydantic<=1.8.2
+SQLAlchemy<=1.4.30
+starlette==0.14.2
+```
+
 ## Installation
 
 ```bash
