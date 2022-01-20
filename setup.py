@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.1.3'
+VERSION = '0.1.6'
 
 print("""
 
@@ -13,12 +13,13 @@ print("""
 
 """)
 
+
 if __name__ == '__main__':
     setup(
         name='fastapi_quickcrud',
         version=VERSION,
-        install_requires=["fastapi","starlette==0.14.2","pydantic","SQLAlchemy>=1.4","StrEnum",
-                          "aiosqlite","uvicorn"],
+        install_requires=["fastapi<=0.72.0","pydantic==1.8.2","SQLAlchemy<=1.4.30","StrEnum==0.4.7","starlette==0.17.1",
+                          "aiosqlite==0.17.0","uvicorn==0.17.0","greenlet==1.1.2","anyio==3.5.0"],
         python_requires=">=3.7",
         description="A comprehensive FastaAPI's CRUD router generator for SQLALchemy.",
         long_description=open("README.md",'r',encoding="utf-8").read(),
