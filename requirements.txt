@@ -4,11 +4,11 @@ asgiref==3.4.1
 asyncpg==0.25.0
 coverage==6.2
 coveralls==3.3.1
-fastapi
+fastapi==0.68.2
 greenlet==1.1.2
 guid==0.2.1
 psycopg2-binary==2.9.3
-pydantic==1.6.2
+pydantic==1.6.0
 pytest==6.2.5
 requests==2.27.1
 SQLAlchemy==1.4.30
