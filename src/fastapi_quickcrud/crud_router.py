@@ -91,9 +91,8 @@ def crud_router_builder(
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
     :return:
     """
-    NO_PRIMARY_KEY = False
 
-    db_model = convert_table_to_model(db_model)
+    db_model, NO_PRIMARY_KEY = convert_table_to_model(db_model)
 
     constraints = db_model.__table__.constraints
 
