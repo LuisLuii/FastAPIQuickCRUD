@@ -153,7 +153,7 @@ app.include_router(crud_route_2)
 ```
 
 
-### SQLAlchemy to Pydantic Model Converter ([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/basic_usage/quick_usage_with_async_SQLALchemy_Base.py))
+### SQLAlchemy to Pydantic Model Converter And Build your own API([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/basic_usage/quick_usage_with_async_SQLALchemy_Base.py))
 ```python
 import uvicorn
 from fastapi import FastAPI, Depends
