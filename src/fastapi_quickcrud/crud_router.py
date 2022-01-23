@@ -23,6 +23,7 @@ from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRo
 from .misc.crud_model import CRUDModel
 from .misc.memory_sql import async_memory_db, sync_memory_db
 from .misc.type import CrudMethods, SqlType
+from .misc.utils import convert_table_to_model
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -92,23 +93,7 @@ def crud_router_builder(
     """
     NO_PRIMARY_KEY = False
 
-    if isinstance(db_model, Table):
-        db_name = str(db_model.fullname)
-        table_dict = {'__table__': db_model,
-                      '__tablename__': db_name}
-
-        if not db_model.primary_key:
-            table_dict['__mapper_args__'] = {
-                "primary_key": [i for i in db_model._columns]
-            }
-            NO_PRIMARY_KEY = True
-
-        for i in db_model.c:
-            col, = i.expression.base_columns
-            table_dict[str(i.key)] = col
-
-        tmp = type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict)
-        db_model = tmp
+    db_model = convert_table_to_model(db_model)
 
     constraints = db_model.__table__.constraints
 

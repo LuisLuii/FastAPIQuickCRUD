@@ -4,25 +4,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
-from fastapi_quickcrud import sqlalchemy_table_to_pydantic
 from fastapi_quickcrud import sqlalchemy_to_pydantic
 
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
-                             pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
-async_session = sessionmaker(bind=engine, class_=AsyncSession)
-
-
-async def get_transaction_session() -> AsyncSession:
-    async with async_session() as session:
-        async with session.begin():
-            yield session
 
 
 from sqlalchemy import CHAR, Column, ForeignKey, Integer, Table
@@ -50,13 +37,8 @@ class Child(Base):
     name = Column(CHAR, nullable=True)
 
 
-@app.on_event("startup")
-async def startup_event():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
-
-user_model_m2m = sqlalchemy_table_to_pydantic(db_model=association_table,
+user_model_m2m = sqlalchemy_to_pydantic(db_model=association_table,
                                               crud_methods=[
                                                   CrudMethods.FIND_MANY,
                                                   CrudMethods.UPSERT_ONE,
@@ -92,24 +74,21 @@ friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
                                           ],
                                           exclude_columns=[])
 
-crud_route_1 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=user_model_set,
+crud_route_1 = crud_router_builder(crud_models=user_model_set,
                                    db_model=Parent,
                                    prefix="/Parent",
                                    dependencies=[],
                                    async_mode=True,
                                    tags=["Parent"]
                                    )
-crud_route_3 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=user_model_m2m,
+crud_route_3 = crud_router_builder(crud_models=user_model_m2m,
                                    db_model=association_table,
                                    prefix="/Parent2child",
                                    dependencies=[],
                                    async_mode=True,
                                    tags=["m2m"]
                                    )
-crud_route_2 = crud_router_builder(db_session=get_transaction_session,
-                                   crud_models=friend_model_set,
+crud_route_2 = crud_router_builder(crud_models=friend_model_set,
                                    db_model=Child,
                                    async_mode=True,
                                    prefix="/Child",
