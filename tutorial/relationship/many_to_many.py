@@ -1,16 +1,16 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import crud_router_builder
 from fastapi_quickcrud import sqlalchemy_to_pydantic
+from fastapi_quickcrud.misc.memory_sql import sync_memory_db
 
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
-
 
 from sqlalchemy import CHAR, Column, ForeignKey, Integer, Table
 from sqlalchemy.orm import relationship
@@ -37,23 +37,22 @@ class Child(Base):
     name = Column(CHAR, nullable=True)
 
 
-
 user_model_m2m = sqlalchemy_to_pydantic(db_model=association_table,
-                                              crud_methods=[
-                                                  CrudMethods.FIND_MANY,
-                                                  CrudMethods.UPSERT_ONE,
-                                                  CrudMethods.UPDATE_MANY,
-                                                  CrudMethods.DELETE_MANY,
-                                                  CrudMethods.PATCH_MANY,
+                                        crud_methods=[
+                                            CrudMethods.FIND_MANY,
+                                            CrudMethods.UPSERT_ONE,
+                                            CrudMethods.UPDATE_MANY,
+                                            CrudMethods.DELETE_MANY,
+                                            CrudMethods.PATCH_MANY,
 
-                                              ],
-                                              exclude_columns=[])
+                                        ],
+                                        exclude_columns=[])
 
 user_model_set = sqlalchemy_to_pydantic(db_model=Parent,
                                         crud_methods=[
                                             CrudMethods.FIND_MANY,
                                             CrudMethods.FIND_ONE,
-                                            CrudMethods.UPSERT_ONE,
+                                            CrudMethods.CREATE_ONE,
                                             CrudMethods.UPDATE_MANY,
                                             CrudMethods.UPDATE_ONE,
                                             CrudMethods.DELETE_ONE,
@@ -69,6 +68,7 @@ friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
                                               CrudMethods.UPSERT_MANY,
                                               CrudMethods.UPDATE_MANY,
                                               CrudMethods.DELETE_MANY,
+                                              CrudMethods.CREATE_ONE,
                                               CrudMethods.PATCH_MANY,
 
                                           ],
@@ -95,6 +95,24 @@ crud_route_2 = crud_router_builder(crud_models=friend_model_set,
                                    dependencies=[],
                                    tags=["Child"]
                                    )
+post_model = friend_model_set.POST[CrudMethods.CREATE_ONE]
+
+sync_memory_db.create_memory_table(Child)
+@app.post("/hello",
+           status_code=201,
+          tags=["Child"],
+           response_model=post_model.responseModel,
+           dependencies=[])
+async def my_api(
+        query: post_model.requestBodyModel = Depends(post_model.requestBodyModel),
+        session=Depends(sync_memory_db.get_memory_db_session)
+):
+    db_item = Child(**query.__dict__)
+    session.add(db_item)
+    session.commit()
+    session.refresh(db_item)
+    return db_item.__dict__
+
 
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
