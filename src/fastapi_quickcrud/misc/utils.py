@@ -104,7 +104,7 @@ def sqlalchemy_to_pydantic(
         constraints = None,
         exclude_primary_key=False) -> CRUDModel:
 
-    db_model = convert_table_to_model(db_model)
+    db_model, _ = convert_table_to_model(db_model)
     if exclude_columns is None:
         exclude_columns = []
     request_response_mode_set = {}
@@ -325,8 +325,9 @@ def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
     return response_list
 
 def convert_table_to_model(db_model):
+    NO_PRIMARY_KEY = False
     if not isinstance(db_model, Table):
-        return db_model
+        return db_model, NO_PRIMARY_KEY
     db_name = str(db_model.fullname)
     table_dict = {'__table__': db_model,
                   '__tablename__': db_name}
@@ -341,4 +342,4 @@ def convert_table_to_model(db_model):
         col, = i.expression.base_columns
         table_dict[str(i.key)] = col
 
-    return type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict)
+    return type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict), NO_PRIMARY_KEY
