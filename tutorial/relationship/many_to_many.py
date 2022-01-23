@@ -104,10 +104,10 @@ sync_memory_db.create_memory_table(Child)
            response_model=post_model.responseModel,
            dependencies=[])
 async def my_api(
-        query: post_model.requestBodyModel = Depends(post_model.requestBodyModel),
+        body: post_model.requestBodyModel = Depends(post_model.requestBodyModel),
         session=Depends(sync_memory_db.get_memory_db_session)
 ):
-    db_item = Child(**query.__dict__)
+    db_item = Child(**body.__dict__)
     session.add(db_item)
     session.commit()
     session.refresh(db_item)
