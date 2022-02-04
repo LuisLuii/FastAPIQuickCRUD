@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import Type, List, Union, TypeVar
+from typing import Type, List, Union, TypeVar, Optional
 
 from pydantic import BaseModel, BaseConfig
 from sqlalchemy import Column, Integer
@@ -188,14 +188,18 @@ def sqlalchemy_to_pydantic(
         sql_type: str = SqlType.postgresql,
         exclude_columns: List[str] = None,
         constraints = None,
+        foreign_include: Optional[bool] = None,
         exclude_primary_key=False) -> CRUDModel:
     if exclude_columns is None:
         exclude_columns = []
+    if foreign_include is None:
+        foreign_include = {}
     request_response_mode_set = {}
     model_builder = ApiParameterSchemaBuilder(db_model,
                                               constraints = constraints,
                                               exclude_column=exclude_columns,
                                               sql_type=sql_type,
+                                              foreign_include=foreign_include,
                                               exclude_primary_key=exclude_primary_key)
 
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,

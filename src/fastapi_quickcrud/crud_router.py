@@ -39,6 +39,7 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
+        foreign_include: Optional[bool] = None,
         **router_kwargs: Any) -> APIRouter:
     """
     :param db_session: Callable function
@@ -88,6 +89,7 @@ def crud_router_builder(
     :param async_mode:
     :param autocommit:
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
+    :param foreign_mode:
     :return:
     """
     NO_PRIMARY_KEY = False
@@ -154,6 +156,7 @@ def crud_router_builder(
                                                      crud_methods=crud_methods,
                                                      exclude_columns=exclude_columns,
                                                      sql_type=sql_type,
+                                                     foreign_include=foreign_include,
                                                      exclude_primary_key=NO_PRIMARY_KEY)
 
     crud_service = query_service(model=db_model, async_mode=async_mode)
