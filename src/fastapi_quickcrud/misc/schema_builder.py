@@ -134,8 +134,9 @@ class ApiParameterSchemaBuilder:
     unsupported_data_types = ["BLOB"]
     partial_supported_data_types = ["INTERVAL", "JSON", "JSONB"]
 
-    def __init__(self, db_model: Type, sql_type, exclude_column=None ,constraints = None,exclude_primary_key = False):
+    def __init__(self, db_model: Type, sql_type, exclude_column=None ,constraints = None,exclude_primary_key = False,foreign_include=False):
         self.constraints = constraints
+        self.foreign_include = foreign_include
         self.exclude_primary_key = exclude_primary_key
         if exclude_column is None:
             self._exclude_column = []
@@ -164,13 +165,32 @@ class ApiParameterSchemaBuilder:
         self.json_type_columns = []
         self.array_type_columns = []
         self.reference_mapper = {}
+        self.foreign_mapper = {}
         self.foreign_table_response_model_sets: Dict[TableNameT, ResponseModelT] = {}
         self.table_of_foreign: Dict[ForeignKeyName, dict] = self.extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
         self.sql_type = sql_type
 
+    def __get_table_name_from_table(self, table):
+        if not hasattr(table, "name"):
+            print("require name for your table if you try to query with foreign table")
+        return table.name
+
+    def __get_table_name_from_model(self, table):
+        if not hasattr(table, "name"):
+            print("require __tablename__ for your model if you try to query with foreign table")
+        return table.__tablename__
+
+    def __get_table_name(self,table):
+        if isinstance(table, Table):
+            return self.__get_table_name_from_table(table)
+        else:
+            return self.__get_table_name_from_model(table)
+
     def extra_foreign_table(self) -> Dict[ForeignKeyName, dict]:
-        if self.exclude_primary_key:
+        for i in self.foreign_include:
+            self.foreign_mapper[self.__get_table_name(i)] = i
+        if self.exclude_primary_key and self.foreign_mapper:
             return self._extra_foreign_table_from_table()
         else:
             return self._extra_foreign_table_from_declarative_base()
@@ -863,9 +883,6 @@ class ApiParameterSchemaBuilder:
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
         response_item_model = _to_require_but_default(response_model_pydantic)
-        # if self.alias_mapper and response_item_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
         response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model, config=OrmConfig)
 
         response_model = create_model(
@@ -911,10 +928,6 @@ class ApiParameterSchemaBuilder:
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
         response_model = _to_require_but_default(response_model_pydantic)
-        # if self.alias_mapper and response_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model = _add_validators(response_model, {"root_validator": validator_function})
-        # else:
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return None, request_body_model, response_model
 
@@ -962,9 +975,6 @@ class ApiParameterSchemaBuilder:
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
 
         response_item_model = _to_require_but_default(response_model_pydantic)
-        # if self.alias_mapper and response_item_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_item_model = _add_validators(response_item_model, {"root_validator": validator_function})
         response_item_model = _add_orm_model_config_into_pydantic_model(response_item_model, config=OrmConfig)
 
         response_model = create_model(
@@ -1019,11 +1029,6 @@ class ApiParameterSchemaBuilder:
                                                   response_fields,
                                                   )
         response_list_item_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_list_item_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_list_item_model = _add_validators(response_list_item_model, {"root_validator": validator_function},
-        #                                                config=OrmConfig)
-        # else:
         response_list_item_model = _add_orm_model_config_into_pydantic_model(response_list_item_model,
                                                                              config=OrmConfig)
 
@@ -1033,68 +1038,6 @@ class ApiParameterSchemaBuilder:
         )
 
         return request_query_model, None, response_model
-
-    def find_one(self) -> Tuple:
-        query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
-        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
-        response_fields = []
-        all_field = deepcopy(self.all_field)
-
-        for i in self.reference_mapper:
-            response_fields.append((f"{i}_foreign",
-                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
-                                    None))
-
-        for i in all_field:
-            response_fields.append((i['column_name'],
-                                    i['column_type'],
-                                    Body(i['column_default'])))
-
-        request_fields = []
-        for i in query_param:
-            assert isinstance(i, dict) or isinstance(i, tuple)
-            if isinstance(i, Tuple):
-                request_fields.append(i)
-            else:
-                request_fields.append((i['column_name'],
-                                       i['column_type'],
-                                       Query(i['column_default'], description=i['column_description'])))
-        request_validation = [lambda self_object: _filter_none(self_object)]
-        if self.uuid_type_columns:
-            request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
-                                                                                     self.uuid_type_columns))
-        if self.table_of_foreign:
-            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
-                                                                                           self.table_of_foreign))
-
-        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
-                                             request_fields,
-                                             namespace={
-                                                 '__post_init__': lambda self_object: [validator_(self_object)
-                                                                                       for validator_ in
-                                                                                       request_validation]
-                                             }
-                                             )
-        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneResponseModel',
-                                                  response_fields,
-                                                  namespace={
-                                                      '__post_init__': lambda self_object: [validator_(self_object)
-                                                                                            for validator_ in
-                                                                                            request_validation]}
-                                                  )
-        response_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model = _add_validators(response_model, {"root_validator": validator_function}, config=OrmConfig)
-        # else:
-        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
-
-        response_model = create_model(
-            f'{self.db_name + str(uuid.uuid4())}_FindOneResponseListModel',
-            **{'__root__': (response_model, None), '__base__': ExcludeUnsetBaseModel}
-        )
-
-        return self._primary_key_dataclass_model, request_query_model, None, response_model, None
 
     def delete_one(self) -> Tuple:
         query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
@@ -1165,13 +1108,6 @@ class ApiParameterSchemaBuilder:
                                                                                        request_validation]
                                              }
                                              )
-        # response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseModel',
-        #                                 response_fields,
-        #                                 namespace={
-        #                                     '__post_init__': lambda self_object: [validator_(self_object)
-        #                                                                           for validator_ in
-        #                                                                           response_validation]}
-        #                                 )
         response_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_DeleteManyResponseModel',
                                         response_fields,
                                         namespace={
@@ -1243,9 +1179,6 @@ class ApiParameterSchemaBuilder:
                                                                                             request_validation]}
                                                   )
         response_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model = _add_validators(response_model, {"root_validator": validator_function})
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
@@ -1303,9 +1236,6 @@ class ApiParameterSchemaBuilder:
                                                                                             request_validation]}
                                                   )
         response_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model = _add_validators(response_model, {"root_validator": validator_function})
 
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
         return self._primary_key_dataclass_model, request_query_model, request_body_model, response_model
@@ -1368,10 +1298,6 @@ class ApiParameterSchemaBuilder:
                                                   response_fields,
                                                   )
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model_dataclass:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
-
         response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_UpdateManyResponseListModel',
@@ -1443,10 +1369,6 @@ class ApiParameterSchemaBuilder:
                                                                                             request_validation]}
                                                   )
         response_model_pydantic = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model_dataclass:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model_pydantic = _add_validators(response_model_pydantic, {"root_validator": validator_function})
-
         response_model_pydantic = _add_orm_model_config_into_pydantic_model(response_model_pydantic, config=OrmConfig)
         response_model = create_model(
             f'{self.db_name + str(uuid.uuid4())}_PatchManyResponseListModel',
@@ -1488,9 +1410,76 @@ class ApiParameterSchemaBuilder:
         response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_PostAndRedirectResponseModel',
                                                   response_body_fields)
         response_model = _model_from_dataclass(response_model_dataclass)
-        # if self.alias_mapper and response_model:
-        #     validator_function = root_validator(pre=True, allow_reuse=True)(_original_data_to_alias(self.alias_mapper))
-        #     response_model = _add_validators(response_model, {"root_validator": validator_function})
         response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
 
         return None, request_body_model, response_model
+
+    def find_one(self) -> Tuple:
+        query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
+        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
+        response_fields = []
+        all_field = deepcopy(self.all_field)
+
+        for i in self.reference_mapper:
+            response_fields.append((f"{i}_foreign",
+                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
+                                    None))
+
+        for i in all_field:
+            response_fields.append((i['column_name'],
+                                    i['column_type'],
+                                    Body(i['column_default'])))
+
+        request_fields = []
+        for i in query_param:
+            assert isinstance(i, dict) or isinstance(i, tuple)
+            if isinstance(i, Tuple):
+                request_fields.append(i)
+            else:
+                request_fields.append((i['column_name'],
+                                       i['column_type'],
+                                       Query(i['column_default'], description=i['column_description'])))
+        request_validation = [lambda self_object: _filter_none(self_object)]
+        if self.uuid_type_columns:
+            request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
+                                                                                     self.uuid_type_columns))
+        if self.table_of_foreign:
+            request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
+                                                                                           self.table_of_foreign))
+
+        request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
+                                             request_fields,
+                                             namespace={
+                                                 '__post_init__': lambda self_object: [validator_(self_object)
+                                                                                       for validator_ in
+                                                                                       request_validation]
+                                             }
+                                             )
+        response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneResponseModel',
+                                                  response_fields,
+                                                  namespace={
+                                                      '__post_init__': lambda self_object: [validator_(self_object)
+                                                                                            for validator_ in
+                                                                                            request_validation]}
+                                                  )
+        response_model = _model_from_dataclass(response_model_dataclass)
+        response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
+        response_model = create_model(
+            f'{self.db_name + str(uuid.uuid4())}_FindOneResponseListModel',
+            **{'__root__': (response_model, None), '__base__': ExcludeUnsetBaseModel}
+        )
+
+        return self._primary_key_dataclass_model, request_query_model, None, response_model, None
+
+    def foreign_tree_get(self) -> Tuple:
+        query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
+        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
+        response_fields = []
+        all_field = deepcopy(self.all_field)
+
+        for i in self.reference_mapper:
+            response_fields.append((f"{i}_foreign",
+                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
+                                    None))
+
