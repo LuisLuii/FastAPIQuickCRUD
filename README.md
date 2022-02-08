@@ -161,16 +161,14 @@ from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import sqlalchemy_to_pydantic
 from fastapi_quickcrud.misc.memory_sql import sync_memory_db
 
+from sqlalchemy import CHAR, Column, Integer
+from sqlalchemy.ext.declarative import declarative_base
+
 app = FastAPI()
 
 Base = declarative_base()
 metadata = Base.metadata
 
-from sqlalchemy import CHAR, Column, Integer
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
-metadata = Base.metadata
 
 class Child(Base):
     __tablename__ = 'right'
@@ -190,14 +188,15 @@ friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
                                           ],
                                           exclude_columns=[])
 
-post_model = friend_model_set.POST[CrudMethods.CREATE_ONE]
 
+post_model = friend_model_set.POST[CrudMethods.CREATE_ONE]
 sync_memory_db.create_memory_table(Child)
+
 @app.post("/hello",
-           status_code=201,
+          status_code=201,
           tags=["Child"],
-           response_model=post_model.responseModel,
-           dependencies=[])
+          response_model=post_model.responseModel,
+          dependencies=[])
 async def my_api(
         query: post_model.requestBodyModel = Depends(post_model.requestBodyModel),
         session=Depends(sync_memory_db.get_memory_db_session)
@@ -207,6 +206,8 @@ async def my_api(
     session.commit()
     session.refresh(db_item)
     return db_item.__dict__
+
+
 
 uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 
