@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 
+
+## [not release] - 2021-09-27
+ 
+### FIX
+pydantic update is not good for this project
+
+---
+
 ## [not release] - 2021-09-27
  
 ### Added
@@ -16,7 +24,7 @@ Full SQL support
 ### ToDo
 
 upsert for each sql
-
+---
 
 
 ## [not release] - 2021-09-08

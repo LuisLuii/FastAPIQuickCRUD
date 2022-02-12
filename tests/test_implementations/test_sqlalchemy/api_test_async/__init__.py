@@ -17,18 +17,15 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
                                    'postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres')
+# client = AsyncIOMotorClient()??
+# client.get_io_loop = asyncio.get_event_loop
+# engine = AIOEngine(motor_client=client)
 
-engine = create_async_engine(TEST_DATABASE_URL,
-                             future=True,
-                             echo=True,
-                             pool_use_lifo=True,
-                             pool_pre_ping=True,
-                             pool_recycle=7200)
-async_session = sessionmaker(autocommit=False,
-                             autoflush=False,
-                             bind=engine,
-                             class_=AsyncSession)
+engine = create_async_engine(TEST_DATABASE_URL, echo=True, future=True)
 
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
 
 async def get_transaction_session() -> AsyncSession:
     async with async_session() as session:

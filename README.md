@@ -5,7 +5,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb?style=flat-square)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=main)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=main)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main)
-[![PyPidownload](https://img.shields.io/pypi/dm/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
+[![Downloads](https://static.pepy.tech/personalized-badge/fastapi-quickcrud?period=week&units=none&left_color=black&right_color=orange&left_text=Week%20Downloads%20)](https://pepy.tech/project/fastapi-quickcrud)
 [![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![PyPI version](https://badge.fury.io/py/fastapi-quickcrud.svg)](https://badge.fury.io/py/fastapi-quickcrud)
@@ -14,13 +14,14 @@
 ---
 
 
+![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example.gif)
 
 
 
 
 - [Introduction](#introduction)
-  - [Advantage](#advantage)
-  - [Constraint](#constraint)
+  - [Advantages](#advantages)
+  - [Limitations](#limitations)
 - [Getting started](#getting-started)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -37,9 +38,9 @@
 
 # Introduction
 
-I believe that everyone who's working with FastApi and building some RESTful of CRUD services, wastes the time to writing similar code for simple CRUD every time
+I believe that many people who work with FastApi to build RESTful CRUD services end up wasting time writing repitive boilerplate code.
 
-`FastAPI Quick CRUD` can generate CRUD in FastApi with SQLAlchemy schema 
+`FastAPI Quick CRUD` can generate CRUD methods in FastApi from an SQLAlchemy schema:
 
 - Get one
 - Get many
@@ -57,9 +58,9 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
-## Advantage
+## Advantages
 
-  - [x] **Support SQLAlchemy 1.4** - Allow you build a fully asynchronous python service, also supports synchronization.
+  - [x] **Support SQLAlchemy 1.4** - Allows you build a fully asynchronous or synchronous python service
   
   - [x] **Full SQLAlchemy DBAPI Support** - Support different SQL for SQLAlchemy
     
@@ -73,11 +74,11 @@ I believe that everyone who's working with FastApi and building some RESTful of 
      
   - [x] **SQL Relationship** - `FIND ONE/MANY` supports Path get data with relationship
     
-## Constraint
+## Limitations
    
   - ❌ If there are multiple **unique constraints**, please use **composite unique constraints** instead
-  - ❌ **Composite primary key** is not support
-  - ❌ Not Support API requests with specific resource `xxx/{primary key}` when table have not primary key; 
+  - ❌ **Composite primary key** is not supported
+  - ❌ Unsupported API requests with on resources `xxx/{primary key}` for tables without a primary key; 
     - `UPDATE ONE`
     - `FIND ONE`
     - `PATCH ONE` 
@@ -86,15 +87,31 @@ I believe that everyone who's working with FastApi and building some RESTful of 
 
 # Getting started
 
+##
+I try to update the version dependencies as soon as possible to ensure that the core dependencies of this project have the highest version possible.
+```bash
+fastapi<=0.68.2
+pydantic<=1.8.2
+SQLAlchemy<=1.4.30
+starlette==0.14.2
+```
+
 ## Installation
 
 ```bash
 pip install fastapi-quickcrud
 ```
 
+I suggest the following library if you try to connect to PostgreSQL 
+```bash
+pip install psycopg2
+pip install asyncpg
+```
+
 ## Usage
 
-#### Simple Code (get more example from `./example`)
+### Simple Code (or see the longer ([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/sample.py))
+
 
 ```python
 from fastapi import FastAPI
@@ -134,8 +151,70 @@ app.include_router(crud_route_1)
 app.include_router(crud_route_2)
 ```
 
+
+### SQLAlchemy to Pydantic Model Converter And Build your own API([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/basic_usage/quick_usage_with_async_SQLALchemy_Base.py))
+```python
+import uvicorn
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import declarative_base
+from fastapi_quickcrud import CrudMethods
+from fastapi_quickcrud import sqlalchemy_to_pydantic
+from fastapi_quickcrud.misc.memory_sql import sync_memory_db
+
+from sqlalchemy import CHAR, Column, Integer
+from sqlalchemy.ext.declarative import declarative_base
+
+app = FastAPI()
+
+Base = declarative_base()
+metadata = Base.metadata
+
+
+class Child(Base):
+    __tablename__ = 'right'
+    id = Column(Integer, primary_key=True)
+    name = Column(CHAR, nullable=True)
+
+
+friend_model_set = sqlalchemy_to_pydantic(db_model=Child,
+                                          crud_methods=[
+                                              CrudMethods.FIND_MANY,
+                                              CrudMethods.UPSERT_MANY,
+                                              CrudMethods.UPDATE_MANY,
+                                              CrudMethods.DELETE_MANY,
+                                              CrudMethods.CREATE_ONE,
+                                              CrudMethods.PATCH_MANY,
+
+                                          ],
+                                          exclude_columns=[])
+
+
+post_model = friend_model_set.POST[CrudMethods.CREATE_ONE]
+sync_memory_db.create_memory_table(Child)
+
+@app.post("/hello",
+          status_code=201,
+          tags=["Child"],
+          response_model=post_model.responseModel,
+          dependencies=[])
+async def my_api(
+        query: post_model.requestBodyModel = Depends(post_model.requestBodyModel),
+        session=Depends(sync_memory_db.get_memory_db_session)
+):
+    db_item = Child(**query.__dict__)
+    session.add(db_item)
+    session.commit()
+    session.refresh(db_item)
+    return db_item.__dict__
+
+
+
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
+
+```
+
 * Note:
- you can use [sqlacodegen](https://github.com/agronholm/sqlacodegen) to generate SQLAlchemy model for your table. This project is based on the model development and testing generated by sqlacodegen
+ you can use [sqlacodegen](https://github.com/agronholm/sqlacodegen) to generate SQLAlchemy models for your table. This project is based on the model development and testing generated by sqlacodegen
 
 ### Main module
 
