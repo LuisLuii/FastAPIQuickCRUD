@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from sqlalchemy import *
 from sqlalchemy.orm import *
-from fastapi_quickcrud import crud_router_builder
 from fastapi_quickcrud.crud_router import generic_sql_crud_router_builder
 
 Base = declarative_base()
@@ -32,10 +31,12 @@ crud_route_child = generic_sql_crud_router_builder(
     tags=["child"]
 )
 
-
 app = FastAPI()
 [app.include_router(i) for i in [crud_route_parent, crud_route_child]]
 
+@app.get("/", tags=["child"])
+async def root():
+    return {"message": "Hello World"}
 
 import uvicorn
 uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)
