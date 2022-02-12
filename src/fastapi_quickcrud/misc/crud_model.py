@@ -19,6 +19,7 @@ class RequestResponseModel(BaseModel):
     jsonRequestFieldModel: Optional[ModelMetaclass]
     jsonbRequestFieldModel: Optional[ModelMetaclass]
     arrayRequestFieldModel: Optional[ModelMetaclass]
+    foreign_pk: Optional[Dict[str,dict]]
 
 
 class CRUDModel(BaseModel):

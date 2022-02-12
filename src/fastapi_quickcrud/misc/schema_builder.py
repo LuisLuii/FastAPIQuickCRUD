@@ -165,12 +165,29 @@ class ApiParameterSchemaBuilder:
         self.json_type_columns = []
         self.array_type_columns = []
         self.reference_mapper = {}
-        self.foreign_mapper = {}
+        self.foreign_mapper = self.__foreign_mapper_builder()
         self.foreign_table_response_model_sets: Dict[TableNameT, ResponseModelT] = {}
         self.table_of_foreign: Dict[ForeignKeyName, dict] = self.extra_foreign_table()
         self.all_field: List[dict] = self._extract_all_field()
         self.sql_type = sql_type
 
+    def __foreign_mapper_builder(self):
+        foreign_mapper = {}
+        if self.exclude_primary_key:
+            return foreign_mapper
+        for db_model in self.foreign_include:
+            tmp = {}
+            table_name = self.__get_table_name(db_model)
+            tmp["model"] = db_model
+            foreign_mapper[table_name] = db_model
+            tmp["db_model"] = db_model
+            tmp["db_model_table"] = db_model.__table__
+            tmp["db_name"] = db_model.__tablename__
+            tmp["columns"] = db_model.__table__.c
+            tmp["all_fields"] = self._extract_all_field(tmp["columns"])
+            tmp["primary_key"] = self._extract_primary(tmp["db_model_table"])
+            foreign_mapper[table_name] = tmp
+        return foreign_mapper
     def __get_table_name_from_table(self, table):
         if not hasattr(table, "name"):
             print("require name for your table if you try to query with foreign table")
@@ -188,9 +205,7 @@ class ApiParameterSchemaBuilder:
             return self.__get_table_name_from_model(table)
 
     def extra_foreign_table(self) -> Dict[ForeignKeyName, dict]:
-        for i in self.foreign_include:
-            self.foreign_mapper[self.__get_table_name(i)] = i
-        if self.exclude_primary_key and self.foreign_mapper:
+        if self.exclude_primary_key:
             return self._extra_foreign_table_from_table()
         else:
             return self._extra_foreign_table_from_declarative_base(self.__db_model)
@@ -232,13 +247,14 @@ class ApiParameterSchemaBuilder:
             return ""
         return column.comment
 
-    def _extract_primary(self) -> Union[tuple, Tuple[Union[str, Any],
+    def _extract_primary(self, db_model_table=None) -> Union[tuple, Tuple[Union[str, Any],
                                                      DataClassT,
                                                      Tuple[Union[str, Any],
                                                            Union[Type[uuid.UUID], Any],
                                                            Optional[Any]]]]:
-
-        primary_list = self.__db_model_table.primary_key.columns.values()
+        if db_model_table == None:
+            db_model_table = self.__db_model_table
+        primary_list = db_model_table.primary_key.columns.values()
         if not primary_list or self.exclude_primary_key:
             return (None, None, None)
         if len(primary_list) > 1:
@@ -458,12 +474,13 @@ class ApiParameterSchemaBuilder:
         foreign_key_table = {}
         for r in mapper.relationships:
             local, = r.local_columns
-            if r.key and r.key not in processed_table:
-                processed_table.append(str(mapper.local_table))
-                foreign_key_table.update(self._extra_foreign_table_from_declarative_base(self.foreign_mapper[r.key],
-                                                                                         processed_table=processed_table
-                                                                                         )
-                                         )
+            relation_table = r.key
+            # if relation_table and relation_table not in processed_table and relation_table in self.foreign_include:
+            #     processed_table.append(str(mapper.local_table))
+            #     foreign_key_table.update(self._extra_foreign_table_from_declarative_base(self.foreign_mapper[relation_table],
+            #                                                                              processed_table=processed_table
+            #                                                                              )
+            #                              )
             local = mapper.get_property_by_column(local).expression
             local_table = str(local).split('.')[0]
             local_column = str(local).split('.')[1]
@@ -741,10 +758,12 @@ class ApiParameterSchemaBuilder:
         result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
         return result_
 
-    def _get_fizzy_query_param(self, exclude_column: List[str] = None) -> List[dict]:
+    def _get_fizzy_query_param(self, exclude_column: List[str] = None, fields=None) -> List[dict]:
+        if not fields:
+            fields = self.all_field
         if not exclude_column:
             exclude_column = []
-        fields_: List[dict] = deepcopy(self.all_field)
+        fields_: List[dict] = deepcopy(fields)
         result = []
         for field_ in fields_:
             if field_['column_name'] in exclude_column:
@@ -1480,14 +1499,22 @@ class ApiParameterSchemaBuilder:
 
         return self._primary_key_dataclass_model, request_query_model, None, response_model, None
 
-    def foreign_tree_get(self) -> Tuple:
-        query_param: List[dict] = self._get_fizzy_query_param(self.primary_key_str)
-        query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(query_param)
-        response_fields = []
-        all_field = deepcopy(self.all_field)
+    def foreign_tree_get_many(self) -> Tuple:
+        for table_name, table_detail in self.foreign_mapper.items():
+            _all_fields = table_detail["all_fields"]
+            _primary_key = table_detail["primary_key"]
+            _query_param: List[dict] = self._get_fizzy_query_param(_primary_key, _all_fields)
+            _query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(_query_param)
+            response_fields = []
+            all_field = deepcopy(_all_fields)
+            for i in self.reference_mapper:
+                response_fields.append((f"{i}_foreign",
+                                        self.foreign_table_response_model_sets[self.reference_mapper[i]],
+                                        None))
 
-        for i in self.reference_mapper:
-            response_fields.append((f"{i}_foreign",
-                                    self.foreign_table_response_model_sets[self.reference_mapper[i]],
-                                    None))
+            for i in all_field:
+                response_fields.append((i['column_name'],
+                                        i['column_type'],
+                                        Body(i['column_default'])))
+
 

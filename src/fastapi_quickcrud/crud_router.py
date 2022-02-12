@@ -164,7 +164,17 @@ def crud_router_builder(
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
-        routes_source.find_one(path=path,
+        _foreign_table_pk = request_response_model.get('foreign_pk', None)
+        _foreign_table_pk = {"table":"abc", "pk":"a_id","next": {"table":"def","pk":"b_id",next:None}}
+        _tmp_path = ""
+        if _foreign_table_pk:
+            tmp = _foreign_table_pk
+            while "next" in tmp:
+                _tmp_path += '/' + _foreign_table_pk["table"] + ''
+                _tmp_path += '/{' + _foreign_table_pk["pk"] + '}'
+                tmp = _foreign_table_pk["next"]
+
+        routes_source.find_one(path=path+_tmp_path,
                                request_url_param_model=_request_url_param_model,
                                request_query_model=_request_query_model,
                                response_model=_response_model,

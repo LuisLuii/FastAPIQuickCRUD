@@ -33,6 +33,7 @@ class CrudMethods(Enum):
     DELETE_ONE = "DELETE_ONE"
     DELETE_MANY = "DELETE_MANY"
     POST_REDIRECT_GET = "POST_REDIRECT_GET"
+    FIND_MANY_WITH_FOREIGN_TREE = "FIND_MANY_WITH_FOREIGN_TREE"
 
     @staticmethod
     def get_table_full_crud_method():
@@ -44,7 +45,7 @@ class CrudMethods(Enum):
         return [CrudMethods.FIND_MANY, CrudMethods.FIND_ONE,
                 CrudMethods.UPDATE_MANY, CrudMethods.UPDATE_ONE,
                 CrudMethods.PATCH_MANY, CrudMethods.PATCH_ONE, CrudMethods.CREATE_MANY,
-                CrudMethods.DELETE_MANY, CrudMethods.DELETE_ONE]
+                CrudMethods.DELETE_MANY, CrudMethods.DELETE_ONE, CrudMethods.FIND_MANY_WITH_FOREIGN_TREE]
 
 
 class RequestMethods(Enum):

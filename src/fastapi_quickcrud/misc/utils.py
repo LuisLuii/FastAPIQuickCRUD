@@ -191,6 +191,11 @@ def sqlalchemy_to_pydantic(
             request_query_model, \
             request_body_model, \
             response_model = model_builder.patch_many()
+        elif crud_method.value == CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value:
+            request_url_param_model, \
+            request_query_model, \
+            request_body_model, \
+            response_model = model_builder.foreign_tree_get_many()
 
         request_response_models = {'requestBodyModel': request_body_model,
                                    'responseModel': response_model,

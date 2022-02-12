@@ -29,7 +29,7 @@ crud_route_parent = crud_router_builder(
     db_model=Account,
     prefix="/account",
     tags=["account"],
-    foreign_include=[BlogPost,BlogComment]
+    foreign_include=[BlogComment,BlogPost]
 
 )
 
