@@ -9,16 +9,21 @@ Base = declarative_base()
 class Account(Base):
     __tablename__ = "account"
     id = Column(Integer, primary_key=True, autoincrement=True)
+    blog_post = relationship("BlogPost", back_populates="account")
 
 class BlogPost(Base):
     __tablename__ = "blog_post"
     id = Column(Integer, primary_key=True, autoincrement=True)
     account_id = Column(Integer, ForeignKey("account.id"), nullable=False)
+    account = relationship("Account", back_populates="blog_post")
+    blog_comment = relationship("BlogComment", back_populates="blog_post")
 
 class BlogComment(Base):
     __tablename__ = "blog_comment"
     id = Column(Integer, primary_key=True, autoincrement=True)
     blog_id = Column(Integer, ForeignKey("blog_post.id"), nullable=False)
+    blog_post = relationship("BlogPost", back_populates="blog_comment")
+
 
 crud_route_parent = crud_router_builder(
     db_model=Account,

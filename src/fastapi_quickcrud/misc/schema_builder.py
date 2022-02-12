@@ -193,7 +193,7 @@ class ApiParameterSchemaBuilder:
         if self.exclude_primary_key and self.foreign_mapper:
             return self._extra_foreign_table_from_table()
         else:
-            return self._extra_foreign_table_from_declarative_base()
+            return self._extra_foreign_table_from_declarative_base(self.__db_model)
 
     def _extract_unique(self) -> List[str]:
         # get the unique columns with alias name
@@ -451,11 +451,19 @@ class ApiParameterSchemaBuilder:
 
         return foreign_key_table
 
-    def _extra_foreign_table_from_declarative_base(self) -> Dict[str, Table]:
-        mapper = inspect(self.__db_model)
+    def _extra_foreign_table_from_declarative_base(self, model, processed_table=None) -> Dict[str, Table]:
+        if not processed_table:
+            processed_table = []
+        mapper = inspect(model)
         foreign_key_table = {}
         for r in mapper.relationships:
             local, = r.local_columns
+            if r.key and r.key not in processed_table:
+                processed_table.append(str(mapper.local_table))
+                foreign_key_table.update(self._extra_foreign_table_from_declarative_base(self.foreign_mapper[r.key],
+                                                                                         processed_table=processed_table
+                                                                                         )
+                                         )
             local = mapper.get_property_by_column(local).expression
             local_table = str(local).split('.')[0]
             local_column = str(local).split('.')[1]
