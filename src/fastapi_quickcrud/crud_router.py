@@ -90,7 +90,7 @@ def crud_router_builder(
     :param async_mode:
     :param autocommit:
     :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
-    :param foreign_mode:
+    :param foreign_include:
     :return:
     """
 
