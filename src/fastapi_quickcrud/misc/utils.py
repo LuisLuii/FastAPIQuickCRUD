@@ -128,6 +128,7 @@ def sqlalchemy_to_pydantic(
         request_body_model = None
         response_model = None
         request_query_model = None
+        foreignListModel = None
         if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD and not model_builder.primary_key_str:
             raise PrimaryMissing(f"The generation of this API [{crud_method.value}] requires a primary key")
 
@@ -192,15 +193,13 @@ def sqlalchemy_to_pydantic(
             request_body_model, \
             response_model = model_builder.patch_many()
         elif crud_method.value == CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value:
-            request_url_param_model, \
-            request_query_model, \
-            request_body_model, \
-            response_model = model_builder.foreign_tree_get_many()
+            foreignListModel = model_builder.foreign_tree_get_many()
 
         request_response_models = {'requestBodyModel': request_body_model,
                                    'responseModel': response_model,
                                    'requestQueryModel': request_query_model,
-                                   'requestUrlParamModel': request_url_param_model}
+                                   'requestUrlParamModel': request_url_param_model,
+                                   'foreignListModel':foreignListModel}
         request_response_model = RequestResponseModel(**request_response_models)
         request_method = CRUDRequestMapping.get_request_method_by_crud_method(crud_method.value).value
         if request_method not in request_response_mode_set:

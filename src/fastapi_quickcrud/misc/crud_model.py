@@ -19,7 +19,7 @@ class RequestResponseModel(BaseModel):
     jsonRequestFieldModel: Optional[ModelMetaclass]
     jsonbRequestFieldModel: Optional[ModelMetaclass]
     arrayRequestFieldModel: Optional[ModelMetaclass]
-    foreign_pk: Optional[Dict[str,dict]]
+    foreignListModel: Optional[List[dict]]
 
 
 class CRUDModel(BaseModel):
@@ -28,11 +28,12 @@ class CRUDModel(BaseModel):
     PUT: Optional[Dict[CrudMethods, RequestResponseModel]]
     PATCH: Optional[Dict[CrudMethods, RequestResponseModel]]
     DELETE: Optional[Dict[CrudMethods, RequestResponseModel]]
+    FIND_MANY_WITH_FOREIGN_TREE: Optional[Dict[CrudMethods, RequestResponseModel]]
     PRIMARY_KEY_NAME: Optional[str]
     UNIQUE_LIST: Optional[List[str]]
 
     def get_available_request_method(self):
-        return [i for i in self.dict(exclude_unset=True, ).keys() if i in ["GET", "POST", "PUT", "PATCH", "DELETE"]]
+        return [i for i in self.dict(exclude_unset=True,).keys() if i in ["GET", "POST", "PUT", "PATCH", "DELETE"]]
 
     def get_model_by_request_method(self, request_method):
         available_methods = self.dict()
