@@ -192,6 +192,8 @@ def sqlalchemy_to_pydantic(
             request_query_model, \
             request_body_model, \
             response_model = model_builder.patch_many()
+        elif crud_method.value == CrudMethods.FIND_ONE_WITH_FOREIGN_TREE.value:
+            foreignListModel = model_builder.foreign_tree_get_one()
         elif crud_method.value == CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value:
             foreignListModel = model_builder.foreign_tree_get_many()
 

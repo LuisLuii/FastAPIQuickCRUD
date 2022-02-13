@@ -33,6 +33,7 @@ class CrudMethods(Enum):
     DELETE_ONE = "DELETE_ONE"
     DELETE_MANY = "DELETE_MANY"
     POST_REDIRECT_GET = "POST_REDIRECT_GET"
+    FIND_ONE_WITH_FOREIGN_TREE = "FIND_ONE_WITH_FOREIGN_TREE"
     FIND_MANY_WITH_FOREIGN_TREE = "FIND_MANY_WITH_FOREIGN_TREE"
 
     @staticmethod
@@ -45,7 +46,8 @@ class CrudMethods(Enum):
         return [CrudMethods.FIND_MANY, CrudMethods.FIND_ONE,
                 CrudMethods.UPDATE_MANY, CrudMethods.UPDATE_ONE,
                 CrudMethods.PATCH_MANY, CrudMethods.PATCH_ONE, CrudMethods.CREATE_MANY,
-                CrudMethods.DELETE_MANY, CrudMethods.DELETE_ONE, CrudMethods.FIND_MANY_WITH_FOREIGN_TREE]
+                CrudMethods.DELETE_MANY, CrudMethods.DELETE_ONE, CrudMethods.FIND_ONE_WITH_FOREIGN_TREE,
+                CrudMethods.FIND_MANY_WITH_FOREIGN_TREE]
 
 
 class RequestMethods(Enum):
@@ -58,6 +60,8 @@ class RequestMethods(Enum):
 
 class CRUDRequestMapping(Enum):
     FIND_ONE = RequestMethods.GET
+    FIND_ONE_WITH_FOREIGN_TREE = RequestMethods.GET
+
     FIND_MANY = RequestMethods.GET
     FIND_MANY_WITH_FOREIGN_TREE = RequestMethods.GET
 

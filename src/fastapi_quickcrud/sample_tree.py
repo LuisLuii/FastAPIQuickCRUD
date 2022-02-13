@@ -36,14 +36,18 @@ print("BlogPost222")
 crud_route_child1 = generic_sql_crud_router_builder(
     db_model=BlogPost,
     prefix="/blog_post",
-    tags=["blog_post"]
+    tags=["blog_post"],
+    foreign_include = [BlogComment,Account]
+
 )
 print("BlogComment111")
 
 crud_route_child2 = generic_sql_crud_router_builder(
     db_model=BlogComment,
     prefix="/blog_comment",
-    tags=["blog_comment"]
+    tags=["blog_comment"],
+    foreign_include=[BlogPost]
+
 )
 
 app = FastAPI()

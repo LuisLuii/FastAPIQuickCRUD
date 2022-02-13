@@ -206,11 +206,13 @@ class ApiParameterSchemaBuilder:
         else:
             return self.__get_table_name_from_model(table)
 
-    def extra_foreign_table(self) -> Dict[ForeignKeyName, dict]:
+    def extra_foreign_table(self, db_model = None) -> Dict[ForeignKeyName, dict]:
+        if db_model is None:
+            db_model = self.__db_model
         if self.exclude_primary_key:
             return self._extra_foreign_table_from_table()
         else:
-            return self._extra_foreign_table_from_declarative_base(self.__db_model)
+            return self._extra_foreign_table_from_declarative_base(db_model)
 
     def _extract_unique(self) -> List[str]:
         # get the unique columns with alias name
@@ -545,7 +547,8 @@ class ApiParameterSchemaBuilder:
             relation_table = r.key
             if relation_table and relation_table not in processed_table and relation_table in self.foreign_mapper:
                 processed_table.append(str(mapper.local_table))
-                self.relation_level.append(self.foreign_mapper[relation_table]["db_name"])
+                if self.foreign_mapper[relation_table]["db_name"] not in self.relation_level:
+                    self.relation_level.append(self.foreign_mapper[relation_table]["db_name"])
                 self._extra_foreign_table_from_declarative_base(self.foreign_mapper[relation_table]["db_model"],
                                                                 processed_table=processed_table
                                                                 )
@@ -817,11 +820,13 @@ class ApiParameterSchemaBuilder:
             result_.append(i)
         return result_
 
-    def _assign_foreign_join(self, result_) -> List[Union[Tuple, Dict]]:
+    def _assign_foreign_join(self, result_, table_of_foreign = None) -> List[Union[Tuple, Dict]]:
+        if table_of_foreign is None:
+            table_of_foreign = self.table_of_foreign
         if not self.table_of_foreign:
             return result_
         table_name_enum = StrEnum('TableName' + str(uuid.uuid4()),
-                                  {table_name: auto() for table_name in self.table_of_foreign})
+                                  {table_name: auto() for table_name in table_of_foreign})
 
         result_.append(('join_foreign_table', Optional[List[table_name_enum]], Query(None)))
         return result_
@@ -1567,7 +1572,7 @@ class ApiParameterSchemaBuilder:
 
         return self._primary_key_dataclass_model, request_query_model, None, response_model, None
 
-    def foreign_tree_get_many(self) -> Tuple:
+    def foreign_tree_get_one(self) -> Tuple:
         _tmp = []
         path = ""
         path += '/{' + self.db_name + "_" + self.primary_key_str + '}'
@@ -1581,8 +1586,9 @@ class ApiParameterSchemaBuilder:
             _db_model_table = table_detail["db_model_table"]
             path_model.append(_db_model_table)
             _primary_key_dataclass_model = self._extra_relation_primary_key(path_model)
-            _query_param: List[dict] = self._get_fizzy_query_param(_primary_key[0], _all_fields)
-            _query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(_query_param)
+            _query_param: List[dict] = self._get_fizzy_query_param(_primary_key[0])
+            table_of_foreign = self.extra_foreign_table(_db_model)
+            _query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(_query_param, table_of_foreign)
             response_fields = []
             all_field = deepcopy(_all_fields)
             for i in self.table_of_foreign:
@@ -1592,6 +1598,90 @@ class ApiParameterSchemaBuilder:
 
             path += '/' + _db_name + ''
             path += '/{' + _db_name + "_" + _primary_key[0] + '}'
+
+            for i in all_field:
+                response_fields.append((i['column_name'],
+                                        i['column_type'],
+                                        Body(i['column_default'])))
+
+            request_fields = []
+            for i in _query_param:
+                assert isinstance(i, dict) or isinstance(i, tuple)
+                if isinstance(i, Tuple):
+                    request_fields.append(i)
+                else:
+                    request_fields.append((i['column_name'],
+                                           i['column_type'],
+                                           Query(i['column_default'], description=i['column_description'])))
+            request_validation = [lambda self_object: _filter_none(self_object)]
+            if self.uuid_type_columns:
+                request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
+                                                                                         self.uuid_type_columns))
+            if self.table_of_foreign:
+                request_validation.append(lambda self_object: self._assign_join_table_instance(self_object,
+                                                                                               self.table_of_foreign))
+
+            request_query_model = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneRequestBody',
+                                                 request_fields,
+                                                 namespace={
+                                                     '__post_init__': lambda self_object: [validator_(self_object)
+                                                                                           for validator_ in
+                                                                                           request_validation]
+                                                 }
+                                                 )
+            response_model_dataclass = make_dataclass(f'{self.db_name + str(uuid.uuid4())}_FindOneResponseModel',
+                                                      response_fields,
+                                                      namespace={
+                                                          '__post_init__': lambda self_object: [validator_(self_object)
+                                                                                                for validator_ in
+                                                                                                request_validation]}
+                                                      )
+            response_model = _model_from_dataclass(response_model_dataclass)
+            response_model = _add_orm_model_config_into_pydantic_model(response_model, config=OrmConfig)
+
+            response_model = create_model(
+                f'{self.db_name + str(uuid.uuid4())}_FindOneResponseListModel',
+                **{'__root__': (response_model, None), '__base__': ExcludeUnsetBaseModel}
+            )
+            _response_model = {}
+            _response_model["primary_key_dataclass_model"] = _primary_key_dataclass_model[1]
+            _response_model["request_query_model"] = request_query_model
+            _response_model["response_model"] = response_model
+            _response_model["path"] = path
+            _tmp.append(_response_model)
+        return _tmp
+
+    def foreign_tree_get_many(self) -> Tuple:
+        _tmp = []
+        path = ""
+        path += '/{' + self.db_name + "_" + self.primary_key_str + '}'
+        path_model = [self.__db_model_table]
+        for idx, relation in enumerate(self.relation_level):
+            table_detail = self.foreign_mapper[relation]
+            _all_fields = table_detail["all_fields"]
+            _primary_key = table_detail["primary_key"]
+            _db_name = table_detail["db_name"]
+            _db_model = table_detail["db_model"]
+            _db_model_table = table_detail["db_model_table"]
+            path_model.append(_db_model_table)
+            _primary_key_dataclass_model = self._extra_relation_primary_key(path_model)
+            _query_param: List[dict] = self._get_fizzy_query_param(_primary_key[0], _all_fields)
+            table_of_foreign = self.extra_foreign_table(_db_model)
+            _query_param: List[Union[Tuple, Dict]] = self._assign_foreign_join(_query_param, table_of_foreign)
+            response_fields = []
+            all_field = deepcopy(_all_fields)
+
+            if idx is 0:
+                path += '/' + _db_name + ''
+            else:
+                path += '/{' + _db_name + "_" + _primary_key[0] + '}'
+                path += '/' + _db_name + ''
+
+            for i in self.table_of_foreign:
+                response_fields.append((f"{i}_foreign",
+                                        self.foreign_table_response_model_sets[self.table_of_foreign[i]["instance"]],
+                                        None))
+
 
             for i in all_field:
                 response_fields.append((i['column_name'],
