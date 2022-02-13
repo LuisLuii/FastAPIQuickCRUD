@@ -118,6 +118,59 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
                                                             session=session)
                 return parsed_response
 
+    @classmethod
+    def find_many_foreign_tree(cls, api, *,
+                               query_service,
+                               parsing_service,
+                               execute_service,
+                               async_mode,
+                               path,
+                               response_model,
+                               dependencies,
+                               request_query_model,
+                               request_url_param_model,
+                               db_session):
+
+        if async_mode:
+            @api.get(path, dependencies=dependencies, response_model=response_model)
+            async def async_get_many(response: Response,
+                                     request: Request,
+                                     url_param=Depends(request_url_param_model),
+                                     query=Depends(request_query_model),
+                                     session=Depends(
+                                         db_session)
+                                     ):
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(query=query.__dict__, join_mode=join)
+
+                query_result = await execute_service.async_execute(session, stmt)
+
+                parsed_response = await parsing_service.async_find_many(response_model=response_model,
+                                                                        sql_execute_result=query_result,
+                                                                        fastapi_response=response,
+                                                                        join_mode=join,
+                                                                        session=session)
+                return parsed_response
+        else:
+            @api.get(path, dependencies=dependencies, response_model=response_model)
+            def get_many(response: Response,
+                         request: Request,
+                         url_param=Depends(request_url_param_model),
+                         query=Depends(request_query_model),
+                         session=Depends(
+                             db_session)
+                         ):
+                join = query.__dict__.pop('join_foreign_table', None)
+
+                stmt = query_service.get_many(query=query.__dict__, join_mode=join)
+                query_result = execute_service.execute(session, stmt)
+                parsed_response = parsing_service.find_many(response_model=response_model,
+                                                            sql_execute_result=query_result,
+                                                            fastapi_response=response,
+                                                            join_mode=join,
+                                                            session=session)
+                return parsed_response
+
     @abstractmethod
     def upsert_one(cls, api, *,
                    path,

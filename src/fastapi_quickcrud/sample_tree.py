@@ -10,7 +10,6 @@ class Account(Base):
     __tablename__ = "account"
     id = Column(Integer, primary_key=True, autoincrement=True)
     blog_post = relationship("BlogPost", back_populates="account")
-
 class BlogPost(Base):
     __tablename__ = "blog_post"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -32,12 +31,14 @@ crud_route_parent = crud_router_builder(
     foreign_include=[BlogComment,BlogPost]
 
 )
+print("BlogPost222")
 
 crud_route_child1 = generic_sql_crud_router_builder(
     db_model=BlogPost,
     prefix="/blog_post",
     tags=["blog_post"]
 )
+print("BlogComment111")
 
 crud_route_child2 = generic_sql_crud_router_builder(
     db_model=BlogComment,

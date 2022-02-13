@@ -164,17 +164,8 @@ def crud_router_builder(
         _request_query_model = request_response_model.get('requestQueryModel', None)
         _response_model = request_response_model.get('responseModel', None)
         _request_url_param_model = request_response_model.get('requestUrlParamModel', None)
-        _foreign_table_pk = request_response_model.get('foreign_pk', None)
-        _foreign_table_pk = {"table":"abc", "pk":"a_id","next": {"table":"def","pk":"b_id",next:None}}
-        _tmp_path = ""
-        if _foreign_table_pk:
-            tmp = _foreign_table_pk
-            while "next" in tmp:
-                _tmp_path += '/' + _foreign_table_pk["table"] + ''
-                _tmp_path += '/{' + _foreign_table_pk["pk"] + '}'
-                tmp = _foreign_table_pk["next"]
 
-        routes_source.find_one(path=path+_tmp_path,
+        routes_source.find_one(path=path,
                                request_url_param_model=_request_url_param_model,
                                request_query_model=_request_query_model,
                                response_model=_response_model,
@@ -199,6 +190,25 @@ def crud_router_builder(
                                 dependencies=dependencies,
                                 api=api,
                                 async_mode=async_mode)
+
+    def find_many_foreign_tree_api(request_response_model: dict, dependencies):
+        _foreign_list_model = request_response_model.get('foreignListModel', None)
+        for i in _foreign_list_model:
+            _request_query_model = i["request_query_model"]
+            _response_model = i["response_model"]
+            _path = i["path"]
+            request_url_param_model = i["primary_key_dataclass_model"]
+            routes_source.find_many_foreign_tree(path=_path,
+                                                 request_query_model=_request_query_model,
+                                                 response_model=_response_model,
+                                                 request_url_param_model=request_url_param_model,
+                                                 db_session=db_session,
+                                                 query_service=crud_service,
+                                                 parsing_service=result_parser,
+                                                 execute_service=execute_service,
+                                                 dependencies=dependencies,
+                                                 api=api,
+                                                 async_mode=async_mode)
 
     def upsert_one_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
@@ -392,7 +402,8 @@ def crud_router_builder(
         CrudMethods.PATCH_ONE.value: patch_one_api,
         CrudMethods.PATCH_MANY.value: patch_many_api,
         CrudMethods.UPDATE_ONE.value: put_one_api,
-        CrudMethods.UPDATE_MANY.value: put_many_api
+        CrudMethods.UPDATE_MANY.value: put_many_api,
+        CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value: find_many_foreign_tree_api
     }
     api = APIRouter(**router_kwargs)
 
