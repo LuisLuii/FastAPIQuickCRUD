@@ -40,7 +40,7 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
-        sql_type: Optional[str] = None,
+        sql_type: Optional[SqlType] = None,
         **router_kwargs: Any) -> APIRouter:
     """
     :param db_session: Callable function
