@@ -1671,7 +1671,7 @@ class ApiParameterSchemaBuilder:
             response_fields = []
             all_field = deepcopy(_all_fields)
 
-            if idx is 0:
+            if idx == 0:
                 path += '/' + _db_name + ''
             else:
                 path += '/{' + _db_name + "_" + _primary_key[0] + '}'
