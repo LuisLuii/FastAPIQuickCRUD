@@ -178,9 +178,10 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
                 if 'exclude' in local_reference and local_reference['exclude']:
                     continue
                 for column in local_reference['reference_table_columns']:
-                    foreign_name = local_reference['local']['local_column']
+                    foreign_table_name = local_reference['reference']['reference_table']
+                    foreign_column_name = local_reference['reference']['reference_column']
                     join_table_instance_list.append(
-                        column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+                        column.label(foreign_table_name +'_foreign_____' + str(column).split('.')[1]))
         return join_table_instance_list
 
     def get_join_by_excpression(self, stmt: BinaryExpression, join_mode=None) -> BinaryExpression:
