@@ -122,6 +122,7 @@ def crud_router_builder(
     if sql_type is None:
         async def async_runner(f):
             return [i.bind.name async for i in f()]
+
         try:
             if async_mode:
                 sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
@@ -129,7 +130,7 @@ def crud_router_builder(
                 sql_type, = [i.bind.name for i in db_session()]
         except Exception:
             raise RuntimeError("Some unknown problem occurred error, maybe you are uvicorn.run with reload=True. "
-                                "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
+                               "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
 
     if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
@@ -215,18 +216,20 @@ def crud_router_builder(
             _request_query_model = i["request_query_model"]
             _response_model = i["response_model"]
             _path = i["path"]
+            _function_name = i["function_name"]
             request_url_param_model = i["primary_key_dataclass_model"]
             routes_source.find_one_foreign_tree(path=_path,
-                                                 request_query_model=_request_query_model,
-                                                 response_model=_response_model,
-                                                 request_url_param_model=request_url_param_model,
-                                                 db_session=db_session,
-                                                 query_service=crud_service,
-                                                 parsing_service=result_parser,
-                                                 execute_service=execute_service,
-                                                 dependencies=dependencies,
-                                                 api=api,
-                                                 async_mode=async_mode)
+                                                request_query_model=_request_query_model,
+                                                response_model=_response_model,
+                                                request_url_param_model=request_url_param_model,
+                                                db_session=db_session,
+                                                query_service=crud_service,
+                                                parsing_service=result_parser,
+                                                execute_service=execute_service,
+                                                dependencies=dependencies,
+                                                api=api,
+                                                function_name = _function_name,
+                                                async_mode=async_mode)
 
     def find_many_foreign_tree_api(request_response_model: dict, dependencies):
         _foreign_list_model = request_response_model.get('foreignListModel', None)
@@ -234,6 +237,7 @@ def crud_router_builder(
             _request_query_model = i["request_query_model"]
             _response_model = i["response_model"]
             _path = i["path"]
+            _function_name = i["function_name"]
             request_url_param_model = i["primary_key_dataclass_model"]
             routes_source.find_many_foreign_tree(path=_path,
                                                  request_query_model=_request_query_model,
@@ -245,7 +249,8 @@ def crud_router_builder(
                                                  execute_service=execute_service,
                                                  dependencies=dependencies,
                                                  api=api,
-                                                 async_mode=async_mode)
+                                                 async_mode=async_mode,
+                                                 function_name=_function_name)
 
     def upsert_one_api(request_response_model: dict, dependencies):
         _request_body_model = request_response_model.get('requestBodyModel', None)
