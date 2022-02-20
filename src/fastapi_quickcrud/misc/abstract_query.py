@@ -24,24 +24,73 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
+        self.foreign_table_mapping = foreign_table_mapping
 
     def get_many(self, *,
                  join_mode,
                  query,
+                 target_model,
+                 abstract_param=None
                  ) -> BinaryExpression:
         filter_args = query
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
         order_by_columns = filter_args.pop('order_by_columns', None)
+        model = self.foreign_table_mapping[target_model]
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
-                                                                 model=self.model_columns)
+                                                                 model=model)
+        path_filter_list: List[BinaryExpression] = path_query_builder(params=abstract_param,
+                                                                      model=self.foreign_table_mapping)
         join_table_instance_list: list = self.get_join_select_fields(join_mode)
 
-        model = self.model
         if not isinstance(self.model, Table):
             model = model.__table__
 
-        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list))
+        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list+path_filter_list))
+        if order_by_columns:
+            order_by_query_list = []
+
+            for order_by_column in order_by_columns:
+                if not order_by_column:
+                    continue
+                sort_column, order_by = (order_by_column.replace(' ', '').split(':') + [None])[:2]
+                if not hasattr(self.model_columns, sort_column):
+                    raise UnknownColumn(f'column {sort_column} is not exited')
+                if not order_by:
+                    order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
+                elif order_by.upper() == Ordering.DESC.upper():
+                    order_by_query_list.append(getattr(self.model_columns, sort_column).desc())
+                elif order_by.upper() == Ordering.ASC.upper():
+                    order_by_query_list.append(getattr(self.model_columns, sort_column).asc())
+                else:
+                    raise UnknownOrderType(f"Unknown order type {order_by}, only accept DESC or ASC")
+            if order_by_query_list:
+                stmt = stmt.order_by(*order_by_query_list)
+        stmt = stmt.limit(limit).offset(offset)
+        stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
+        return stmt
+
+    def get_many_with_foreign_pk(self, *,
+                 join_mode,
+                 query,
+                 target_model,
+                 abstract_param=None
+                 ) -> BinaryExpression:
+        filter_args = query
+        limit = filter_args.pop('limit', None)
+        offset = filter_args.pop('offset', None)
+        order_by_columns = filter_args.pop('order_by_columns', None)
+        model = self.foreign_table_mapping[target_model]
+        filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
+                                                                 model=model)
+        path_filter_list: List[BinaryExpression] = path_query_builder(params=abstract_param,
+                                                                      model=self.foreign_table_mapping)
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
+
+        if not isinstance(self.model, Table):
+            model = model.__table__
+
+        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list+path_filter_list))
         if order_by_columns:
             order_by_query_list = []
 
@@ -79,7 +128,6 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         model = self.model
         if not isinstance(self.model, Table):
             model = model.__table__
-        a = model.c._all_columns
         stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list + extra_query_expression))
         # stmt = session.query(*[model] + join_table_instance_list).filter(and_(*filter_list + extra_query_expression))
         stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
