@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import Type, List, Union, TypeVar, Optional
+from typing import Type, List, Union, TypeVar, Optional, Dict
 
 from pydantic import BaseModel, BaseConfig
 from sqlalchemy import Column, Integer
@@ -20,7 +20,7 @@ from .type import \
     RangeFromComparisonOperators, \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
-    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType
+    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType, FOREIGN_PATH_PARAM_KEYWORD
 
 Base = TypeVar("Base", bound=declarative_base)
 
@@ -93,6 +93,20 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
     return query
 
 
+
+def path_query_builder(params, model) -> List[Union[BinaryExpression]]:
+    query = []
+    if not params:
+        return query
+    for param_name, param_value in params.items():
+        table_with_column = param_name.split(FOREIGN_PATH_PARAM_KEYWORD)
+        assert len(table_with_column) == 2
+        table_name, column_name = table_with_column
+        table_model = model[table_name]
+        query.append((getattr(table_model, column_name) == param_value))
+    return query
+
+
 class OrmConfig(BaseConfig):
     orm_mode = True
 
@@ -112,7 +126,7 @@ def sqlalchemy_to_pydantic(
         foreign_include = {}
     request_response_mode_set = {}
     model_builder = ApiParameterSchemaBuilder(db_model,
-                                              constraints = constraints,
+                                              constraints=constraints,
                                               exclude_column=exclude_columns,
                                               sql_type=sql_type,
                                               foreign_include=foreign_include,
