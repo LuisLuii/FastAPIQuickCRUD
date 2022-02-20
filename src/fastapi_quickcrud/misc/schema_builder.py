@@ -35,7 +35,7 @@ from .type import (MatchingPatternInStringBase,
                    RangeToComparisonOperators,
                    ExtraFieldTypePrefix,
                    ExtraFieldType,
-                   ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType)
+                   ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType, FOREIGN_PATH_PARAM_KEYWORD)
 
 BaseModelT = TypeVar('BaseModelT', bound=BaseModel)
 DataClassT = TypeVar('DataClassT', bound=Any)
@@ -206,7 +206,7 @@ class ApiParameterSchemaBuilder:
         else:
             return self.__get_table_name_from_model(table)
 
-    def extra_foreign_table(self, db_model = None) -> Dict[ForeignKeyName, dict]:
+    def extra_foreign_table(self, db_model=None) -> Dict[ForeignKeyName, dict]:
         if db_model is None:
             db_model = self.__db_model
         if self.exclude_primary_key:
@@ -397,6 +397,7 @@ class ApiParameterSchemaBuilder:
             columns = columns.c
         for column in columns:
             column_name = str(column.key)
+            column_foreign = [i.target_fullname for i in column.foreign_keys]
             default = self._extra_default_value(column)
             if column_name in self._exclude_column:
                 continue
@@ -463,7 +464,8 @@ class ApiParameterSchemaBuilder:
                 fields.append({'column_name': column_name,
                                'column_type': python_type,
                                'column_default': default,
-                               'column_description': description})
+                               'column_description': description,
+                               'column_foreign': column_foreign})
 
         return fields
 
@@ -820,7 +822,7 @@ class ApiParameterSchemaBuilder:
             result_.append(i)
         return result_
 
-    def _assign_foreign_join(self, result_, table_of_foreign = None) -> List[Union[Tuple, Dict]]:
+    def _assign_foreign_join(self, result_, table_of_foreign=None) -> List[Union[Tuple, Dict]]:
         if table_of_foreign is None:
             table_of_foreign = self.table_of_foreign
         if not self.table_of_foreign:
