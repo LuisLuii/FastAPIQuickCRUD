@@ -8,13 +8,13 @@ from sqlalchemy.sql.schema import Table
 
 from .exceptions import UnknownOrderType, UnknownColumn, UpdateColumnEmptyException
 from .type import Ordering
-from .utils import clean_input_fields
+from .utils import clean_input_fields, path_query_builder
 from .utils import find_query_builder
 
 
 class SQLAlchemyGeneralSQLQueryService(ABC):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
 
         """
         :param model: declarative_base model
@@ -202,7 +202,7 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
 
 class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
 
         """
         :param model: declarative_base model
@@ -210,7 +210,8 @@ class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
         """
         super(SQLAlchemyPGSQLQueryService,
               self).__init__(model=model,
-                             async_mode=async_mode)
+                             async_mode=async_mode,
+                             foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -255,13 +256,14 @@ class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemySQLITEQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode,foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -276,13 +278,15 @@ class SQLAlchemySQLITEQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
+
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -297,13 +301,15 @@ class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
+
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -318,13 +324,15 @@ class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
+
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -339,13 +347,15 @@ class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
+
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -360,13 +370,15 @@ class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
+
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
