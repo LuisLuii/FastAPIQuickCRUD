@@ -41,6 +41,7 @@ def crud_router_builder(
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
         foreign_include: Optional[bool] = None,
+        sql_type: Optional[str] = None,
         **router_kwargs: Any) -> APIRouter:
     """
     :param db_session: Callable function
@@ -113,9 +114,22 @@ def crud_router_builder(
         async def async_runner(f):
             return [i.bind.name async for i in f()]
 
-        sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
-    else:
+        if sql_type is None:
+            sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
+    elif sql_type is None:
         sql_type, = [i.bind.name for i in db_session()]
+
+    if sql_type is None:
+        async def async_runner(f):
+            return [i.bind.name async for i in f()]
+        try:
+            if async_mode:
+                sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
+            else:
+                sql_type, = [i.bind.name for i in db_session()]
+        except Exception:
+            raise RuntimeError("Some unknown problem occurred error, maybe you are uvicorn.run with reload=True. "
+                                "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
 
     if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
@@ -142,8 +156,12 @@ def crud_router_builder(
                                                      sql_type=sql_type,
                                                      foreign_include=foreign_include,
                                                      exclude_primary_key=NO_PRIMARY_KEY)
+    foreign_table_mapping = {db_model.__tablename__: db_model}
 
-    crud_service = query_service(model=db_model, async_mode=async_mode)
+    if foreign_include:
+        for i in foreign_include:
+            foreign_table_mapping[i.__tablename__] = i
+    crud_service = query_service(model=db_model, async_mode=async_mode, foreign_table_mapping=foreign_table_mapping)
     # else:
     #     crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
 
