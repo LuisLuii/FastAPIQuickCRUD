@@ -40,6 +40,7 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
+        foreign_include: Optional[any] = None,
         sql_type: Optional[SqlType] = None,
         **router_kwargs: Any) -> APIRouter:
     """
@@ -146,7 +147,11 @@ def crud_router_builder(
                                                      sql_type=sql_type,
                                                      exclude_primary_key=NO_PRIMARY_KEY)
 
-    crud_service = query_service(model=db_model, async_mode=async_mode)
+    foreign_table_mapping = {db_model.__tablename__: db_model}
+    if foreign_include:
+        for i in foreign_include:
+            foreign_table_mapping[i.__tablename__] = i
+    crud_service = query_service(model=db_model, async_mode=async_mode, foreign_table_mapping=foreign_table_mapping)
     # else:
     #     crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
 

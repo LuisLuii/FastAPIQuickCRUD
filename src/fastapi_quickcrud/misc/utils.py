@@ -20,7 +20,7 @@ from .type import \
     RangeFromComparisonOperators, \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
-    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType
+    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType, FOREIGN_PATH_PARAM_KEYWORD
 
 Base = TypeVar("Base", bound=declarative_base)
 
@@ -343,3 +343,16 @@ def convert_table_to_model(db_model):
         table_dict[str(i.key)] = col
 
     return type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict), NO_PRIMARY_KEY
+
+
+def path_query_builder(params, model) -> List[Union[BinaryExpression]]:
+    query = []
+    if not params:
+        return query
+    for param_name, param_value in params.items():
+        table_with_column = param_name.split(FOREIGN_PATH_PARAM_KEYWORD)
+        assert len(table_with_column) == 2
+        table_name, column_name = table_with_column
+        table_model = model[table_name]
+        query.append((getattr(table_model, column_name) == param_value))
+    return query

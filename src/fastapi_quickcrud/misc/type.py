@@ -151,3 +151,5 @@ class JSONBMatchingMode(str, Enum):
 class SessionObject(StrEnum):
     sqlalchemy = auto()
     databases = auto()
+
+FOREIGN_PATH_PARAM_KEYWORD = "__pk__"
