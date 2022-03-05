@@ -3,3 +3,4 @@
 tests/htmlcov
 /poetry.lock
 /pyproject.toml
+*.pyc
