@@ -145,7 +145,7 @@ class ApiParameterSchemaBuilder:
             self._exclude_column = exclude_column
         self.alias_mapper: Dict[str, str] = {}  # Table not support alias
         if self.exclude_primary_key:
-            self.__db_model: Table = db_model.__table__
+            self.__db_model: Table = db_model
             self.__db_model_table: Table = db_model.__table__
             self.__columns = db_model.__table__.c
             self.db_name: str = db_model.__tablename__
@@ -154,6 +154,7 @@ class ApiParameterSchemaBuilder:
             self.__db_model_table: Table = db_model.__table__
             self.db_name: str = db_model.__tablename__
             self.__columns = db_model.__table__.c
+        model = self.__db_model
         self.primary_key_str, self._primary_key_dataclass_model, self._primary_key_field_definition \
             = self._extract_primary()
         self.unique_fields: List[str] = self._extract_unique()
@@ -496,7 +497,6 @@ class ApiParameterSchemaBuilder:
                 relation_level += self._extra_relation_level(self.foreign_mapper[relation_table]["db_model"],
                                                              processed_table=processed_table
                                                              )
-        print(relation_level)
         return relation_level
 
     def _extra_foreign_table_from_declarative_base(self, model) -> Dict[str, Table]:
