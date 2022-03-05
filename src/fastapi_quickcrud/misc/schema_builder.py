@@ -843,7 +843,7 @@ class ApiParameterSchemaBuilder:
         for field_ in fields_:
             if field_['column_name'] in exclude_column:
                 continue
-            if field_['column_foreign']:
+            if "column_foreign" in field_ and field_['column_foreign']:
                 jump = False
                 for foreign in field_['column_foreign']:
                     if foreign in exclude_column:
