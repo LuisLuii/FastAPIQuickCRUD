@@ -27,6 +27,7 @@ from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import declarative_base
 from strenum import StrEnum
 
+from .covert_model import convert_table_to_model
 from .exceptions import (SchemaException,
                          ColumnTypeNotSupportedException)
 from .type import (MatchingPatternInStringBase,
@@ -182,6 +183,7 @@ class ApiParameterSchemaBuilder:
         if self.exclude_primary_key:
             return foreign_mapper
         for db_model in self.foreign_include:
+            db_model, NO_PRIMARY_KEY = convert_table_to_model(db_model)
             tmp = {}
             table_name = self.__get_table_name(db_model)
             tmp["model"] = db_model
@@ -489,12 +491,15 @@ class ApiParameterSchemaBuilder:
         mapper = inspect(model)
         relation_level = []
         for r in mapper.relationships:
-            relation_table = r.key
-            if relation_table and relation_table not in processed_table and relation_table in self.foreign_mapper:
+
+            target_table = r.target
+            target_model, _ = convert_table_to_model(target_table)
+            target_table_name = target_model.__tablename__
+            if target_table_name and target_table_name not in processed_table and target_table_name in self.foreign_mapper:
                 processed_table.append(str(mapper.local_table))
-                if self.foreign_mapper[relation_table]["db_name"] not in relation_level:
-                    relation_level.append(self.foreign_mapper[relation_table]["db_name"])
-                relation_level += self._extra_relation_level(self.foreign_mapper[relation_table]["db_model"],
+                if self.foreign_mapper[target_table_name]["db_name"] not in relation_level:
+                    relation_level.append(self.foreign_mapper[target_table_name]["db_name"])
+                relation_level += self._extra_relation_level(self.foreign_mapper[target_table_name]["db_model"],
                                                              processed_table=processed_table
                                                              )
         return relation_level
@@ -505,7 +510,6 @@ class ApiParameterSchemaBuilder:
         reference_mapper = {}
         for r in mapper.relationships:
             local, = r.local_columns
-            relation_table = r.key
             local = mapper.get_property_by_column(local).expression
             local_table = str(local).split('.')[0]
             local_column = str(local).split('.')[1]

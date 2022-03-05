@@ -152,7 +152,8 @@ def crud_router_builder(
     foreign_table_mapping = {db_model.__tablename__: db_model}
     if foreign_include:
         for i in foreign_include:
-            foreign_table_mapping[i.__tablename__] = i
+            model , _= convert_table_to_model(i)
+            foreign_table_mapping[model.__tablename__] = i
     crud_service = query_service(model=db_model, async_mode=async_mode, foreign_table_mapping=foreign_table_mapping)
     # else:
     #     crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
