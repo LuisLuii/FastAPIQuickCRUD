@@ -58,6 +58,9 @@ I believe that many people who work with FastApi to build RESTful CRUD services 
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
 
+## [Developing](https://github.com/LuisLuii/FastAPIQuickCRUD/issues/9)
+
+
 ## Advantages
 
   - [x] **Support SQLAlchemy 1.4** - Allows you build a fully asynchronous or synchronous python service
