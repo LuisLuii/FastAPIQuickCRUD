@@ -40,6 +40,7 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
+        sql_type: Optional[SqlType] = None,
         **router_kwargs: Any) -> APIRouter:
     """
     :param db_session: Callable function
@@ -107,13 +108,18 @@ def crud_router_builder(
 
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
-    if async_mode:
+    
+    if sql_type is None:
         async def async_runner(f):
             return [i.bind.name async for i in f()]
-
-        sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
-    else:
-        sql_type, = [i.bind.name for i in db_session()]
+        try:
+            if async_mode:
+                sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
+            else:
+                sql_type, = [i.bind.name for i in db_session()]
+        except Exception:
+            raise RuntimeError("Some unknown problem occurred error, maybe you are uvicorn.run with reload=True. "
+                                "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
 
     if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
