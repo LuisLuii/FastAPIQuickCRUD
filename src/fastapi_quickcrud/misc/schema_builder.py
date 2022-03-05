@@ -593,7 +593,7 @@ class ApiParameterSchemaBuilder:
                         reference_column_ = str(column).split('.')[1]
                         reference_table_instance_ = column.table
 
-                self.reference_mapper[local_column_] = {"foreign_table": foreign_table,
+                reference_mapper[local_column_] = {"foreign_table": foreign_table,
                                                         "foreign_table_name": foreign_table_name}
                 local_reference_pairs.append({'local': {"local_table": local_table_,
                                                         "local_column": local_column_},
