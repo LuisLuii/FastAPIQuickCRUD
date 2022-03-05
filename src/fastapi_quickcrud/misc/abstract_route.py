@@ -737,6 +737,122 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
                 #                                  fastapi_response=response,
                 #                                  session=session)
 
+    @classmethod
+    def find_one_foreign_tree(cls, api, *,
+                              query_service,
+                              parsing_service,
+                              execute_service,
+                              async_mode,
+                              path,
+                              response_model,
+                              dependencies,
+                              request_query_model,
+                              request_url_param_model,
+                              function_name,
+                              db_session):
+
+        if async_mode:
+            @api.get(path, dependencies=dependencies, response_model=response_model, name=function_name)
+            async def async_get_one_with_foreign_tree(response: Response,
+                                                      request: Request,
+                                                      url_param=Depends(request_url_param_model),
+                                                      query=Depends(request_query_model),
+                                                      session=Depends(
+                                                          db_session)
+                                                      ):
+                target_model = request.url.path.split("/")[-2]
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many_with_foreign_pk(query=query.__dict__, join_mode=join,
+                                                              target_model=target_model)
+
+                query_result = await execute_service.async_execute(session, stmt)
+
+                parsed_response = await parsing_service.async_find_one(response_model=response_model,
+                                                                       sql_execute_result=query_result,
+                                                                       fastapi_response=response,
+                                                                       join_mode=join,
+                                                                       session=session)
+                return parsed_response
+        else:
+            @api.get(path, dependencies=dependencies, response_model=response_model, name=function_name)
+            def get_one_with_foreign_tree(response: Response,
+                                          request: Request,
+                                          url_param=Depends(request_url_param_model),
+                                          query=Depends(request_query_model),
+                                          session=Depends(
+                                              db_session)
+                                          ):
+                target_model = request.url.path.split("/")[-2]
+                join = query.__dict__.pop('join_foreign_table', None)
+
+                stmt = query_service.get_many_with_foreign_pk(query=query.__dict__, join_mode=join,
+                                                              target_model=target_model)
+                query_result = execute_service.execute(session, stmt)
+                parsed_response = parsing_service.find_one(response_model=response_model,
+                                                           sql_execute_result=query_result,
+                                                           fastapi_response=response,
+                                                           join_mode=join,
+                                                           session=session)
+                return parsed_response
+
+    @classmethod
+    def find_many_foreign_tree(cls, api, *,
+                               query_service,
+                               parsing_service,
+                               execute_service,
+                               async_mode,
+                               path,
+                               response_model,
+                               dependencies,
+                               request_query_model,
+                               request_url_param_model,
+                               function_name,
+                               db_session):
+
+        if async_mode:
+            @api.get(path, dependencies=dependencies, response_model=response_model, name=function_name)
+            async def async_get_many_with_foreign_tree(response: Response,
+                                                       request: Request,
+                                                       url_param=Depends(request_url_param_model),
+                                                       query=Depends(request_query_model),
+                                                       session=Depends(
+                                                           db_session)
+                                                       ):
+                target_model = request.url.path.split("/")[-1]
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(query=query.__dict__, join_mode=join, abstract_param=url_param,
+                                              target_model=target_model)
+
+                query_result = await execute_service.async_execute(session, stmt)
+
+                parsed_response = await parsing_service.async_find_many(response_model=response_model,
+                                                                        sql_execute_result=query_result,
+                                                                        fastapi_response=response,
+                                                                        join_mode=join,
+                                                                        session=session)
+                return parsed_response
+        else:
+            @api.get(path, dependencies=dependencies, response_model=response_model, name=function_name)
+            def get_many_with_foreign_tree(response: Response,
+                                           request: Request,
+                                           url_param=Depends(request_url_param_model),
+                                           query=Depends(request_query_model),
+                                           session=Depends(
+                                               db_session)
+                                           ):
+                target_model = request.url.path.split("/")[-1]
+                join = query.__dict__.pop('join_foreign_table', None)
+                stmt = query_service.get_many(query=query.__dict__, join_mode=join, abstract_param=url_param.__dict__,
+                                              target_model=target_model)
+                query_result = execute_service.execute(session, stmt)
+                parsed_response = parsing_service.find_many(response_model=response_model,
+                                                            sql_execute_result=query_result,
+                                                            fastapi_response=response,
+                                                            join_mode=join,
+                                                            session=session)
+
+                return parsed_response
+
 
 class SQLAlchemyPGSQLRouteSource(SQLAlchemyGeneralSQLBaseRouteSource):
     '''

@@ -109,10 +109,11 @@ def crud_router_builder(
 
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
-    
+
     if sql_type is None:
         async def async_runner(f):
             return [i.bind.name async for i in f()]
+
         try:
             if async_mode:
                 sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
@@ -120,7 +121,7 @@ def crud_router_builder(
                 sql_type, = [i.bind.name for i in db_session()]
         except Exception:
             raise RuntimeError("Some unknown problem occurred error, maybe you are uvicorn.run with reload=True. "
-                                "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
+                               "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
 
     if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
@@ -145,6 +146,7 @@ def crud_router_builder(
                                                      crud_methods=crud_methods,
                                                      exclude_columns=exclude_columns,
                                                      sql_type=sql_type,
+                                                     foreign_include=foreign_include,
                                                      exclude_primary_key=NO_PRIMARY_KEY)
 
     foreign_table_mapping = {db_model.__tablename__: db_model}
@@ -377,6 +379,48 @@ def crud_router_builder(
                                async_mode=async_mode,
                                response_model=_response_model)
 
+    def find_one_foreign_tree_api(request_response_model: dict, dependencies):
+        _foreign_list_model = request_response_model.get('foreignListModel', None)
+        for i in _foreign_list_model:
+            _request_query_model = i["request_query_model"]
+            _response_model = i["response_model"]
+            _path = i["path"]
+            _function_name = i["function_name"]
+            request_url_param_model = i["primary_key_dataclass_model"]
+            routes_source.find_one_foreign_tree(path=_path,
+                                                request_query_model=_request_query_model,
+                                                response_model=_response_model,
+                                                request_url_param_model=request_url_param_model,
+                                                db_session=db_session,
+                                                query_service=crud_service,
+                                                parsing_service=result_parser,
+                                                execute_service=execute_service,
+                                                dependencies=dependencies,
+                                                api=api,
+                                                function_name=_function_name,
+                                                async_mode=async_mode)
+
+    def find_many_foreign_tree_api(request_response_model: dict, dependencies):
+        _foreign_list_model = request_response_model.get('foreignListModel', None)
+        for i in _foreign_list_model:
+            _request_query_model = i["request_query_model"]
+            _response_model = i["response_model"]
+            _path = i["path"]
+            _function_name = i["function_name"]
+            request_url_param_model = i["primary_key_dataclass_model"]
+            routes_source.find_many_foreign_tree(path=_path,
+                                                 request_query_model=_request_query_model,
+                                                 response_model=_response_model,
+                                                 request_url_param_model=request_url_param_model,
+                                                 db_session=db_session,
+                                                 query_service=crud_service,
+                                                 parsing_service=result_parser,
+                                                 execute_service=execute_service,
+                                                 dependencies=dependencies,
+                                                 api=api,
+                                                 async_mode=async_mode,
+                                                 function_name=_function_name)
+
     api_register = {
         CrudMethods.FIND_ONE.value: find_one_api,
         CrudMethods.FIND_MANY.value: find_many_api,
@@ -390,7 +434,9 @@ def crud_router_builder(
         CrudMethods.PATCH_ONE.value: patch_one_api,
         CrudMethods.PATCH_MANY.value: patch_many_api,
         CrudMethods.UPDATE_ONE.value: put_one_api,
-        CrudMethods.UPDATE_MANY.value: put_many_api
+        CrudMethods.UPDATE_MANY.value: put_many_api,
+        CrudMethods.FIND_ONE_WITH_FOREIGN_TREE.value: find_one_foreign_tree_api,
+        CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value: find_many_foreign_tree_api
     }
     api = APIRouter(**router_kwargs)
 
