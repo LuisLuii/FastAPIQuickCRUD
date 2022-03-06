@@ -7,3 +7,7 @@ tests/htmlcov
 *.pyc
 *.iml
 *.sh
+*.gz
+*.txt
+*.
+PKG-INFO
