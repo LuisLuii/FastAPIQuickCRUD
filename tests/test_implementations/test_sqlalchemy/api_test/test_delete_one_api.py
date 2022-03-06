@@ -437,7 +437,7 @@ def test_create_one_and_delete_one_but_not_found():
 
 
 
-def test_create_one_and_delete_one_but_not_found_test_case_insensitive():
+def test_create_one_and_delete_one_but_not_found_test_case_sensitive():
     headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json',
@@ -468,4 +468,15 @@ def test_create_one_and_delete_one_but_not_found_test_case_insensitive():
     update_data = {"bool_value": False}
     response = client.delete(f'/test_delete_one/{primary_key}?{query_string}')
     assert response.status_code == 404
+
+
+    params = {
+              "varchar_value____str": 'String',
+              "varchar_value____str_____matching_pattern": 'case_insensitive',
+              }
+    from urllib.parse import urlencode
+    query_string = urlencode(OrderedDict(**params))
+    update_data = {"bool_value": False}
+    response = client.delete(f'/test_delete_one/{primary_key}?{query_string}')
+    assert response.status_code == 200
 
