@@ -19,6 +19,7 @@ class RequestResponseModel(BaseModel):
     jsonRequestFieldModel: Optional[ModelMetaclass]
     jsonbRequestFieldModel: Optional[ModelMetaclass]
     arrayRequestFieldModel: Optional[ModelMetaclass]
+    foreignListModel: Optional[List[dict]]
 
 
 class CRUDModel(BaseModel):
@@ -27,6 +28,7 @@ class CRUDModel(BaseModel):
     PUT: Optional[Dict[CrudMethods, RequestResponseModel]]
     PATCH: Optional[Dict[CrudMethods, RequestResponseModel]]
     DELETE: Optional[Dict[CrudMethods, RequestResponseModel]]
+    FIND_MANY_WITH_FOREIGN_TREE: Optional[Dict[CrudMethods, RequestResponseModel]]
     PRIMARY_KEY_NAME: Optional[str]
     UNIQUE_LIST: Optional[List[str]]
 
@@ -43,4 +45,3 @@ class CRUDModel(BaseModel):
                 f'make sure the CRUDModel contains this request method')
         _ = available_methods[request_method]
         return _
-
