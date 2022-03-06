@@ -116,7 +116,7 @@ pip install asyncpg
 ```
 
 ## Usage
-
+run and go to http://127.0.0.1:port/docs and see the auto-generated API
 ### Simple Code (or see the longer ([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/sample.py))
 
 
