@@ -159,6 +159,13 @@ app.include_router(crud_route_2)
 
 ### Foreign Tree With Relationship
 ```python
+from fastapi import FastAPI
+from fastapi_quickcrud import crud_router_builder
+from sqlalchemy import *
+from sqlalchemy.orm import *
+from fastapi_quickcrud.crud_router import generic_sql_crud_router_builder
+
+Base = declarative_base()
 
 class Account(Base):
     __tablename__ = "account"
