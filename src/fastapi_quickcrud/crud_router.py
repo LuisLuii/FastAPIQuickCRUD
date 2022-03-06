@@ -22,7 +22,7 @@ from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRo
 from .misc.crud_model import CRUDModel
 from .misc.memory_sql import async_memory_db, sync_memory_db
 from .misc.type import CrudMethods, SqlType
-from .misc.utils import convert_table_to_model
+from .misc.utils import convert_table_to_model, Base
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -39,34 +39,20 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
-        foreign_include: Optional[any] = None,
+        foreign_include: Optional[Base] = None,
         sql_type: Optional[SqlType] = None,
         **router_kwargs: Any) -> APIRouter:
     """
-    :param db_session: Callable function
-        db_session should be a callable function, and return a session generator.
-        Also you can handle commit by yourelf or othe business logic
+    @param db_model:
+        The Sqlalchemy Base model/Table you want to use it to build api.
 
-        SQLAlchemy based example(SQLAlchemy was supported async since 1.4 version):
-            async:
-            async def get_transaction_session() -> AsyncSession:
-                async with async_session() as session:
-                    async with session.begin():
-                        yield session
-            sync:
-            def get_transaction_session():
-                try:
-                    db = sync_session()
-                    yield db
-                    db.commit()
-                except Exception as e:
-                    db.rollback()
-                    raise e
-                finally:
-                    db.close()
+    @param db_session:
+        The callable variable and return a session generator that will be used to get database connection session for fastapi.
 
+    @param autocommit:
+        set False if you handle commit in your db_session.
 
-    :param crud_methods: List[CrudMethods]
+    @param crud_methods:
         Fastapi Quick CRUD supports a few of crud methods, and they save into the Enum class,
         get it by : from fastapi_quickcrud import CrudMethods
         example:
@@ -76,21 +62,33 @@ def crud_router_builder(
             specific resource, such as GET_ONE, UPDATE_ONE, DELETE_ONE, PATCH_ONE AND POST_REDIRECT_GET
             this is because POST_REDIRECT_GET need to redirect to GET_ONE api
 
-    :param exclude_columns: List[str]
+    @param exclude_columns:
         Fastapi Quick CRUD will get all the columns in you table to generate a CRUD router,
         it is allow you exclude some columns you dont want it expose to operated by API
         note:
             if the column in exclude list but is it not nullable or no default_value, it may throw error
             when you do insert
 
-    :param crud_models:
-    :param db_model:
-        SQLAlchemy model,
-    :param dependencies:
-    :param async_mode:
-    :param autocommit:
-    :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
-    :return:
+    @param dependencies:
+        A variable that will be added to the path operation decorators.
+
+    @param crud_models:
+        You can use the sqlalchemy_to_pydantic() to build your own Pydantic model CRUD set
+
+    @param async_mode:
+        As your database connection
+
+    @param foreign_include: BaseModel
+        Used to build foreign tree api
+
+    @param sql_type:
+        You sql database type
+
+    @param router_kwargs:
+        other argument for FastApi's views
+
+    @return:
+        APIRouter for fastapi
     """
 
     db_model, NO_PRIMARY_KEY = convert_table_to_model(db_model)
