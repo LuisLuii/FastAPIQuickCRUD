@@ -1704,7 +1704,7 @@ class ApiParameterSchemaBuilder:
         path_model = [self.__db_model_table]
         pk_list = [self.db_name + "." + self.primary_key_str]
         total_table_of_foreign = {}
-        function_name = "get_many_by_pk_from"
+        function_name = "get_one_by_pk_from"
 
         for relation in self.relation_level:
             table_detail = self.foreign_mapper[relation]
