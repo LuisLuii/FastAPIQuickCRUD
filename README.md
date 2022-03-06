@@ -16,7 +16,6 @@
 
 ![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example.gif)
 
-![intro2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/foreign_tree.gif)
 
 
 
@@ -62,8 +61,8 @@ I believe that many people who work with FastApi to build RESTful CRUD services 
 `FastAPI Quick CRUD`is developed based on SQLAlchemy `1.4.23` version and supports sync and async.
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
+![docs_page_2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/foreign_tree.png?raw=true)
 
-## [Developing](https://github.com/LuisLuii/FastAPIQuickCRUD/issues/9)
 
 
 ## Advantages
