@@ -24,7 +24,7 @@ class UntitledTable256(Base):
     primary_key = Column(Integer, primary_key=True, autoincrement=True)
     bool_value = Column(Boolean, nullable=False, default=False)
     bytea_value = Column(LargeBinary)
-    char_value = Column(CHAR(10))
+    char_value = Column(CHAR(10,collation='NOCASE'))
     date_value = Column(Date)
     float4_value = Column(Float, nullable=False)
     float8_value = Column(Float(53), nullable=False, default=10.10)

@@ -1,5 +1,5 @@
 from itertools import groupby
-from typing import Type, List, Union, TypeVar
+from typing import Type, List, Union, TypeVar, Optional
 
 from pydantic import BaseModel, BaseConfig
 from sqlalchemy import Column, Integer
@@ -9,6 +9,8 @@ from sqlalchemy.sql.elements import \
     BinaryExpression
 
 from sqlalchemy.sql.schema import Table
+
+from .covert_model import convert_table_to_model
 from .crud_model import RequestResponseModel, CRUDModel
 from .exceptions import QueryOperatorNotFound, PrimaryMissing, UnknownColumn
 from .schema_builder import ApiParameterSchemaBuilder
@@ -20,7 +22,7 @@ from .type import \
     RangeFromComparisonOperators, \
     ExtraFieldTypePrefix, \
     RangeToComparisonOperators, \
-    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType
+    ItemComparisonOperators, PGSQLMatchingPatternInString, SqlType, FOREIGN_PATH_PARAM_KEYWORD
 
 Base = TypeVar("Base", bound=declarative_base)
 
@@ -96,22 +98,26 @@ def find_query_builder(param: dict, model: Base) -> List[Union[BinaryExpression]
 class OrmConfig(BaseConfig):
     orm_mode = True
 
+
 def sqlalchemy_to_pydantic(
         db_model: Type, *,
         crud_methods: List[CrudMethods],
         sql_type: str = SqlType.postgresql,
         exclude_columns: List[str] = None,
-        constraints = None,
+        constraints=None,
+        foreign_include: Optional[any] = None,
         exclude_primary_key=False) -> CRUDModel:
-
     db_model, _ = convert_table_to_model(db_model)
     if exclude_columns is None:
         exclude_columns = []
+    if foreign_include is None:
+        foreign_include = {}
     request_response_mode_set = {}
     model_builder = ApiParameterSchemaBuilder(db_model,
-                                              constraints = constraints,
+                                              constraints=constraints,
                                               exclude_column=exclude_columns,
                                               sql_type=sql_type,
+                                              foreign_include=foreign_include,
                                               exclude_primary_key=exclude_primary_key)
 
     REQUIRE_PRIMARY_KEY_CRUD_METHOD = [CrudMethods.DELETE_ONE.value,
@@ -124,6 +130,7 @@ def sqlalchemy_to_pydantic(
         request_body_model = None
         response_model = None
         request_query_model = None
+        foreignListModel = None
         if crud_method.value in REQUIRE_PRIMARY_KEY_CRUD_METHOD and not model_builder.primary_key_str:
             raise PrimaryMissing(f"The generation of this API [{crud_method.value}] requires a primary key")
 
@@ -187,11 +194,16 @@ def sqlalchemy_to_pydantic(
             request_query_model, \
             request_body_model, \
             response_model = model_builder.patch_many()
+        elif crud_method.value == CrudMethods.FIND_ONE_WITH_FOREIGN_TREE.value:
+            foreignListModel = model_builder.foreign_tree_get_one()
+        elif crud_method.value == CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value:
+            foreignListModel = model_builder.foreign_tree_get_many()
 
         request_response_models = {'requestBodyModel': request_body_model,
                                    'responseModel': response_model,
                                    'requestQueryModel': request_query_model,
-                                   'requestUrlParamModel': request_url_param_model}
+                                   'requestUrlParamModel': request_url_param_model,
+                                   'foreignListModel': foreignListModel}
         request_response_model = RequestResponseModel(**request_response_models)
         request_method = CRUDRequestMapping.get_request_method_by_crud_method(crud_method.value).value
         if request_method not in request_response_mode_set:
@@ -267,6 +279,9 @@ process_map = {
     MatchingPatternInStringBase.not_case_sensitive:
         lambda field, values: or_(field.not_like(value) for value in values),
 
+    MatchingPatternInStringBase.contains:
+        lambda field, values: or_(field.contains(value) for value in values),
+
     PGSQLMatchingPatternInString.similar_to:
         lambda field, values: or_(field.op("SIMILAR TO")(value) for value in values),
 
@@ -286,6 +301,7 @@ process_map = {
         lambda field, values: or_(field.op("!~*")(value) for value in values)
 }
 
+
 def table_to_declarative_base(db_model):
     db_name = str(db_model.fullname)
     Base = declarative_base()
@@ -299,6 +315,7 @@ def table_to_declarative_base(db_model):
     tmp = type(f'{db_name}', (Base,), table_dict)
     tmp.__table__ = db_model
     return tmp
+
 
 def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
     def group_by_foreign_key(item):
@@ -324,22 +341,15 @@ def group_find_many_join(list_of_dict: List[dict]) -> List[dict]:
         response_list.append(result)
     return response_list
 
-def convert_table_to_model(db_model):
-    NO_PRIMARY_KEY = False
-    if not isinstance(db_model, Table):
-        return db_model, NO_PRIMARY_KEY
-    db_name = str(db_model.fullname)
-    table_dict = {'__table__': db_model,
-                  '__tablename__': db_name}
 
-    if not db_model.primary_key:
-        table_dict['__mapper_args__'] = {
-            "primary_key": [i for i in db_model._columns]
-        }
-        NO_PRIMARY_KEY = True
-
-    for i in db_model.c:
-        col, = i.expression.base_columns
-        table_dict[str(i.key)] = col
-
-    return type(f'{db_name}DeclarativeBaseClass', (declarative_base(),), table_dict), NO_PRIMARY_KEY
+def path_query_builder(params, model) -> List[Union[BinaryExpression]]:
+    query = []
+    if not params:
+        return query
+    for param_name, param_value in params.items():
+        table_with_column = param_name.split(FOREIGN_PATH_PARAM_KEYWORD)
+        assert len(table_with_column) == 2
+        table_name, column_name = table_with_column
+        table_model = model[table_name]
+        query.append((getattr(table_model, column_name) == param_value))
+    return query

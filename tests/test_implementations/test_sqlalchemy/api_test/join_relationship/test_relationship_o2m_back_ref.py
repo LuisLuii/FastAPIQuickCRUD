@@ -67,7 +67,7 @@ def test_get_many_with_join():
     assert response.status_code == 200
     assert response.json() == [
         {
-            "id_foreign": [
+            "child_one_to_many_back_ref_foreign": [
                 {
                     "id": 1,
                     "parent_id": 1
@@ -80,7 +80,7 @@ def test_get_many_with_join():
             "id": 1
         },
         {
-            "id_foreign": [
+            "child_one_to_many_back_ref_foreign": [
                 {
                     "id": 3,
                     "parent_id": 2
@@ -96,7 +96,7 @@ def test_get_many_with_join():
     response = client.get('/parent/1?join_foreign_table=child_one_to_many_back_ref', headers=headers)
     assert response.status_code == 200
     assert response.json() == {
-            "id_foreign": [
+            "child_one_to_many_back_ref_foreign": [
                 {
                     "id": 1,
                     "parent_id": 1

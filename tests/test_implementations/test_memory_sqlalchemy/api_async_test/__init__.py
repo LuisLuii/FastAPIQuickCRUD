@@ -1,10 +1,9 @@
 import os
 
 from fastapi import FastAPI
-from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, sessionmaker, synonym
+from sqlalchemy import BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
+    LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, text
+from sqlalchemy.orm import declarative_base
 
 TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_URL', 'postgresql://postgres:1234@127.0.0.1:5432/postgres')
 

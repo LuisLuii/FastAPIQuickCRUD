@@ -71,7 +71,7 @@ def test_get_many_with_join():
     assert response.json() == [
         {
             "id": 1,
-            "child_id_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }
@@ -80,7 +80,7 @@ def test_get_many_with_join():
         },
         {
             "id": 2,
-            "child_id_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }
@@ -89,7 +89,7 @@ def test_get_many_with_join():
         },
         {
             "id": 3,
-            "child_id_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 2
                 }
@@ -98,7 +98,7 @@ def test_get_many_with_join():
         },
         {
             "id": 4,
-            "child_id_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 2
                 }
@@ -112,7 +112,7 @@ def test_get_many_with_join():
     assert response.status_code == 200
     assert response.json() == {
             "id": 1,
-            "child_id_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }

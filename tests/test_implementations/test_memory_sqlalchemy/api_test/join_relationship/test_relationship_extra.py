@@ -86,7 +86,7 @@ def test_():
     assert response.status_code == 200
     assert response.json() == [
   {
-    "id_foreign": [
+    "test_users_foreign": [
       {
         "id": 1,
         "name": "string",
