@@ -16,6 +16,8 @@
 
 ![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example.gif)
 
+![intro2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/foreign_tree.gif)
+
 
 
 
