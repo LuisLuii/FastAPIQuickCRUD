@@ -43,7 +43,9 @@ I believe that many people who work with FastApi to build RESTful CRUD services 
 `FastAPI Quick CRUD` can generate CRUD methods in FastApi from an SQLAlchemy schema:
 
 - Get one
+- Get one with foreign key (IN DEVELOPMENT)
 - Get many
+- Get many with foreign key (IN DEVELOPMENT)
 - Update one
 - Update many
 - Patch one
