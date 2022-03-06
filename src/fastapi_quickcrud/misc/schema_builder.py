@@ -198,13 +198,9 @@ class ApiParameterSchemaBuilder:
         return foreign_mapper
 
     def __get_table_name_from_table(self, table):
-        if not hasattr(table, "name"):
-            print("require name for your table if you try to query with foreign table")
         return table.name
 
     def __get_table_name_from_model(self, table):
-        if not hasattr(table, "name"):
-            print("require __tablename__ for your model if you try to query with foreign table")
         return table.__tablename__
 
     def __get_table_name(self, table):

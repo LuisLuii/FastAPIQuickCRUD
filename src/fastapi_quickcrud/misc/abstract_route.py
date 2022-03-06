@@ -824,7 +824,7 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
                                                        ):
                 target_model = request.url.path.split("/")[-1]
                 join = query.__dict__.pop('join_foreign_table', None)
-                stmt = query_service.get_many(query=query.__dict__, join_mode=join, abstract_param=url_param,
+                stmt = query_service.get_many(query=query.__dict__, join_mode=join, abstract_param=url_param.__dict__,
                                               target_model=target_model)
 
                 query_result = await execute_service.async_execute(session, stmt)
