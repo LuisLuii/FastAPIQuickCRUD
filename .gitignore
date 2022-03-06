@@ -4,3 +4,6 @@ tests/htmlcov
 /poetry.lock
 /pyproject.toml
 *.pyc
+*.xml
+*.iml
+*.sh
