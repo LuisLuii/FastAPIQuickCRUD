@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Union
 
-from sqlalchemy import and_, select, update, text
+from sqlalchemy import and_, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.schema import Table
@@ -302,7 +302,7 @@ class SQLAlchemySQLITEQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
@@ -324,7 +324,7 @@ class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
@@ -346,7 +346,7 @@ class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
@@ -368,7 +368,7 @@ class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
@@ -390,7 +390,7 @@ class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
@@ -412,4 +412,4 @@ class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError

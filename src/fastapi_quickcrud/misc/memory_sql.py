@@ -10,7 +10,12 @@ from sqlalchemy.pool import StaticPool
 
 
 class MemorySql():
-    def __init__(self, async_mode=False):
+    def __init__(self, async_mode: bool = False):
+        """
+
+        @type async_mode: bool
+        used to build sync or async memory sql connection
+        """
         self.async_mode = async_mode
         SQLALCHEMY_DATABASE_URL = f"sqlite{'+aiosqlite' if async_mode else ''}://"
         if not async_mode:

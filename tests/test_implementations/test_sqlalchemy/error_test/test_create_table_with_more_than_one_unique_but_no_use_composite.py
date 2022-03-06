@@ -35,7 +35,7 @@ UntitledTable256 = Table(
     Column('array_value', ARRAY(Integer())),
     Column('array_str__value', ARRAY(String())),
 )
-from sqlalchemy.orm import declarative_base, synonym, sessionmaker
+from sqlalchemy.orm import sessionmaker
 import os
 from sqlalchemy import  create_engine
 TEST_DATABASE_URL = os.environ.get('TEST_DATABASE_ASYNC_URL',
