@@ -435,3 +435,37 @@ def test_create_one_and_delete_one_but_not_found():
     response = client.delete(f'/test_delete_one/{primary_key}?{query_string}')
     assert response.status_code == 404
 
+
+
+def test_create_one_and_delete_one_but_not_found_test_case_insensitive():
+    headers = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
+
+    data = {"insert": [
+                       {"bool_value": True, "char_value": "string", "date_value": "2021-07-24", "float4_value": 0,
+                        "float8_value": 0, "int2_value": 0, "int4_value": 0, "int8_value": 0, "interval_value": 0,
+                        "json_value": {}, "jsonb_value": {}, "numeric_value": 0, "text_value": "string",
+                        "timestamp_value": "2021-07-24T02:54:53.285",
+                        "timestamptz_value": "2021-07-24T02:54:53.285Z",
+                        "uuid_value": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "varchar_value": "string",
+                        "array_value": [0], "array_str__value": ["string"], "time_value": "18:18:18",
+                        "timetz_value": "18:18:18+00:00"},
+                       ]}
+
+    response = client.post('/test_creation_many', headers=headers, data=json.dumps(data))
+    assert response.status_code == 201
+    insert_response_data = response.json()
+
+    primary_key ,= [i[primary_key_name] for i in insert_response_data]
+    params = {
+              "varchar_value____str": 'String',
+              "varchar_value____str_____matching_pattern": 'case_sensitive',
+              }
+    from urllib.parse import urlencode
+    query_string = urlencode(OrderedDict(**params))
+    update_data = {"bool_value": False}
+    response = client.delete(f'/test_delete_one/{primary_key}?{query_string}')
+    assert response.status_code == 404
+
