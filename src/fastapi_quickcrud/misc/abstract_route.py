@@ -785,7 +785,7 @@ class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
                 target_model = request.url.path.split("/")[-2]
                 join = query.__dict__.pop('join_foreign_table', None)
 
-                stmt = query_service.get_many_with_foreign_pk(query=query.__dict__, join_mode=join,
+                stmt = query_service.get_one_with_foreign_pk(query=query.__dict__, join_mode=join,
                                                               target_model=target_model)
                 query_result = execute_service.execute(session, stmt)
                 parsed_response = parsing_service.find_one(response_model=response_model,

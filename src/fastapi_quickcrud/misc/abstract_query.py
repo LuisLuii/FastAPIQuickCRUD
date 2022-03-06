@@ -189,6 +189,28 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         stmt = select(self.model).where(and_(*filter_list))
         return stmt
 
+    def get_one_with_foreign_pk(self, *,
+                                 join_mode,
+                                 query,
+                                 target_model,
+                                 abstract_param=None
+                                 ) -> BinaryExpression:
+        model = self.foreign_table_mapping[target_model]
+        filter_list: List[BinaryExpression] = find_query_builder(param=query,
+                                                                 model=model)
+        path_filter_list: List[BinaryExpression] = path_query_builder(params=abstract_param,
+                                                                      model=self.foreign_table_mapping)
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
+
+        if not isinstance(self.model, Table):
+            model = model.__table__
+
+        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list + path_filter_list))
+
+        stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
+        return stmt
+
+
     # def update(self, *,
     #            update_args,
     #            extra_query,

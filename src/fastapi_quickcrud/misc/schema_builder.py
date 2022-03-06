@@ -1657,7 +1657,7 @@ class ApiParameterSchemaBuilder:
             if self.uuid_type_columns:
                 request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                          self.uuid_type_columns))
-            for local_column, refer_table_info in self.reference_mapper.items():
+            for local_column, refer_table_info in reference_mapper.items():
                 response_fields.append((f"{refer_table_info['foreign_table_name']}_foreign",
                                         self.foreign_table_response_model_sets[refer_table_info['foreign_table']],
                                         None))
@@ -1750,7 +1750,7 @@ class ApiParameterSchemaBuilder:
                 request_validation.append(lambda self_object: self._value_of_list_to_str(self_object,
                                                                                          self.uuid_type_columns))
 
-            for local_column, refer_table_info in self.reference_mapper.items():
+            for local_column, refer_table_info in reference_mapper.items():
                 response_fields.append((f"{refer_table_info['foreign_table_name']}_foreign",
                                         self.foreign_table_response_model_sets[refer_table_info['foreign_table']],
                                         None))
