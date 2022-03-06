@@ -10,7 +10,6 @@ from fastapi import \
     Depends, APIRouter
 from pydantic import \
     BaseModel
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.schema import Table
 
 from . import sqlalchemy_to_pydantic

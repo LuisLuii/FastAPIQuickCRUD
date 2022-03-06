@@ -1,7 +1,7 @@
 from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
     JSON, LargeBinary, Numeric, SmallInteger, String, Text, Time, text, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
-from sqlalchemy.orm import declarative_base, synonym
+from sqlalchemy.orm import declarative_base
 
 from src.fastapi_quickcrud import sqlalchemy_to_pydantic, CrudMethods
 from src.fastapi_quickcrud.misc.exceptions import SchemaException

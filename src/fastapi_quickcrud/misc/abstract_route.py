@@ -10,9 +10,7 @@ from starlette.requests import Request
 
 
 class SQLAlchemyGeneralSQLBaseRouteSource(ABC):
-    '''
-    This route will support the SQL SQLAlchemy dialects
-    '''
+    """ This route will support the SQL SQLAlchemy dialects. """
 
     @classmethod
     def find_one(cls, api,

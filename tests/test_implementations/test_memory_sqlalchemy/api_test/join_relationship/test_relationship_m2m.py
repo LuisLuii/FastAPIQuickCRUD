@@ -3,7 +3,6 @@ from sqlalchemy import Column, Integer, \
     ForeignKey, Table
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-from src.fastapi_quickcrud.misc.type import SqlType
 from src.fastapi_quickcrud.crud_router import crud_router_builder
 
 app = FastAPI()
@@ -61,34 +60,34 @@ crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
                                        prefix="/child",
                                        tags=["child"],
-                                       
+
                                        )
 
 crud_route_association_table_second = crud_router_builder(db_session=get_transaction_session,
                                                           db_model=association_table_second,
                                                           prefix="/association_table_second",
                                                           tags=["association_table_second"],
-                                                          
+
                                                           )
 
 crud_route_child_second = crud_router_builder(db_session=get_transaction_session,
                                               db_model=Child,
                                               prefix="/child_second",
                                               tags=["child_second"],
-                                              
+
                                               )
 
 crud_route_parent = crud_router_builder(db_session=get_transaction_session,
                                         db_model=Parent,
                                         prefix="/parent",
                                         tags=["parent"],
-                                        
+
                                         )
 crud_route_association = crud_router_builder(db_session=get_transaction_session,
                                              db_model=association_table,
                                              prefix="/association",
                                              tags=["association"],
-                                             
+
                                              )
 from starlette.testclient import TestClient
 

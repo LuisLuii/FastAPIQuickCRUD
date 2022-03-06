@@ -90,7 +90,7 @@ def _add_orm_model_config_into_pydantic_model(pydantic_model, **kwargs) -> BaseM
 #                         __validators__={**validators})
 
 def _model_from_dataclass(kls: DataClassT) -> Type[BaseModel]:
-    """ Converts a stdlib dataclass to a pydantic BaseModel """
+    """ Converts a stdlib dataclass to a pydantic BaseModel. """
 
     return pydantic_dataclass(kls).__pydantic_model__
 
@@ -899,7 +899,7 @@ class ApiParameterSchemaBuilder:
                             Optional[List[str]],
                             Body(set(all_column_) - set(self.unique_fields),
                                  description='update_columns should contain which columns you want to update '
-                                             f'when the unique columns got conflict'))
+                                             'when the unique columns got conflict'))
         conflict_model = make_dataclass(
             f'{self.db_name + str(uuid.uuid4())}_Upsert_many_request_update_columns_when_conflict_request_body_model',
             [conflict_columns])
@@ -957,8 +957,6 @@ class ApiParameterSchemaBuilder:
         request_fields = []
         response_fields = []
 
-        # Create on_conflict Model
-        all_column_ = [i['column_name'] for i in self.all_field]
 
         # Create Request and Response Model
         all_field = deepcopy(self.all_field)
@@ -993,9 +991,6 @@ class ApiParameterSchemaBuilder:
     def create_many(self) -> Tuple:
         insert_fields = []
         response_fields = []
-
-        # Create on_conflict Model
-        all_column_ = [i['column_name'] for i in self.all_field]
 
         # Ready the Request and Response Model
         all_field = deepcopy(self.all_field)

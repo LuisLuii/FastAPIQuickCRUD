@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 from fastapi import FastAPI
 from sqlalchemy import BigInteger, Boolean, CHAR, Column, Date, DateTime, Float, Integer, \
-    LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint, func
+    LargeBinary, Numeric, SmallInteger, String, Text, Time, UniqueConstraint
 from sqlalchemy.orm import declarative_base
 from starlette.testclient import TestClient
 

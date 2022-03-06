@@ -161,7 +161,6 @@ app.include_router(crud_route_2)
 ```python
 import uvicorn
 from fastapi import FastAPI, Depends
-from sqlalchemy.orm import declarative_base
 from fastapi_quickcrud import CrudMethods
 from fastapi_quickcrud import sqlalchemy_to_pydantic
 from fastapi_quickcrud.misc.memory_sql import sync_memory_db
