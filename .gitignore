@@ -5,7 +5,9 @@ tests/htmlcov
 /pyproject.toml
 *.xml
 *.pyc
+workspace.xml
 *.iml
+*.xml
 *.sh
 *.gz
 *.txt

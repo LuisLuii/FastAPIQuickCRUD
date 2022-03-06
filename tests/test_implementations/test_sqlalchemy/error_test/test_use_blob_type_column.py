@@ -3,10 +3,8 @@ from sqlalchemy import ARRAY, BigInteger, Boolean, CHAR, Column, Date, DateTime,
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB, UUID
 from sqlalchemy.orm import declarative_base
 
-from src.fastapi_quickcrud import crud_router_builder, sqlalchemy_to_pydantic
-from src.fastapi_quickcrud.misc.utils import table_to_declarative_base
+from src.fastapi_quickcrud import sqlalchemy_to_pydantic
 from src.fastapi_quickcrud import CrudMethods
-from src.fastapi_quickcrud.misc.exceptions import ColumnTypeNotSupportedException
 
 Base = declarative_base()
 

@@ -1,20 +1,20 @@
 from abc import ABC
 from typing import List, Union
 
-from sqlalchemy import and_, select, update, text
+from sqlalchemy import and_, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlalchemy.sql.schema import Table
 
 from .exceptions import UnknownOrderType, UnknownColumn, UpdateColumnEmptyException
 from .type import Ordering
-from .utils import clean_input_fields
+from .utils import clean_input_fields, path_query_builder
 from .utils import find_query_builder
 
 
 class SQLAlchemyGeneralSQLQueryService(ABC):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
 
         """
         :param model: declarative_base model
@@ -24,24 +24,32 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
+        self.foreign_table_mapping = foreign_table_mapping
 
     def get_many(self, *,
                  join_mode,
                  query,
+                 target_model=None,
+                 abstract_param=None
                  ) -> BinaryExpression:
         filter_args = query
         limit = filter_args.pop('limit', None)
         offset = filter_args.pop('offset', None)
         order_by_columns = filter_args.pop('order_by_columns', None)
+        model = self.model
+        if target_model:
+            model = self.foreign_table_mapping[target_model]
         filter_list: List[BinaryExpression] = find_query_builder(param=filter_args,
-                                                                 model=self.model_columns)
+                                                                 model=model)
+        path_filter_list: List[BinaryExpression] = path_query_builder(params=abstract_param,
+                                                                      model=self.foreign_table_mapping)
         join_table_instance_list: list = self.get_join_select_fields(join_mode)
 
-        model = self.model
+
         if not isinstance(self.model, Table):
             model = model.__table__
 
-        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list))
+        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list+path_filter_list))
         if order_by_columns:
             order_by_query_list = []
 
@@ -79,7 +87,6 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         model = self.model
         if not isinstance(self.model, Table):
             model = model.__table__
-        a = model.c._all_columns
         stmt = select(*[model] + join_table_instance_list).where(and_(*filter_list + extra_query_expression))
         # stmt = session.query(*[model] + join_table_instance_list).filter(and_(*filter_list + extra_query_expression))
         stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
@@ -130,9 +137,9 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
                 if 'exclude' in local_reference and local_reference['exclude']:
                     continue
                 for column in local_reference['reference_table_columns']:
-                    foreign_name = local_reference['local']['local_column']
+                    foreign_table_name = local_reference['reference']['reference_table']
                     join_table_instance_list.append(
-                        column.label(foreign_name + '_foreign_____' + str(column).split('.')[1]))
+                        column.label(foreign_table_name + '_foreign_____' + str(column).split('.')[1]))
         return join_table_instance_list
 
     def get_join_by_excpression(self, stmt: BinaryExpression, join_mode=None) -> BinaryExpression:
@@ -182,6 +189,28 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
         stmt = select(self.model).where(and_(*filter_list))
         return stmt
 
+    def get_one_with_foreign_pk(self, *,
+                                 join_mode,
+                                 query,
+                                 target_model,
+                                 abstract_param=None
+                                 ) -> BinaryExpression:
+        model = self.foreign_table_mapping[target_model]
+        filter_list: List[BinaryExpression] = find_query_builder(param=query,
+                                                                 model=model)
+        path_filter_list: List[BinaryExpression] = path_query_builder(params=abstract_param,
+                                                                      model=self.foreign_table_mapping)
+        join_table_instance_list: list = self.get_join_select_fields(join_mode)
+
+        if not isinstance(self.model, Table):
+            model = model.__table__
+
+        stmt = select(*[model] + join_table_instance_list).filter(and_(*filter_list + path_filter_list))
+
+        stmt = self.get_join_by_excpression(stmt, join_mode=join_mode)
+        return stmt
+
+
     # def update(self, *,
     #            update_args,
     #            extra_query,
@@ -202,7 +231,7 @@ class SQLAlchemyGeneralSQLQueryService(ABC):
 
 class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
 
         """
         :param model: declarative_base model
@@ -210,7 +239,8 @@ class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
         """
         super(SQLAlchemyPGSQLQueryService,
               self).__init__(model=model,
-                             async_mode=async_mode)
+                             async_mode=async_mode,
+                             foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -255,13 +285,14 @@ class SQLAlchemyPGSQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
 class SQLAlchemySQLITEQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -271,18 +302,19 @@ class SQLAlchemySQLITEQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -292,18 +324,19 @@ class SQLAlchemyMySQLQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -313,18 +346,19 @@ class SQLAlchemyMariaDBQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -334,18 +368,19 @@ class SQLAlchemyOracleQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -355,18 +390,19 @@ class SQLAlchemyMSSqlQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError
 
 
 class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
 
-    def __init__(self, *, model, async_mode):
+    def __init__(self, *, model, async_mode, foreign_table_mapping):
         """
         :param model: declarative_base model
         :param async_mode: bool
         """
         super().__init__(model=model,
-                         async_mode=async_mode)
+                         async_mode=async_mode,
+                         foreign_table_mapping=foreign_table_mapping)
         self.model = model
         self.model_columns = model
         self.async_mode = async_mode
@@ -376,4 +412,4 @@ class SQLAlchemyNotSupportQueryService(SQLAlchemyGeneralSQLQueryService):
                unique_fields: List[str],
                upsert_one=True,
                ) -> BinaryExpression:
-        raise NotImplemented('upsert only support PostgreSQL')
+        raise NotImplementedError

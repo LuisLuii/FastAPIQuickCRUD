@@ -10,7 +10,6 @@ from fastapi import \
     Depends, APIRouter
 from pydantic import \
     BaseModel
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.schema import Table
 
 from . import sqlalchemy_to_pydantic
@@ -23,7 +22,7 @@ from .misc.abstract_route import SQLAlchemySQLLiteRouteSource, SQLAlchemyPGSQLRo
 from .misc.crud_model import CRUDModel
 from .misc.memory_sql import async_memory_db, sync_memory_db
 from .misc.type import CrudMethods, SqlType
-from .misc.utils import convert_table_to_model
+from .misc.utils import convert_table_to_model, Base
 
 CRUDModelType = TypeVar("CRUDModelType", bound=BaseModel)
 CompulsoryQueryModelType = TypeVar("CompulsoryQueryModelType", bound=BaseModel)
@@ -40,33 +39,20 @@ def crud_router_builder(
         dependencies: Optional[List[callable]] = None,
         crud_models: Optional[CRUDModel] = None,
         async_mode: Optional[bool] = None,
+        foreign_include: Optional[Base] = None,
         sql_type: Optional[SqlType] = None,
         **router_kwargs: Any) -> APIRouter:
     """
-    :param db_session: Callable function
-        db_session should be a callable function, and return a session generator.
-        Also you can handle commit by yourelf or othe business logic
+    @param db_model:
+        The Sqlalchemy Base model/Table you want to use it to build api.
 
-        SQLAlchemy based example(SQLAlchemy was supported async since 1.4 version):
-            async:
-            async def get_transaction_session() -> AsyncSession:
-                async with async_session() as session:
-                    async with session.begin():
-                        yield session
-            sync:
-            def get_transaction_session():
-                try:
-                    db = sync_session()
-                    yield db
-                    db.commit()
-                except Exception as e:
-                    db.rollback()
-                    raise e
-                finally:
-                    db.close()
+    @param db_session:
+        The callable variable and return a session generator that will be used to get database connection session for fastapi.
 
+    @param autocommit:
+        set False if you handle commit in your db_session.
 
-    :param crud_methods: List[CrudMethods]
+    @param crud_methods:
         Fastapi Quick CRUD supports a few of crud methods, and they save into the Enum class,
         get it by : from fastapi_quickcrud import CrudMethods
         example:
@@ -76,21 +62,33 @@ def crud_router_builder(
             specific resource, such as GET_ONE, UPDATE_ONE, DELETE_ONE, PATCH_ONE AND POST_REDIRECT_GET
             this is because POST_REDIRECT_GET need to redirect to GET_ONE api
 
-    :param exclude_columns: List[str]
+    @param exclude_columns:
         Fastapi Quick CRUD will get all the columns in you table to generate a CRUD router,
         it is allow you exclude some columns you dont want it expose to operated by API
         note:
             if the column in exclude list but is it not nullable or no default_value, it may throw error
             when you do insert
 
-    :param crud_models:
-    :param db_model:
-        SQLAlchemy model,
-    :param dependencies:
-    :param async_mode:
-    :param autocommit:
-    :param router_kwargs:  Optional arguments that ``APIRouter().include_router`` takes.
-    :return:
+    @param dependencies:
+        A variable that will be added to the path operation decorators.
+
+    @param crud_models:
+        You can use the sqlalchemy_to_pydantic() to build your own Pydantic model CRUD set
+
+    @param async_mode:
+        As your database connection
+
+    @param foreign_include: BaseModel
+        Used to build foreign tree api
+
+    @param sql_type:
+        You sql database type
+
+    @param router_kwargs:
+        other argument for FastApi's views
+
+    @return:
+        APIRouter for fastapi
     """
 
     db_model, NO_PRIMARY_KEY = convert_table_to_model(db_model)
@@ -108,10 +106,11 @@ def crud_router_builder(
 
     if async_mode is None:
         async_mode = inspect.isasyncgen(db_session())
-    
+
     if sql_type is None:
         async def async_runner(f):
             return [i.bind.name async for i in f()]
+
         try:
             if async_mode:
                 sql_type, = asyncio.get_event_loop().run_until_complete(async_runner(db_session))
@@ -119,7 +118,7 @@ def crud_router_builder(
                 sql_type, = [i.bind.name for i in db_session()]
         except Exception:
             raise RuntimeError("Some unknown problem occurred error, maybe you are uvicorn.run with reload=True. "
-                                "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
+                               "Try declaring sql_type for crud_router_builder yourself using from fastapi_quickcrud.misc.type import SqlType")
 
     if not crud_methods and NO_PRIMARY_KEY == False:
         crud_methods = CrudMethods.get_declarative_model_full_crud_method()
@@ -144,9 +143,15 @@ def crud_router_builder(
                                                      crud_methods=crud_methods,
                                                      exclude_columns=exclude_columns,
                                                      sql_type=sql_type,
+                                                     foreign_include=foreign_include,
                                                      exclude_primary_key=NO_PRIMARY_KEY)
 
-    crud_service = query_service(model=db_model, async_mode=async_mode)
+    foreign_table_mapping = {db_model.__tablename__: db_model}
+    if foreign_include:
+        for i in foreign_include:
+            model , _= convert_table_to_model(i)
+            foreign_table_mapping[model.__tablename__] = i
+    crud_service = query_service(model=db_model, async_mode=async_mode, foreign_table_mapping=foreign_table_mapping)
     # else:
     #     crud_service = SQLAlchemyPostgreQueryService(model=db_model, async_mode=async_mode)
 
@@ -372,6 +377,48 @@ def crud_router_builder(
                                async_mode=async_mode,
                                response_model=_response_model)
 
+    def find_one_foreign_tree_api(request_response_model: dict, dependencies):
+        _foreign_list_model = request_response_model.get('foreignListModel', None)
+        for i in _foreign_list_model:
+            _request_query_model = i["request_query_model"]
+            _response_model = i["response_model"]
+            _path = i["path"]
+            _function_name = i["function_name"]
+            request_url_param_model = i["primary_key_dataclass_model"]
+            routes_source.find_one_foreign_tree(path=_path,
+                                                request_query_model=_request_query_model,
+                                                response_model=_response_model,
+                                                request_url_param_model=request_url_param_model,
+                                                db_session=db_session,
+                                                query_service=crud_service,
+                                                parsing_service=result_parser,
+                                                execute_service=execute_service,
+                                                dependencies=dependencies,
+                                                api=api,
+                                                function_name=_function_name,
+                                                async_mode=async_mode)
+
+    def find_many_foreign_tree_api(request_response_model: dict, dependencies):
+        _foreign_list_model = request_response_model.get('foreignListModel', None)
+        for i in _foreign_list_model:
+            _request_query_model = i["request_query_model"]
+            _response_model = i["response_model"]
+            _path = i["path"]
+            _function_name = i["function_name"]
+            request_url_param_model = i["primary_key_dataclass_model"]
+            routes_source.find_many_foreign_tree(path=_path,
+                                                 request_query_model=_request_query_model,
+                                                 response_model=_response_model,
+                                                 request_url_param_model=request_url_param_model,
+                                                 db_session=db_session,
+                                                 query_service=crud_service,
+                                                 parsing_service=result_parser,
+                                                 execute_service=execute_service,
+                                                 dependencies=dependencies,
+                                                 api=api,
+                                                 async_mode=async_mode,
+                                                 function_name=_function_name)
+
     api_register = {
         CrudMethods.FIND_ONE.value: find_one_api,
         CrudMethods.FIND_MANY.value: find_many_api,
@@ -385,7 +432,9 @@ def crud_router_builder(
         CrudMethods.PATCH_ONE.value: patch_one_api,
         CrudMethods.PATCH_MANY.value: patch_many_api,
         CrudMethods.UPDATE_ONE.value: put_one_api,
-        CrudMethods.UPDATE_MANY.value: put_many_api
+        CrudMethods.UPDATE_MANY.value: put_many_api,
+        CrudMethods.FIND_ONE_WITH_FOREIGN_TREE.value: find_one_foreign_tree_api,
+        CrudMethods.FIND_MANY_WITH_FOREIGN_TREE.value: find_many_foreign_tree_api
     }
     api = APIRouter(**router_kwargs)
 
