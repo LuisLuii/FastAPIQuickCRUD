@@ -126,6 +126,7 @@ class MatchingPatternInStringBase(StrEnum):
     case_sensitive = auto()
     not_case_insensitive = auto()
     not_case_sensitive = auto()
+    contains = auto()
 
 
 class PGSQLMatchingPattern(StrEnum):

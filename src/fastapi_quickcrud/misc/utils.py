@@ -279,6 +279,9 @@ process_map = {
     MatchingPatternInStringBase.not_case_sensitive:
         lambda field, values: or_(field.not_like(value) for value in values),
 
+    MatchingPatternInStringBase.contains:
+        lambda field, values: or_(field.contains(value) for value in values),
+
     PGSQLMatchingPatternInString.similar_to:
         lambda field, values: or_(field.op("SIMILAR TO")(value) for value in values),
 

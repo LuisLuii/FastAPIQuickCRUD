@@ -95,11 +95,11 @@ def test_get_by_primary_key_with_false_char_query_param():
         headers=headers)
     assert response.status_code == 200
 
-
+    # sql lite
     response = client.get(
         f'/test/{sample_primary_key}?char_value____str=string1&char_value____str=%Tri%&char_value____str_____matching_pattern=case_sensitive',
         headers=headers)
-    assert response.status_code == 404
+    assert response.status_code == 200
 
     response = client.get(
         f'/test/{sample_primary_key}?char_value____str=string1&char_value____str=%tsri%&char_value____str_____matching_pattern=case_sensitive',
