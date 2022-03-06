@@ -22,7 +22,6 @@ from sqlalchemy.pool import StaticPool
 engine = create_engine('sqlite://', echo=True,
                        connect_args={"check_same_thread": False}, pool_recycle=7200, poolclass=StaticPool)
 session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 def get_transaction_session():
     try:
         db = session()
@@ -31,16 +30,22 @@ def get_transaction_session():
         db.close()
 
 class Parent(Base):
-    __tablename__ = 'parent_one_to_many_back_ref'
+    __tablename__ = 'parent_o2o'
     id = Column(Integer, primary_key=True)
-    children = relationship("Child", backref="child_one_to_many_back_ref")
+
+    # one-to-many collection
+    children = relationship("Child", back_populates="parent")
 
 class Child(Base):
-    __tablename__ = 'child_one_to_many_back_ref'
+    __tablename__ = 'child_o2o'
     id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey('parent_one_to_many_back_ref.id'))
+    parent_id = Column(Integer, ForeignKey('parent_o2o.id'))
 
+    # many-to-one scalar
+    parent = relationship("Parent", back_populates="children")
 
+    def test_function(self, *args, **kwargs ):
+        print("hello")
 crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
                                        prefix="/child",
@@ -58,38 +63,87 @@ from starlette.testclient import TestClient
 client = TestClient(app)
 
 
-def test_get_many_with_join():
+def test_get_parent_many_with_join():
     headers = {
         'accept': '*/*',
         'Content-Type': 'application/json',
     }
 
-    response = client.get('/parent?join_foreign_table=child_one_to_many_back_ref', headers=headers)
+    response = client.get('/parent?join_foreign_table=child_o2o', headers=headers)
     assert response.status_code == 200
-    assert response.json() == [{'child_one_to_many_back_ref_foreign': [{'id': 1, 'parent_id': 1},
-                                         {'id': 2, 'parent_id': 1}],
+    assert response.json() == [{'child_o2o_foreign': [{'id': 1, 'parent_id': 1}, {'id': 2, 'parent_id': 1}],
   'id': 1},
- {'child_one_to_many_back_ref_foreign': [{'id': 3, 'parent_id': 2},
-                                         {'id': 4, 'parent_id': 2}],
+ {'child_o2o_foreign': [{'id': 3, 'parent_id': 2}, {'id': 4, 'parent_id': 2}],
   'id': 2}]
-    response = client.get('/parent/1?join_foreign_table=child_one_to_many_back_ref', headers=headers)
+
+
+    response = client.get('/parent/1?join_foreign_table=child_o2o', headers=headers)
     assert response.status_code == 200
     assert response.json() == {
-            "child_one_to_many_back_ref_foreign": [
-                {
-                    "id": 1,
-                    "parent_id": 1
-                },
-                {
-                    "id": 2,
-                    "parent_id": 1
-                }
-            ],
-            "id": 1
-        }
+    "child_o2o_foreign": [
+      {
+        "id": 1,
+        "parent_id": 1
+      },
+      {
+        "id": 2,
+        "parent_id": 1
+      }
+    ],
+    "id": 1
+  }
 
 
 def test_get_child_many_with_join():
+    headers = {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+    }
+
+    response = client.get('/child?join_foreign_table=parent_o2o', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == [{'id': 1, 'parent_id': 1, 'parent_o2o_foreign': [{'id': 1}]},
+ {'id': 2, 'parent_id': 1, 'parent_o2o_foreign': [{'id': 1}]},
+ {'id': 3, 'parent_id': 2, 'parent_o2o_foreign': [{'id': 2}]},
+ {'id': 4, 'parent_id': 2, 'parent_o2o_foreign': [{'id': 2}]}]
+    response = client.get('/child/1?join_foreign_table=parent_o2o', headers=headers)
+    assert response.status_code == 200
+    assert response.json() =={
+    "id": 1,
+    "parent_o2o_foreign": [
+      {
+        "id": 1
+      }
+    ],
+    "parent_id": 1
+  }
+
+
+def test_get_child_many_without_join():
+    headers = {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+    }
+
+    response = client.get('/parent', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1
+        },
+        {
+            "id": 2
+        },
+    ]
+
+    response = client.get('/parent/1', headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {
+    "id": 1
+  }
+
+
+def test_get_parent_many_without_join():
     headers = {
         'accept': '*/*',
         'Content-Type': 'application/json',
@@ -105,50 +159,28 @@ def test_get_child_many_with_join():
         {
             "id": 2,
             "parent_id": 1
-        }, {
+        },
+        {
             "id": 3,
             "parent_id": 2
         },
         {
             "id": 4,
             "parent_id": 2
-        }]
-    response = client.get('/child/1', headers=headers)
-    assert response.status_code == 200
-    assert response.json() == {
-            "id": 1,
-            "parent_id": 1
-        }
-
-def test_get_many_without_join():
-    query = {"join_foreign_table": "child"}
-    data = json.dumps(query)
-    headers = {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-    }
-
-    response = client.get('/parent', headers=headers, data=data)
-    assert response.status_code == 200
-    assert response.json() == [
-        {
-            "id": 1
-        },
-        {
-            "id": 2
         }
     ]
 
-    response = client.get('/parent/1', headers=headers, data=data)
+    response = client.get('/child/1', headers=headers)
     assert response.status_code == 200
     assert response.json() == {
-            "id": 1
-        }
+    "id": 1,
+    "parent_id": 1
+  }
 
 
 def setup_module(module):
-    Parent.__table__.create(engine, checkfirst=True)
-    Child.__table__.create(engine, checkfirst=True)
+    Parent.__table__.create(engine)
+    Child.__table__.create(engine)
 
     db = session()
 
@@ -161,6 +193,8 @@ def setup_module(module):
     db.add(Child(id=4, parent_id=2))
 
     db.commit()
+    print()
+
 
 def teardown_module(module):
     Child.__table__.drop(engine, checkfirst=True)

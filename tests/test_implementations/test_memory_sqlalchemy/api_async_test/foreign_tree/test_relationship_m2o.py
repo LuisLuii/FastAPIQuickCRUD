@@ -32,15 +32,16 @@ def get_transaction_session():
 
 
 class Parent(Base):
-    __tablename__ = 'parent_m2o_back_populates'
+    __tablename__ = 'parent_m2o'
     id = Column(Integer, primary_key=True)
-    child_id = Column(Integer, ForeignKey('child_m2o_back_populates.id'))
-    child = relationship("Child", back_populates="parents")
+    child_id = Column(Integer, ForeignKey('child_m2o.id'))
+    child = relationship("Child")
+
 
 class Child(Base):
-    __tablename__ = 'child_m2o_back_populates'
+    __tablename__ = 'child_m2o'
     id = Column(Integer, primary_key=True)
-    parents = relationship("Parent", back_populates="child")
+
 
 crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
@@ -60,19 +61,18 @@ from starlette.testclient import TestClient
 client = TestClient(app)
 
 
-
-def test_get_parent_many_with_join():
+def test_get_many_with_join():
     headers = {
         'accept': '*/*',
         'Content-Type': 'application/json',
     }
 
-    response = client.get('/parent?join_foreign_table=child_m2o_back_populates', headers=headers)
+    response = client.get('/parent?join_foreign_table=child_m2o', headers=headers)
     assert response.status_code == 200
     assert response.json() == [
         {
             "id": 1,
-            "child_m2o_back_populates_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }
@@ -81,7 +81,7 @@ def test_get_parent_many_with_join():
         },
         {
             "id": 2,
-            "child_m2o_back_populates_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }
@@ -90,7 +90,7 @@ def test_get_parent_many_with_join():
         },
         {
             "id": 3,
-            "child_m2o_back_populates_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 2
                 }
@@ -99,7 +99,7 @@ def test_get_parent_many_with_join():
         },
         {
             "id": 4,
-            "child_m2o_back_populates_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 2
                 }
@@ -109,18 +109,17 @@ def test_get_parent_many_with_join():
     ]
 
 
-    response = client.get('/parent/1?join_foreign_table=child_m2o_back_populates', headers=headers)
+    response = client.get('/parent/1?join_foreign_table=child_m2o', headers=headers)
     assert response.status_code == 200
     assert response.json() == {
             "id": 1,
-            "child_m2o_back_populates_foreign": [
+            "child_m2o_foreign": [
                 {
                     "id": 1
                 }
             ],
             "child_id": 1
         }
-
 
 def test_get_child_many_with_join():
     headers = {
@@ -128,95 +127,26 @@ def test_get_child_many_with_join():
         'Content-Type': 'application/json',
     }
 
-    response = client.get('/child?join_foreign_table=parent_m2o_back_populates', headers=headers)
-    assert response.status_code == 200
-    assert response.json() == [{'id': 1,
-  'parent_m2o_back_populates_foreign': [{'child_id': 1, 'id': 1},
-                                        {'child_id': 1, 'id': 2}]},
- {'id': 2,
-  'parent_m2o_back_populates_foreign': [{'child_id': 2, 'id': 3},
-                                        {'child_id': 2, 'id': 4}]}]
-    response = client.get('/child/1?join_foreign_table=parent_m2o_back_populates', headers=headers)
-    assert response.status_code == 200
-
-    assert response.json() == {
-    "parent_m2o_back_populates_foreign": [
-      {
-        "id": 1,
-        "child_id": 1
-      },
-      {
-        "id": 2,
-        "child_id": 1
-      }
-    ],
-    "id": 1
-  }
-
-
-def test_get_child_many_without_join():
-    headers = {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-    }
-
-    response = client.get('/parent', headers=headers)
-    assert response.status_code == 200
-    assert response.json() == [
-        {
-            "id": 1,
-            "child_id": 1
-        },
-        {
-            "id": 2,
-            "child_id": 1
-        },
-        {
-            "id": 3,
-            "child_id": 2
-        },
-        {
-            "id": 4,
-            "child_id": 2
-        }
-    ]
-
-
-    response = client.get('/parent/1', headers=headers)
-    assert response.status_code == 200
-    assert response.json() == {
-    "id": 1,
-    "child_id": 1
-  }
-
-def test_get_parent_many_without_join():
-    headers = {
-        'accept': '*/*',
-        'Content-Type': 'application/json',
-    }
-
-    response = client.get('/child', headers=headers)
-    assert response.status_code == 200
-    assert response.json() == [
-        {
-            "id": 1
-        },
-        {
-            "id": 2
-        },
-        {
-            "id": 3
-        },
-        {
-            "id": 4
-        }
-    ]
-
     response = client.get('/child/1', headers=headers)
     assert response.status_code == 200
     assert response.json() == {
-    "id": 1
-  }
+            "id": 1
+        }
+
+def test_get_many_without_join():
+    query = {"join_foreign_table": "child"}
+    data = json.dumps(query)
+    headers = {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+    }
+
+    response = client.get('/parent/1', headers=headers, data=data)
+    assert response.status_code == 200
+    assert response.json() == {
+            "id": 1,
+            "child_id": 1
+        }
 
 
 def setup_module(module):
@@ -241,6 +171,5 @@ def setup_module(module):
 def teardown_module(module):
     Parent.__table__.drop(engine, checkfirst=True)
     Child.__table__.drop(engine, checkfirst=True)
-
 
 
