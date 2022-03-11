@@ -347,6 +347,9 @@ uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 - exclude_columns: `list` 
   > set the columns that not to be operated but the columns should nullable or set the default value)
 
+- foreign_include: `list[declarative_base()]` 
+  > add the SqlAlchemy models here, and build the foreign tree get one/many api (don't support SqlAlchemy table)
+
 
 - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
 
