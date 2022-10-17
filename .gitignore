@@ -9,3 +9,6 @@ workspace.xml
 *.iml
 *.xml
 *.sh
+fastapi_quickcrud_code_generator_beta.egg-info
+src/fastapi_quick_crud_template
+src/fastapi_quickcrud_codegen_backup

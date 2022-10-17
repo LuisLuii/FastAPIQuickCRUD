@@ -1,0 +1,5 @@
+include src/fastapi_quickcrud_codegen/model/template/common/*.jinja2
+include src/fastapi_quickcrud_codegen/model/template/pydantic/*.jinja2
+include src/fastapi_quickcrud_codegen/model/template/route/*.jinja2
+include src/fastapi_quickcrud_codegen/model/template/sqlalchemy/*.jinja2
+include src/fastapi_quickcrud_codegen/model/template/*.jinja2

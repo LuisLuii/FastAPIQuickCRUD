@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.2.1'
+VERSION = '0.0.7'
 
 print("""
 
@@ -16,7 +16,7 @@ print("""
 
 if __name__ == '__main__':
     setup(
-        name='fastapi_quickcrud',
+        name='fastapi_quickcrud_code_generator_beta',
         version=VERSION,
         install_requires=["fastapi<=0.68.2","pydantic<=1.8.2","SQLAlchemy<=1.4.30","StrEnum==0.4.7","starlette==0.14.2",
                           "aiosqlite==0.17.0","uvicorn==0.17.0","greenlet==1.1.2","anyio==3.5.0"],
@@ -29,7 +29,11 @@ if __name__ == '__main__':
         url='https://github.com/LuisLuii/FastAPIQuickCRUD',
         license="MIT License",
         keywords=["fastapi", "crud", "restful", "routing","SQLAlchemy", "generator", "crudrouter","postgresql","builder"],
-        packages=find_packages('src'),
+        packages=find_packages("src", include="*.jinja2"),
+        package_data={
+            '': ['*.jinja2'],
+            'src.fastapi_quickcrud_codegen.model.template.common': ['*.jinja2'],
+        },
         package_dir={'': 'src'},
         setup_requires=["setuptools>=31.6.0"],
         classifiers=[
@@ -60,3 +64,4 @@ if __name__ == '__main__':
         ],
         include_package_data=True,
     )
+    print(find_packages("src"))
