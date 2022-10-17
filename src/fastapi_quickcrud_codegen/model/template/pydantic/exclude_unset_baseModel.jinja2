@@ -1,0 +1,6 @@
+
+class ExcludeUnsetBaseModel(BaseModel):
+    def dict(self, *args, **kwargs):
+        if kwargs and kwargs.get("exclude_none") is not None:
+            kwargs["exclude_unset"] = True
+            return BaseModel.dict(self, *args, **kwargs)

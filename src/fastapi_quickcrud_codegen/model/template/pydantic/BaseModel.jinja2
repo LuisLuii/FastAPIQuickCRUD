@@ -1,0 +1,38 @@
+{% for decorator in decorators -%}
+{{ decorator }}
+{% endfor -%}
+class {{ class_name }}(BaseModel):
+    """
+    auto gen by FastApi quick CRUD
+    """
+{%- if not fields %}
+    pass
+{%- endif %}
+{%- if config %}
+{%- filter indent(4) %}
+{% include 'Config.jinja2' %}
+{%- endfilter %}
+{%- endif %}
+{%- for field in fields -%}
+    {%- if field|length > 2 %}
+    {{ field[0] }}: {{ field[1] }} = {{field[2]}}
+
+    {%- else %}
+    {{ field[0] }}: {{ field[1] }}
+    {%- endif %}
+{%- endfor -%}
+
+{%- if value_of_list_to_str_columns or filter_none %}
+    def __init__(self):
+    {%- if value_of_list_to_str_columns %}
+        value_of_list_to_str(self, {{ value_of_list_to_str_columns }})
+    {%- endif %}
+    {%- if filter_none %}
+        filter_none(self)
+    {%- endif %}
+{%- endif %}
+
+{%- if orm_mode %}
+    class Config:
+        orm_mode = True
+{%- endif %}

@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 
 from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \

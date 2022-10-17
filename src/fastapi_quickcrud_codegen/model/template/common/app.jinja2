@@ -1,0 +1,15 @@
+import uvicorn
+from fastapi import FastAPI
+{% for model in model_list -%}
+from fastapi_quick_crud_template.route.{{ model["model_name"] }} import api as {{ model["model_name"] }}_router
+
+{%- endfor %}
+app = FastAPI()
+
+[app.include_router(api_route) for api_route in [
+{% for model in model_list -%}
+{{ model["model_name"] }}_router,
+{%- endfor %}
+]]
+
+uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)

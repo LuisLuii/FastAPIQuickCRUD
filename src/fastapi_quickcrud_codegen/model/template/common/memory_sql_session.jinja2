@@ -1,0 +1,91 @@
+import asyncio
+from typing import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+
+{% for model in model_list -%}
+
+from fastapi_quick_crud_template.model.{{ model["model_name"] }} import {{ model["file_name"] }}
+{%- endfor %}
+
+{%- if is_memory_sql %}
+    # please manually update if don't want to use in-memory db
+{%- endif %}
+
+{%- if async_mode %}
+
+
+SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite://"
+
+engine = create_async_engine(SQLALCHEMY_DATABASE_URL,
+                                              future=True,
+                                              echo=True,
+                                              pool_pre_ping=True,
+                                              pool_recycle=7200,
+                                              connect_args={"check_same_thread": False},
+                                              poolclass=StaticPool)
+session = sessionmaker(autocommit=False,
+                       autoflush=False,
+                       bind=engine,
+                       class_=AsyncSession)
+{%- else %}
+
+
+SQLALCHEMY_DATABASE_URL = f"sqlite://"
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL,
+                                        future=True,
+                                        echo=True,
+                                        pool_pre_ping=True,
+                                        pool_recycle=7200,
+                                        connect_args={"check_same_thread": False},
+                                        poolclass=StaticPool)
+session = sessionmaker(bind=engine, autocommit=False)
+{%- endif %}
+
+
+
+{%- if async_mode %}
+
+{% for model in model_list -%}
+async def create_table(engine, {{ model["file_name"] }}):
+    async with engine.begin() as conn:
+        wait conn.run_sync(model._sa_registry.metadata.create_all)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(create_table(engine, Mode))
+{%- endfor %}
+
+
+{%- else %}
+
+
+{% for model in model_list -%}
+{{ model["file_name"] }}.__table__.create(engine, checkfirst=True)
+{%- endfor %}
+{%- endif %}
+
+
+{%- if async_mode %}
+
+
+async def db_session():
+    async with session() as session:
+        yield session
+{%- else %}
+
+
+def db_session() -> Generator:
+    try:
+        db = session()
+        yield db
+    except Exception as e:
+        db.rollback()
+        raise e
+    finally:
+        db.close()
+{%- endif %}

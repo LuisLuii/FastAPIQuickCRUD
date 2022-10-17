@@ -1,0 +1,4 @@
+def __post_init__(self):
+{% for method in methods -%}
+    {{methods}}(self)
+{% endfor -%}

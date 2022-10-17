@@ -1,0 +1,30 @@
+@api.get("{{ path }}", status_code=200, response_model={{ model_name }}FindOneResponseModel)
+def get_one_by_primary_key(response: Response,
+                           url_param=Depends({{ model_name }}PrimaryKeyModel),
+                           query=Depends({{ model_name }}FindOneRequestBody),
+                           session=Depends(db_session)):
+    filter_list: List[BinaryExpression] = find_query_builder(param=query.__dict__,
+                                                             model=UntitledTable256)
+
+    extra_query_expression: List[BinaryExpression] = find_query_builder(param=url_param.__dict__,
+                                                                        model=UntitledTable256)
+    model = {{ model_name }}
+    stmt = select(*[model]).where(and_(*filter_list + extra_query_expression))
+    sql_executed_result = session.execute(stmt)
+
+    one_row_data = sql_executed_result.fetchall()
+    if not one_row_data:
+        return Response('specific data not found', status_code=HTTPStatus.NOT_FOUND)
+    response = []
+    for i in one_row_data:
+        i = dict(i)
+        result__ = copy.deepcopy(i)
+        tmp = {}
+        for key_, value_ in result__.items():
+            tmp[key_] = value_
+        response.append(tmp)
+    if isinstance(response, list):
+        response = response[0]
+    response.headers["x-total-count"] = str(1)
+    session.commit()
+    return response

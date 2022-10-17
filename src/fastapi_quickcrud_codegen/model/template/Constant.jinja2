@@ -1,0 +1,9 @@
+
+{%- for constant in constants %}
+    {%  if constant[1] is iterable and (constant[1] is not string and constant[1] is not mapping )%}
+{{ constant[0] }} = "{{ constant[1] | join('", "') }}"
+    {%  else %}
+{{ constant[0] }} = "{{ constant[1] }}"
+    {% endif %}
+
+{%- endfor -%}
