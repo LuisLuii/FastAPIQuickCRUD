@@ -12,3 +12,7 @@ workspace.xml
 fastapi_quickcrud_code_generator_beta.egg-info
 src/fastapi_quickcrud.egg-info
 dist
+*.gz
+*.txt
+*.
+PKG-INFO

@@ -5,7 +5,6 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/c2a6306f7f0a41948369d80368eb7abb?style=flat-square)](https://www.codacy.com/gh/LuisLuii/FastAPIQuickCRUD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LuisLuii/FastAPIQuickCRUD&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/LuisLuii/FastAPIQuickCRUD/badge.svg?branch=main)](https://coveralls.io/github/LuisLuii/FastAPIQuickCRUD?branch=main)
 [![CircleCI](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main.svg?style=svg)](https://circleci.com/gh/LuisLuii/FastAPIQuickCRUD/tree/main)
-[![Downloads](https://static.pepy.tech/personalized-badge/fastapi-quickcrud?period=week&units=none&left_color=black&right_color=orange&left_text=Week%20Downloads%20)](https://pepy.tech/project/fastapi-quickcrud)
 [![SupportedVersion](https://img.shields.io/pypi/pyversions/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![develop dtatus](https://img.shields.io/pypi/status/fastapi-quickcrud?style=flat-square)](https://pypi.org/project/fastapi-quickcrud)
 [![PyPI version](https://badge.fury.io/py/fastapi-quickcrud.svg)](https://badge.fury.io/py/fastapi-quickcrud)
@@ -16,7 +15,6 @@
 
 ![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example.gif)
 
-![intro2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/foreign_tree.gif)
 
 
 
@@ -62,8 +60,8 @@ I believe that many people who work with FastApi to build RESTful CRUD services 
 `FastAPI Quick CRUD`is developed based on SQLAlchemy `1.4.23` version and supports sync and async.
 
 ![docs page](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/page_preview.png?raw=true)
+![docs_page_2](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/foreign_tree.png?raw=true)
 
-## [Developing](https://github.com/LuisLuii/FastAPIQuickCRUD/issues/9)
 
 
 ## Advantages
@@ -117,7 +115,7 @@ pip install asyncpg
 ```
 
 ## Usage
-
+run and go to http://127.0.0.1:port/docs and see the auto-generated API
 ### Simple Code (or see the longer ([example](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/tutorial/sample.py))
 
 
@@ -347,6 +345,9 @@ uvicorn.run(app, host="0.0.0.0", port=8000, debug=False)
 
 - exclude_columns: `list` 
   > set the columns that not to be operated but the columns should nullable or set the default value)
+
+- foreign_include: `list[declarative_base()]` 
+  > add the SqlAlchemy models here, and build the foreign tree get one/many api (don't support SqlAlchemy table)
 
 
 - dynamic argument (prefix, tags): extra argument for APIRouter() of fastapi
@@ -699,7 +700,7 @@ If there are no users in the system, then, in this case, you should return 204.
 
 
 ### TODO
+[milestones](https://github.com/LuisLuii/FastAPIQuickCRUD/milestones)
 
-- Upsert operation for each SQL
     
 
