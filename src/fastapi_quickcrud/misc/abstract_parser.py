@@ -32,12 +32,10 @@ class SQLAlchemyGeneralSQLeResultParse(object):
             session.commit()
 
     async def async_delete(self, session, data):
-        if self.autocommit:
-            await session.delete(data)
+        await session.delete(data)
 
     def delete(self, session, data):
-        if self.autocommit:
-            session.delete(data)
+        session.delete(data)
 
     def update_data_model(self, data, update_args):
         for update_arg_name, update_arg_value in update_args.items():
