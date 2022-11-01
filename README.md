@@ -12,11 +12,7 @@
 
 ---
 
-
-![intro](https://github.com/LuisLuii/FastAPIQuickCRUD/blob/main/pic/example.gif)
-
-
-
+[My other open sorce project which supports crud code gen](https://github.com/LuisLuii/fastapi-crud-project-generator)
 
 
 - [Introduction](#introduction)
