@@ -24,10 +24,12 @@ class SQLAlchemyGeneralSQLeResultParse(object):
         self.autocommit = autocommit
 
     async def async_commit(self, session):
+        await session.flush()
         if self.autocommit:
             await session.commit()
 
     def commit(self, session):
+        session.flush()
         if self.autocommit:
             session.commit()
 
