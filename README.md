@@ -12,7 +12,7 @@
 
 ---
 
-## [If you need apply business logic or add on some code, you can use my another open source project which supports CRUD router code generator](https://github.com/LuisLuii/fastapi-crud-project-generator)
+## [If you need apply business logic or add on some code, you can use my another open source project which supports CRUD router code generator](https://github.com/LuisLuii/fastapi-crud-template-generator)
 
 
 - [Introduction](#introduction)
