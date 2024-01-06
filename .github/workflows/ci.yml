@@ -31,9 +31,9 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-      - checkout
       - run: sudo apt-get  update
       - run: printenv
+      - run: ls
       - run: sudo pip install setuptools-rust
       - run: sudo python -m pip install --upgrade pip
       - run: sudo pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r requirements.txt
