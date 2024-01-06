@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.2.4'
+VERSION = "0.2.4"
 
-print("""
+print(
+    """
 
 - upload
     - build wheel: python setup.py sdist
@@ -11,26 +12,50 @@ print("""
 - download
     - Just pip install <package>
 
-""")
+"""
+)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup(
-        name='fastapi_quickcrud',
+        name="fastapi_quickcrud",
         version=VERSION,
-        install_requires=["fastapi<=0.68.2","pydantic<=1.8.2","SQLAlchemy<=1.4.30","StrEnum==0.4.7","starlette==0.14.2",
-                          "aiosqlite==0.17.0","uvicorn==0.17.0","greenlet==1.1.2","anyio==3.5.0"],
+        install_requires=[
+            "fastapi>=0.68.2",
+            "pydantic>=1.8.2",
+            "SQLAlchemy>=1.4.30",
+            "StrEnum>=0.4.7",
+            "starlette>=0.14.2",
+            "aiosqlite>=0.17.0",
+        ],
+        extras_require={
+            'dev': [
+                "uvicorn==0.17.0",
+                "greenlet==1.1.2",
+                "anyio==3.5.0"
+            ],
+        },
         python_requires=">=3.7",
         description="A comprehensive FastaAPI's CRUD router generator for SQLALchemy.",
-        long_description=open("README.md",'r',encoding="utf-8").read(),
+        long_description=open("README.md", "r", encoding="utf-8").read(),
         long_description_content_type="text/markdown",
-        author='Luis Lui',
-        author_email='luis11235178@gmail.com',
-        url='https://github.com/LuisLuii/FastAPIQuickCRUD',
+        author="Luis Lui",
+        author_email="luis11235178@gmail.com",
+        url="https://github.com/LuisLuii/FastAPIQuickCRUD",
         license="MIT License",
-        keywords=["fastapi", "crud", "restful", "routing","SQLAlchemy", "generator", "crudrouter","postgresql","builder"],
-        packages=find_packages('src'),
-        package_dir={'': 'src'},
+        keywords=[
+            "fastapi",
+            "crud",
+            "restful",
+            "routing",
+            "SQLAlchemy",
+            "generator",
+            "crudrouter",
+            "postgresql",
+            "builder",
+        ],
+        packages=find_packages("src"),
+        package_dir={"": "src"},
         setup_requires=["setuptools>=31.6.0"],
         classifiers=[
             "Operating System :: OS Independent",
