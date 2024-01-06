@@ -1,6 +1,8 @@
+import os
+
 from setuptools import setup, find_packages
 
-VERSION = '0.2.5'
+VERSION = os.getenv("RELEASE_VERSION", default=None) or os.getenv("env.RELEASE_VERSION", default=None)
 
 print(
     """
