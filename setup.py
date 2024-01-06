@@ -28,6 +28,13 @@ if __name__ == "__main__":
             "starlette>=0.14.2",
             "aiosqlite>=0.17.0",
         ],
+        extras_require={
+            'dev': [
+                "uvicorn==0.17.0",
+                "greenlet==1.1.2",
+                "anyio==3.5.0"
+            ],
+        },
         python_requires=">=3.7",
         description="A comprehensive FastaAPI's CRUD router generator for SQLALchemy.",
         long_description=open("README.md", "r", encoding="utf-8").read(),
