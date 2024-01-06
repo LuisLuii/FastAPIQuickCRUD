@@ -34,4 +34,4 @@ crud_route_2 = crud_router_builder(db_model=friend,
 app = FastAPI()
 app.include_router(crud_route_1)
 app.include_router(crud_route_2)
-uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8002)
