@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Coverage
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  Coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.10' ]
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ci_db_test
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set github token
+        run: echo "GITHUB_TOKEN=${{ secrets.GIT_TOKEN }}" >> $GITHUB_ENV
+      - name: Set coveralls token
+        run: echo "COVERALLS_REPO_TOKEN=${{ secrets.COVERALLS_REPO_TOKEN }}" >> $GITHUB_ENV
+      - name: Enable Postgres Trigram Extension
+        run: |
+          PGPASSWORD=postgres psql -U postgres -h 127.0.0.1 -p ${{ job.services.postgres.ports[5432] }} -d ci_db_test -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+      - name: pip install, make coverage
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost/ci_db_test
+          TEST_DATABASE_ASYNC_URL: postgresql+asyncpg://postgres:postgres@localhost/ci_db_test
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install coverage
+          pip install coveralls
+          python -m coverage run -m unittest
+          coveralls
