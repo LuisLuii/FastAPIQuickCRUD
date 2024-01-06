@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.10 ]
+        python-version: [ '3.10' ]
     services:
       postgres:
         image: postgres:11
@@ -140,8 +140,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage
-          pip install coveralls
       - name: Enable Postgres Trigram Extension
         run: |
           PGPASSWORD=postgres psql -U postgres -h 127.0.0.1 -p ${{ job.services.postgres.ports[5432] }} -d ci_db_test -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
@@ -149,6 +147,5 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost/ci_db_test
           TEST_DATABASE_ASYNC_URL: postgresql+asyncpg://postgres:postgres@localhost/ci_db_test
-        run:  |
-          python -m coverage run -m unittest
-          coveralls
+        run: |
+          python -m unittest discover -s ./tests/test_implementations
