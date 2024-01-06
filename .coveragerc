@@ -2,6 +2,7 @@
 [report]
 show_missing = True
 omit =
+    /usr/*
     venv/*
     tests/*
     src/fastapi_quickcrud/misc/abstract_execute.py
