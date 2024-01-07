@@ -23,12 +23,12 @@ if __name__ == "__main__":
         name="fastapi_quickcrud",
         version=VERSION,
         install_requires=[
-            "fastapi>=0.68.2",
-            "pydantic>=1.8.2",
-            "SQLAlchemy>=1.4.30",
-            "StrEnum>=0.4.7",
-            "starlette>=0.14.2",
-            "aiosqlite>=0.17.0",
+            "fastapi==0.68.2",
+            "pydantic==1.8.2",
+            "SQLAlchemy==1.4.30",
+            "StrEnum==0.4.7",
+            "starlette==0.14.2",
+            "aiosqlite==0.17.0",
         ],
         extras_require={
             'dev': [
