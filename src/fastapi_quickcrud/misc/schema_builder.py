@@ -1380,7 +1380,7 @@ class ApiParameterSchemaBuilder:
             if i['column_name'] != self.primary_key_str:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(..., description=i['column_description'])))
+                                            Body(i['column_default'], description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
@@ -1446,7 +1446,7 @@ class ApiParameterSchemaBuilder:
             if i['column_name'] not in [self.primary_key_str]:
                 request_body_fields.append((i['column_name'],
                                             i['column_type'],
-                                            Body(..., description=i['column_description'])))
+                                            Body(i['column_default'], description=i['column_description'])))
 
         request_query_fields = []
         for i in query_param:
